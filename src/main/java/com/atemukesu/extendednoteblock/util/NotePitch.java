@@ -1,12 +1,12 @@
 package com.atemukesu.extendednoteblock.util;
 
-import net.minecraft.util.StringIdentifiable;
+import net.minecraft.util.StringRepresentable;
 
 /**
  * 代表一个八度内的12个音高（C, C#, D...）。
  * 这个枚举实现了 StringIdentifiable 接口，使其可以方便地用作方块状态属性。
  */
-public enum NotePitch implements StringIdentifiable {
+public enum NotePitch implements StringRepresentable {
     C("c"),
     C_SHARP("cs"),
     D("d"),
@@ -31,7 +31,7 @@ public enum NotePitch implements StringIdentifiable {
      * @return 状态名称，例如 "c", "cs"。
      */
     @Override
-    public String asString() {
+    public String getSerializedName() {
         return this.name;
     }
 

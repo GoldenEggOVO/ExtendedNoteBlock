@@ -9,17 +9,17 @@ public class NbtPathUtil {
 
     /**
      * 根据路径修改 NBT 数据
-     * 
+     *
      * @param root       根 NBT Compound
      * @param pathString 路径 (e.g., "Items[0].Count" or "display.Name")
      * @param valueStr   新值的字符串表示
      * @param opMode     0=Set, 1=Add, 2=Multiply
      */
-    public static void apply(NbtCompound root, String pathString, String valueStr, int opMode) {
+    public static void apply(CompoundTag root, String pathString, String valueStr, int opMode) {
         try {
             String[] parts = pathString.split("\\.");
-            NbtElement current = root;
-            NbtElement parent = null;
+            Tag current = root;
+            Tag parent = null;
             String lastKey = null;
             int lastIndex = -1;
 
@@ -35,14 +35,14 @@ public class NbtPathUtil {
                     String listName = matcher.group(1);
                     int index = Integer.parseInt(matcher.group(2));
 
-                    if (current instanceof NbtCompound c) {
+                    if (current instanceof CompoundTag c) {
                         current = c.get(listName);
                         lastKey = null;
                     } else {
                         return;
                     } // 路径错误
 
-                    if (current instanceof NbtList list) {
+                    if (current instanceof ListTag list) {
                         if (index >= 0 && index < list.size()) {
                             parent = list; // Parent becomes the list
                             lastIndex = index;
@@ -57,7 +57,7 @@ public class NbtPathUtil {
                     }
                 } else {
                     // 处理普通对象: KeyName
-                    if (current instanceof NbtCompound c) {
+                    if (current instanceof CompoundTag c) {
                         lastKey = part;
                         lastIndex = -1;
                         if (i < parts.length - 1) {
@@ -72,9 +72,9 @@ public class NbtPathUtil {
             }
 
             // 执行修改
-            if (parent instanceof NbtCompound c && lastKey != null) {
+            if (parent instanceof CompoundTag c && lastKey != null) {
                 modifyValue(c, lastKey, valueStr, opMode);
-            } else if (parent instanceof NbtList l && lastIndex != -1) {
+            } else if (parent instanceof ListTag l && lastIndex != -1) {
                 // NbtList 修改比较麻烦，因为没有直接的 set(index, value) for primitives
                 // 我们需要提取旧值，计算，然后 set
                 modifyListValue(l, lastIndex, valueStr, opMode);
@@ -85,13 +85,13 @@ public class NbtPathUtil {
         }
     }
 
-    private static void modifyValue(NbtCompound parent, String key, String valStr, int op) {
+    private static void modifyValue(CompoundTag parent, String key, String valStr, int op) {
         if (!parent.contains(key))
             return; // 只修改已存在的，不创建新键(为了安全)
-        NbtElement old = parent.get(key);
+        Tag old = parent.get(key);
 
         // 如果是数字且模式不是SET
-        if (op != 0 && old instanceof AbstractNbtNumber num) {
+        if (op != 0 && old instanceof NumericTag num) {
             try {
                 double oldVal = num.doubleValue();
                 double modVal = Double.parseDouble(valStr);
@@ -106,48 +106,48 @@ public class NbtPathUtil {
                                                          // from previous code behavior
                 }
 
-                if (old instanceof NbtInt)
+                if (old instanceof IntTag)
                     parent.putInt(key, (int) newVal);
-                else if (old instanceof NbtDouble)
+                else if (old instanceof DoubleTag)
                     parent.putDouble(key, newVal);
-                else if (old instanceof NbtFloat)
+                else if (old instanceof FloatTag)
                     parent.putFloat(key, (float) newVal);
-                else if (old instanceof NbtShort)
+                else if (old instanceof ShortTag)
                     parent.putShort(key, (short) newVal);
-                else if (old instanceof NbtByte)
+                else if (old instanceof ByteTag)
                     parent.putByte(key, (byte) newVal);
-                else if (old instanceof NbtLong)
+                else if (old instanceof LongTag)
                     parent.putLong(key, (long) newVal);
             } catch (NumberFormatException ignored) {
             }
         } else if (op == 0) {
             // SET 模式，尝试解析类型
             try {
-                if (old instanceof NbtInt)
+                if (old instanceof IntTag)
                     parent.putInt(key, Integer.parseInt(valStr));
-                else if (old instanceof NbtDouble)
+                else if (old instanceof DoubleTag)
                     parent.putDouble(key, Double.parseDouble(valStr));
-                else if (old instanceof NbtFloat)
+                else if (old instanceof FloatTag)
                     parent.putFloat(key, Float.parseFloat(valStr));
-                else if (old instanceof NbtByte)
+                else if (old instanceof ByteTag)
                     parent.putByte(key, Byte.parseByte(valStr));
-                else if (old instanceof NbtShort)
+                else if (old instanceof ShortTag)
                     parent.putShort(key, Short.parseShort(valStr));
-                else if (old instanceof NbtLong)
+                else if (old instanceof LongTag)
                     parent.putLong(key, Long.parseLong(valStr));
-                else if (old instanceof NbtString)
+                else if (old instanceof StringTag)
                     parent.putString(key, valStr);
             } catch (Exception e) {
                 // 如果解析失败且原本是String，当作String存入
-                if (old instanceof NbtString)
+                if (old instanceof StringTag)
                     parent.putString(key, valStr);
             }
         }
     }
 
-    private static void modifyListValue(NbtList list, int index, String valStr, int op) {
-        NbtElement old = list.get(index);
-        if (op != 0 && old instanceof AbstractNbtNumber num) {
+    private static void modifyListValue(ListTag list, int index, String valStr, int op) {
+        Tag old = list.get(index);
+        if (op != 0 && old instanceof NumericTag num) {
             try {
                 double oldVal = num.doubleValue();
                 double modVal = Double.parseDouble(valStr);
@@ -161,37 +161,37 @@ public class NbtPathUtil {
                     default -> newVal = oldVal * modVal;
                 }
 
-                if (old instanceof NbtInt)
-                    list.set(index, NbtInt.of((int) newVal));
-                else if (old instanceof NbtFloat)
-                    list.set(index, NbtFloat.of((float) newVal));
-                else if (old instanceof NbtDouble)
-                    list.set(index, NbtDouble.of(newVal));
+                if (old instanceof IntTag)
+                    list.set(index, IntTag.valueOf((int) newVal));
+                else if (old instanceof FloatTag)
+                    list.set(index, FloatTag.valueOf((float) newVal));
+                else if (old instanceof DoubleTag)
+                    list.set(index, DoubleTag.valueOf(newVal));
                 else
-                    list.set(index, NbtInt.of((int) newVal)); // fallback
+                    list.set(index, IntTag.valueOf((int) newVal)); // fallback
             } catch (NumberFormatException ignored) {
             }
         } else if (op == 0) {
             try {
-                if (old instanceof NbtInt)
-                    list.set(index, NbtInt.of(Integer.parseInt(valStr)));
-                else if (old instanceof NbtFloat)
-                    list.set(index, NbtFloat.of(Float.parseFloat(valStr)));
-                else if (old instanceof NbtDouble)
-                    list.set(index, NbtDouble.of(Double.parseDouble(valStr)));
-                else if (old instanceof NbtString)
-                    list.set(index, NbtString.of(valStr));
-                else if (old instanceof NbtByte)
-                    list.set(index, NbtByte.of(Byte.parseByte(valStr)));
-                else if (old instanceof NbtShort)
-                    list.set(index, NbtShort.of(Short.parseShort(valStr)));
-                else if (old instanceof NbtLong)
-                    list.set(index, NbtLong.of(Long.parseLong(valStr)));
+                if (old instanceof IntTag)
+                    list.set(index, IntTag.valueOf(Integer.parseInt(valStr)));
+                else if (old instanceof FloatTag)
+                    list.set(index, FloatTag.valueOf(Float.parseFloat(valStr)));
+                else if (old instanceof DoubleTag)
+                    list.set(index, DoubleTag.valueOf(Double.parseDouble(valStr)));
+                else if (old instanceof StringTag)
+                    list.set(index, StringTag.valueOf(valStr));
+                else if (old instanceof ByteTag)
+                    list.set(index, ByteTag.valueOf(Byte.parseByte(valStr)));
+                else if (old instanceof ShortTag)
+                    list.set(index, ShortTag.valueOf(Short.parseShort(valStr)));
+                else if (old instanceof LongTag)
+                    list.set(index, LongTag.valueOf(Long.parseLong(valStr)));
                 else
-                    list.set(index, NbtString.of(valStr)); // fallback to string if type is unknown
+                    list.set(index, StringTag.valueOf(valStr)); // fallback to string if type is unknown
             } catch (Exception e) {
                 // If parsing fails, set as string
-                list.set(index, NbtString.of(valStr));
+                list.set(index, StringTag.valueOf(valStr));
             }
         }
     }

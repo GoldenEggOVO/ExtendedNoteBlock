@@ -29,6 +29,7 @@
   "block.extendednoteblock.extended_note_block": "扩展音符盒",
   "block.extendednoteblock.global_redstone_transmitter": "全局红石发送器",
   "block.extendednoteblock.global_redstone_receiver": "全局红石接收器",
+  "block.extendednoteblock.nbs_projection_receiver": "NBS 投影接收器",
   "gui.extendednoteblock.title": "扩展音符盒设置",
   "gui.extendednoteblock.instrument": "乐器",
   "gui.extendednoteblock.velocity": "力度",
@@ -127,7 +128,7 @@
   "nbt_desc.note": "MIDI音高 (0-127)，60代表中央C",
   "nbt_desc.sustainTime": "音符持续时间，单位为游戏刻 (20刻=1秒)",
   "nbt_desc.velocity": "MIDI力度值 (0-127)，影响音符音量",
-  "nbt_desc.delayedPlayingTime": "延迟播放时间 (0-5000)，决定音符何时开始播放",
+  "nbt_desc.delayedPlayingTime": "延迟播放时间 (0-3600000 毫秒)，决定音符何时开始播放",
   "nbt_desc.fadeInTime": "淡入播放时间，决定音符淡入效果",
   "nbt_desc.fadeOutTime": "淡出播放时间，决定音符淡出效果",
   "nbt_desc.extendednoteblock.extended_note_block.AdvancedData": "高级功能数据，包含音高、音量曲线和声源位置",
@@ -139,6 +140,7 @@
   "nbt_desc.extendednoteblock.extended_note_block.AdvancedData.ExpressionZ": "声源Z轴位置表达式，自变量为t (0.0-1.0)",
   "key.extendednoteblock.open_wand_gui": "打开指挥棒界面",
   "key.extendednoteblock.clear_selection": "清除指挥棒选区",
+  "key.extendednoteblock.open_nbs_workshop": "打开 NBS 音乐工坊",
   "category.extendednoteblock": "扩展音符盒",
   "commands.extendednoteblock.smoothmove.success": "正在向 %2$s 方向平滑移动 %1$d 个实体",
   "commands.extendednoteblock.smoothmove.success_infinite": "正在向 %2$s 方向无限平滑移动 %1$d 个实体",
@@ -153,5 +155,84 @@
   "gui.extendednoteblock.sponsor.action": "前往爱发电赞助",
   "gui.extendednoteblock.tick_fix.enabled": "§a/tick 修复: 开",
   "gui.extendednoteblock.tick_fix.disabled": "§7/tick 修复: 关",
-  "gui.extendednoteblock.tick_fix.restart_required": "§7需要重启"
+  "gui.extendednoteblock.tick_fix.restart_required": "§7需要重启",
+  "gui.extendednoteblock.nbs.title": "NBS 音乐工坊",
+  "gui.extendednoteblock.nbs.open_folder": "打开歌曲目录",
+  "gui.extendednoteblock.nbs.refresh": "刷新",
+  "gui.extendednoteblock.nbs.drop_hint": "拖入 NBS、MIDI 或音频文件，自动转换后即可生成投影",
+  "gui.extendednoteblock.nbs.no_files": "歌曲目录中还没有 NBS 或音频文件",
+  "gui.extendednoteblock.nbs.loading": "正在读取 NBS...",
+  "gui.extendednoteblock.nbs.loaded": "歌曲已载入",
+  "gui.extendednoteblock.nbs.load_failed": "读取失败：%s",
+  "gui.extendednoteblock.nbs.folder_failed": "无法访问目录：%s",
+  "gui.extendednoteblock.nbs.drop_invalid": "请拖入 NBS、MIDI、WAV、MP3、OGG、AIFF 或 AU 文件",
+  "gui.extendednoteblock.nbs.search": "搜索歌曲",
+  "gui.extendednoteblock.nbs.search_hint": "输入文件名搜索...",
+  "gui.extendednoteblock.nbs.no_search_results": "没有匹配的歌曲",
+  "gui.extendednoteblock.nbs.audio_converting": "正在分析音频并转换为 NBS...",
+  "gui.extendednoteblock.nbs.audio_converted": "已生成 %1$s（%2$s 个音符）",
+  "gui.extendednoteblock.nbs.audio_convert_failed": "音频转换失败：%s",
+  "gui.extendednoteblock.nbs.midi_converting": "正在导入 MIDI 并转换为 NBS...",
+  "gui.extendednoteblock.nbs.midi_converted": "已导入 %1$s（%2$s 个音符）",
+  "gui.extendednoteblock.nbs.midi_convert_failed": "MIDI 导入失败：%s",
+  "gui.extendednoteblock.nbs.summary": "NBS v%s · %s 个音符 · %s 层 · %s TPS",
+  "gui.extendednoteblock.nbs.compatibility": "%s 个自定义乐器 · %s 次变速 · %s ticks",
+  "gui.extendednoteblock.nbs.global_warning": "当前投影使用一对一专用接收器，其他接收器不会响应",
+  "gui.extendednoteblock.nbs.transpose": "移调（半音）",
+  "gui.extendednoteblock.nbs.speed": "速度百分比",
+  "gui.extendednoteblock.nbs.velocity": "力度百分比",
+  "gui.extendednoteblock.nbs.sustain": "持续时间（游戏刻）",
+  "gui.extendednoteblock.nbs.columns": "每轴单元数（4-64）",
+  "gui.extendednoteblock.nbs.output_name": "投影文件名",
+  "gui.extendednoteblock.nbs.export": "生成 Litematica 投影",
+  "gui.extendednoteblock.nbs.exporting": "正在生成投影...",
+  "gui.extendednoteblock.nbs.exported": "已生成 %1$s（%2$s 个音符）",
+  "gui.extendednoteblock.nbs.exported_warnings": "已生成 %1$s：%2$s 音符，自定义乐器替代 %3$s，音高截断 %4$s",
+  "gui.extendednoteblock.nbs.export_failed": "生成失败：%s",
+  "gui.extendednoteblock.nbs.invalid_output": "投影文件名无效",
+  "gui.extendednoteblock.nbs.other_song": "选择其他歌曲",
+  "gui.extendednoteblock.nbs.open_output": "打开投影目录"
+, "gui.extendednoteblock.nbs.speed_mode": "速度模式：%s"
+, "gui.extendednoteblock.nbs.speed_free": "自由"
+, "gui.extendednoteblock.nbs.speed_compatible": "兼容档位"
+, "gui.extendednoteblock.nbs.octave_range": "音域：%s"
+, "gui.extendednoteblock.nbs.octave_two": "2 八度"
+, "gui.extendednoteblock.nbs.octave_six": "6 八度"
+, "gui.extendednoteblock.nbs.custom_instruments": "自定义音色：%s"
+, "gui.extendednoteblock.nbs.enabled": "开启"
+, "gui.extendednoteblock.nbs.disabled": "关闭"
+, "gui.extendednoteblock.nbs.custom_fallback": "回退音色 %1$s：%2$s"
+, "gui.extendednoteblock.nbs.preview_start": "试听"
+, "gui.extendednoteblock.nbs.preview_stop": "停止试听"
+, "gui.extendednoteblock.nbs.preview_started": "开始试听，共 %s 个音符"
+, "gui.extendednoteblock.nbs.preview_stopped": "试听已停止"
+, "gui.extendednoteblock.nbs.preview_finished": "试听完成"
+, "gui.extendednoteblock.nbs.preview_no_pack": "没有可用的活动音色包，无法试听"
+, "gui.extendednoteblock.nbs.preview_empty": "当前设置下没有可试听的音符"
+, "gui.extendednoteblock.nbs.vanilla_export": "原版红石 / 轨道 / 数据包导出"
+, "gui.extendednoteblock.vanilla.title": "原版音符盒音乐导出"
+, "gui.extendednoteblock.vanilla.target": "导出类型：%s"
+, "gui.extendednoteblock.vanilla.format": "结构格式：%s"
+, "gui.extendednoteblock.vanilla.distribution": "和弦分布：%s"
+, "gui.extendednoteblock.vanilla.pitch": "音高处理：%s"
+, "gui.extendednoteblock.vanilla.resolution": "时间精度：%s 步/秒"
+, "gui.extendednoteblock.vanilla.command": "命令方块：%s"
+, "gui.extendednoteblock.vanilla.minecart": "矿车：%s"
+, "gui.extendednoteblock.vanilla.loop": "循环：%s"
+, "gui.extendednoteblock.vanilla.shared": "共享播放：%s"
+, "gui.extendednoteblock.vanilla.rail_speed": "轨道速度（1-8 格/秒 ×10）"
+, "gui.extendednoteblock.vanilla.power_interval": "动力铁轨间隔"
+, "gui.extendednoteblock.vanilla.blocks_page": "方块与数据包设置"
+, "gui.extendednoteblock.vanilla.general_page": "返回常规设置"
+, "gui.extendednoteblock.vanilla.floor_block": "地板方块 ID"
+, "gui.extendednoteblock.vanilla.circuit_block": "线路方块 ID"
+, "gui.extendednoteblock.vanilla.rail_block": "轨道基座方块 ID"
+, "gui.extendednoteblock.vanilla.namespace": "数据包命名空间"
+, "gui.extendednoteblock.vanilla.category": "声音类别：%s"
+, "gui.extendednoteblock.vanilla.instrument_blocks": "16 种音色支撑方块"
+, "gui.extendednoteblock.vanilla.mapping_title": "原版音色支撑方块映射"
+, "gui.extendednoteblock.vanilla.open_output": "打开导出目录"
+, "gui.extendednoteblock.vanilla.export": "生成"
+, "gui.extendednoteblock.vanilla.exporting": "正在生成原版音乐..."
+, "gui.extendednoteblock.vanilla.exported": "已生成 %1$s：%2$s 个音符，顺延 %3$s，时序调整 %4$s"
 }

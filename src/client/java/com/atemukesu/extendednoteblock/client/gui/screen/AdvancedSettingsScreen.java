@@ -5,14 +5,14 @@ import com.atemukesu.extendednoteblock.client.gui.widget.MathExpressionWidget;
 import com.atemukesu.extendednoteblock.client.gui.widget.VisualCurveWidget;
 import com.atemukesu.extendednoteblock.network.ClientModMessages;
 import com.atemukesu.extendednoteblock.util.CurvePoint;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.Vec3;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 
@@ -34,7 +34,7 @@ public class AdvancedSettingsScreen extends Screen {
     private String storedExprY = "";
     @SuppressWarnings("unused")
     private String storedExprZ = "";
-    private TextFieldWidget rangeInput;
+    private EditBox rangeInput;
 
     // 错误信息 - 现在为每个输入框单独存储错误信息
     private String errorMessageX = null;
@@ -46,7 +46,7 @@ public class AdvancedSettingsScreen extends Screen {
     private static final long ERROR_DISPLAY_DURATION = 5000; // 5秒
 
     public AdvancedSettingsScreen(Screen parent, ExtendedNoteBlockEntity entity) {
-        super(Text.translatable("gui.extendednoteblock.advanced.title"));
+        super(Component.translatable("gui.extendednoteblock.advanced.title"));
         this.parent = parent;
         this.entity = entity;
     }
@@ -61,16 +61,16 @@ public class AdvancedSettingsScreen extends Screen {
 
         // 音量曲线: 0.0 -> 2.0
         volCurve = new VisualCurveWidget(20, 35, canvasWidth, canvasHeight,
-                Text.translatable("gui.extendednoteblock.advanced.volume_envelope").getString(),
-                Text.translatable("gui.extendednoteblock.advanced.volume_tooltip_format").getString(),
+                Component.translatable("gui.extendednoteblock.advanced.volume_envelope").getString(),
+                Component.translatable("gui.extendednoteblock.advanced.volume_tooltip_format").getString(),
                 0f, 2f, 0xFF55FF55, true);
 
         // 弯音曲线: Configurable Range
         int range = com.atemukesu.extendednoteblock.config.ConfigManager.getConfig().pitchBendRange;
         int pitchCurveY = 35 + canvasHeight + gap;
         pitchCurve = new VisualCurveWidget(20, pitchCurveY, canvasWidth, canvasHeight,
-                Text.translatable("gui.extendednoteblock.advanced.pitch_bend_semitones").getString(),
-                Text.translatable("gui.extendednoteblock.advanced.pitch_tooltip_format").getString(),
+                Component.translatable("gui.extendednoteblock.advanced.pitch_bend_semitones").getString(),
+                Component.translatable("gui.extendednoteblock.advanced.pitch_tooltip_format").getString(),
                 -range, range, 0xFFFFFF55, false);
 
         // Range Configuration Input
@@ -79,13 +79,13 @@ public class AdvancedSettingsScreen extends Screen {
         int rangeInputX = 20 + canvasWidth - 50 - 22; // Aligned such that "+" button ends at canvasWidth + 20
 
         // Add +/- Buttons for Range
-        addDrawableChild(ButtonWidget.builder(Text.literal("-"), b -> adjustRange(-1))
-                .dimensions(rangeInputX - 22, rangeControlY, 20, 16).build());
+        addRenderableWidget(Button.builder(Component.literal("-"), b -> adjustRange(-1))
+                .bounds(rangeInputX - 22, rangeControlY, 20, 16).build());
 
-        rangeInput = new TextFieldWidget(textRenderer, rangeInputX, rangeControlY, 50, 16,
-                Text.translatable("gui.extendednoteblock.advanced.range"));
-        rangeInput.setText(String.valueOf(range));
-        rangeInput.setChangedListener(text -> {
+        rangeInput = new EditBox(font, rangeInputX, rangeControlY, 50, 16,
+                Component.translatable("gui.extendednoteblock.advanced.range"));
+        rangeInput.setValue(String.valueOf(range));
+        rangeInput.setResponder(text -> {
             try {
                 int newRange = Integer.parseInt(text);
                 if (newRange > 0 && newRange <= 48) { // Hard limit 48
@@ -95,25 +95,25 @@ public class AdvancedSettingsScreen extends Screen {
             } catch (NumberFormatException ignored) {
             }
         });
-        addDrawableChild(rangeInput);
+        addRenderableWidget(rangeInput);
 
-        addDrawableChild(ButtonWidget.builder(Text.literal("+"), b -> adjustRange(1))
-                .dimensions(rangeInputX + 52, rangeControlY, 20, 16).build());
+        addRenderableWidget(Button.builder(Component.literal("+"), b -> adjustRange(1))
+                .bounds(rangeInputX + 52, rangeControlY, 20, 16).build());
 
         // Label logic moved to render()
 
-        addDrawableChild(volCurve);
-        addDrawableChild(pitchCurve);
+        addRenderableWidget(volCurve);
+        addRenderableWidget(pitchCurve);
 
         // Expr Area
-        int editY = pitchCurveY + canvasHeight + 50; // Moved down further
+        int editY = Math.min(pitchCurveY + canvasHeight + 50, this.height - 58);
 
-        exprX = new MathExpressionWidget(textRenderer, 20, editY, canvasWidth / 3 - 5, 20,
-                Text.translatable("gui.extendednoteblock.advanced.x_axis"));
-        exprY = new MathExpressionWidget(textRenderer, 20 + canvasWidth / 3, editY, canvasWidth / 3 - 5, 20,
-                Text.translatable("gui.extendednoteblock.advanced.y_axis"));
-        exprZ = new MathExpressionWidget(textRenderer, 20 + 2 * canvasWidth / 3, editY, canvasWidth / 3 - 5, 20,
-                Text.translatable("gui.extendednoteblock.advanced.z_axis"));
+        exprX = new MathExpressionWidget(font, 20, editY, canvasWidth / 3 - 5, 20,
+                Component.translatable("gui.extendednoteblock.advanced.x_axis"));
+        exprY = new MathExpressionWidget(font, 20 + canvasWidth / 3, editY, canvasWidth / 3 - 5, 20,
+                Component.translatable("gui.extendednoteblock.advanced.y_axis"));
+        exprZ = new MathExpressionWidget(font, 20 + 2 * canvasWidth / 3, editY, canvasWidth / 3 - 5, 20,
+                Component.translatable("gui.extendednoteblock.advanced.z_axis"));
 
         // 为每个表达式输入框设置文本变化监听器
         exprX.setTextChangeCallback(text -> validateSingleExpression("X", text, () -> errorMessageX,
@@ -123,26 +123,39 @@ public class AdvancedSettingsScreen extends Screen {
         exprZ.setTextChangeCallback(text -> validateSingleExpression("Z", text, () -> errorMessageZ,
                 msg -> errorMessageZ = msg, () -> errorDisplayTimeZ, time -> errorDisplayTimeZ = time));
 
-        addDrawableChild(exprX);
-        addDrawableChild(exprY);
-        addDrawableChild(exprZ);
+        addRenderableWidget(exprX);
+        addRenderableWidget(exprY);
+        addRenderableWidget(exprZ);
+
+        int buttonY = this.height - 26;
+        addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.advanced.save"), button -> {
+            if (save() && this.minecraft != null) {
+                this.minecraft.setScreen(parent);
+            }
+        }).bounds(this.width / 2 - 85, buttonY, 80, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.advanced.cancel"), button -> {
+            if (this.minecraft != null) {
+                this.minecraft.setScreen(parent);
+            }
+        }).bounds(this.width / 2 + 5, buttonY, 80, 20).build());
+
         loadExistingData();
     }
 
     private void adjustRange(int delta) {
         try {
-            int current = Integer.parseInt(rangeInput.getText());
+            int current = Integer.parseInt(rangeInput.getValue());
             int newVal = Math.max(1, Math.min(48, current + delta));
-            rangeInput.setText(String.valueOf(newVal));
+            rangeInput.setValue(String.valueOf(newVal));
         } catch (NumberFormatException ignored) {
         }
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // 1. 绘制深色工业风背景
         context.fill(0, 0, width, height, 0xFF111111);
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
         // 2. 绘制标题栏装饰
         context.fill(0, 0, width, 25, 0xFF222222);
@@ -156,27 +169,27 @@ public class AdvancedSettingsScreen extends Screen {
         // Draw Range Label
         // Aligned to left of the "-" button
         int rangeInputX = 20 + canvasWidth - 50 - 22;
-        context.drawTextWithShadow(textRenderer, Text.translatable("gui.extendednoteblock.advanced.range_label"),
+        context.text(font, Component.translatable("gui.extendednoteblock.advanced.range_label"),
                 rangeInputX - 22
-                        - textRenderer.getWidth(Text.translatable("gui.extendednoteblock.advanced.range_label")) - 5,
-                pitchCurveY + canvasHeight + 5 + 4, 0xAAAAAA); // Aligned Y with input
+                        - font.width(Component.translatable("gui.extendednoteblock.advanced.range_label")) - 5,
+                pitchCurveY + canvasHeight + 5 + 4, 0xFFAAAAAA); // Aligned Y with input
 
-        context.drawCenteredTextWithShadow(textRenderer, title.copy().formatted(Formatting.BOLD), width / 2, 8,
-                0xFFAA00);
+        context.centeredText(font, title.copy().withStyle(ChatFormatting.BOLD), width / 2, 8,
+                0xFFFFAA00);
 
         // 3. 侧边/底部操作提示
         int tipX = width - 105;
         int tipY = 40;
-        context.drawText(textRenderer,
-                "§6[" + Text.translatable("gui.extendednoteblock.advanced.controls").getString() + "]", tipX, tipY,
-                0xFFFFFF, true);
+        context.text(font,
+                "§6[" + Component.translatable("gui.extendednoteblock.advanced.controls").getString() + "]", tipX, tipY,
+                0xFFFFFFFF, true);
         String[] tips = {
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.right_click_del").getString(),
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.double_click_add").getString(),
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.drag_move").getString()
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.right_click_del").getString(),
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.double_click_add").getString(),
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.drag_move").getString()
         };
         for (int i = 0; i < tips.length; i++) {
-            context.drawText(textRenderer, tips[i], tipX, tipY + 15 + (i * 12), 0xCCCCCC, false);
+            context.text(font, tips[i], tipX, tipY + 15 + (i * 12), 0xFFCCCCCC, false);
         }
 
         // 函数和自变量说明 - 放在操作说明下方
@@ -188,17 +201,17 @@ public class AdvancedSettingsScreen extends Screen {
         // Draw labels above each input box
 
         // Header for Sound Source Movement
-        int editY = pitchCurveY + canvasHeight + 50;
-        context.drawTextWithShadow(textRenderer,
-                Text.translatable("gui.extendednoteblock.advanced.movement_expressions"),
-                20, editY - 25, 0xE0E0E0);
+        int editY = Math.min(pitchCurveY + canvasHeight + 50, this.height - 58);
+        context.text(font,
+                Component.translatable("gui.extendednoteblock.advanced.movement_expressions"),
+                20, editY - 25, 0xFFE0E0E0);
 
-        context.drawTextWithShadow(textRenderer, Text.translatable("gui.extendednoteblock.advanced.x_axis"),
-                exprX.getX(), exprX.getY() - 10, 0xAAAAAA);
-        context.drawTextWithShadow(textRenderer, Text.translatable("gui.extendednoteblock.advanced.y_axis"),
-                exprY.getX(), exprY.getY() - 10, 0xAAAAAA);
-        context.drawTextWithShadow(textRenderer, Text.translatable("gui.extendednoteblock.advanced.z_axis"),
-                exprZ.getX(), exprZ.getY() - 10, 0xAAAAAA);
+        context.text(font, Component.translatable("gui.extendednoteblock.advanced.x_axis"),
+                exprX.getX(), exprX.getY() - 10, 0xFFAAAAAA);
+        context.text(font, Component.translatable("gui.extendednoteblock.advanced.y_axis"),
+                exprY.getX(), exprY.getY() - 10, 0xFFAAAAAA);
+        context.text(font, Component.translatable("gui.extendednoteblock.advanced.z_axis"),
+                exprZ.getX(), exprZ.getY() - 10, 0xFFAAAAAA);
 
         // 绘制每个输入框右侧的错误信息
         drawExpressionError(context, exprX, errorMessageX, errorDisplayTimeX);
@@ -207,53 +220,53 @@ public class AdvancedSettingsScreen extends Screen {
     }
 
     // 绘制单个表达式输入框的错误信息
-    private void drawExpressionError(DrawContext context, MathExpressionWidget widget, String errorMessage,
+    private void drawExpressionError(GuiGraphicsExtractor context, MathExpressionWidget widget, String errorMessage,
             long errorDisplayTime) {
         if (errorMessage != null && System.currentTimeMillis() - errorDisplayTime < ERROR_DISPLAY_DURATION) {
             int errorX = widget.getX() + widget.getWidth() + 5; // 在输入框右侧显示错误
             int errorY = widget.getY();
             // 确保错误信息不会超出屏幕边界
-            int errorTextWidth = Math.min(textRenderer.getWidth(errorMessage), 200);
+            int errorTextWidth = Math.min(font.width(errorMessage), 200);
             int clampedErrorX = Math.min(errorX, width - errorTextWidth - 5);
             // 绘制错误背景
             context.fill(clampedErrorX, errorY, clampedErrorX + errorTextWidth, errorY + 12, 0xCCFF0000);
             // 绘制错误文本，限制长度以避免超出屏幕
-            String displayText = textRenderer.trimToWidth(errorMessage, 200);
-            context.drawText(textRenderer, displayText, clampedErrorX + 2, errorY + 2, 0xFFFFFF, false);
+            String displayText = font.plainSubstrByWidth(errorMessage, 200);
+            context.text(font, displayText, clampedErrorX + 2, errorY + 2, 0xFFFFFFFF, false);
         }
     }
 
-    private void drawFunctionHelp(DrawContext context, int helpX, int helpY) {
+    private void drawFunctionHelp(GuiGraphicsExtractor context, int helpX, int helpY) {
         // 标题
-        context.drawText(textRenderer,
-                "§6[" + Text.translatable("gui.extendednoteblock.advanced.functions_title").getString() + "]", helpX,
-                helpY, 0xFFFFFF, false);
+        context.text(font,
+                "§6[" + Component.translatable("gui.extendednoteblock.advanced.functions_title").getString() + "]", helpX,
+                helpY, 0xFFFFFFFF, false);
 
         // 变量说明
         String[] variables = {
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.var_t").getString(),
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.var_d").getString()
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.var_t").getString(),
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.var_d").getString()
         };
 
         for (int i = 0; i < variables.length; i++) {
-            context.drawText(textRenderer, variables[i], helpX, helpY + 12 + (i * 10), 0xCCCCCC, false);
+            context.text(font, variables[i], helpX, helpY + 12 + (i * 10), 0xFFCCCCCC, false);
         }
 
         // 函数说明
         String[] functions = {
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.func_sin").getString(),
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.func_cos").getString(),
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.func_tan").getString(),
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.func_sqrt").getString(),
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.func_abs").getString(),
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.func_exp").getString(),
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.func_log").getString(),
-                "§7" + Text.translatable("gui.extendednoteblock.advanced.func_pi").getString()
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.func_sin").getString(),
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.func_cos").getString(),
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.func_tan").getString(),
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.func_sqrt").getString(),
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.func_abs").getString(),
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.func_exp").getString(),
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.func_log").getString(),
+                "§7" + Component.translatable("gui.extendednoteblock.advanced.func_pi").getString()
         };
 
         int funcY = helpY + 12 + (variables.length * 10);
         for (int i = 0; i < functions.length; i++) {
-            context.drawText(textRenderer, functions[i], helpX, funcY + (i * 10), 0xCCCCCC, false);
+            context.text(font, functions[i], helpX, funcY + (i * 10), 0xFFCCCCCC, false);
         }
     }
 
@@ -336,21 +349,21 @@ public class AdvancedSettingsScreen extends Screen {
 
         // 加载存储的表达式（从NBT）
         if (!entity.getStoredExpressionX().isEmpty()) {
-            exprX.setText(entity.getStoredExpressionX());
+            exprX.setValue(entity.getStoredExpressionX());
             storedExprX = entity.getStoredExpressionX();
             // 验证已加载的表达式
             validateSingleExpression("X", entity.getStoredExpressionX(), () -> errorMessageX,
                     msg -> errorMessageX = msg, () -> errorDisplayTimeX, time -> errorDisplayTimeX = time);
         }
         if (!entity.getStoredExpressionY().isEmpty()) {
-            exprY.setText(entity.getStoredExpressionY());
+            exprY.setValue(entity.getStoredExpressionY());
             storedExprY = entity.getStoredExpressionY();
             // 验证已加载的表达式
             validateSingleExpression("Y", entity.getStoredExpressionY(), () -> errorMessageY,
                     msg -> errorMessageY = msg, () -> errorDisplayTimeY, time -> errorDisplayTimeY = time);
         }
         if (!entity.getStoredExpressionZ().isEmpty()) {
-            exprZ.setText(entity.getStoredExpressionZ());
+            exprZ.setValue(entity.getStoredExpressionZ());
             storedExprZ = entity.getStoredExpressionZ();
             // 验证已加载的表达式
             validateSingleExpression("Z", entity.getStoredExpressionZ(), () -> errorMessageZ,
@@ -358,9 +371,9 @@ public class AdvancedSettingsScreen extends Screen {
         }
     }
 
-    private void save() {
+    private boolean save() {
         if (!validateExpressions())
-            return;
+            return false;
         int sustain = entity.getSustain(); // 用于 SoundPath 生成，但不再用于曲线采样
 
         // [修复 1 & 2] 不再采样！直接提取控件上的点
@@ -376,20 +389,21 @@ public class AdvancedSettingsScreen extends Screen {
 
         // SoundPath 目前还是基于表达式生成的逐帧数据，暂时保持原样，
         // 或者如果以后要做可视化路径编辑，也应该改为关键点。
-        List<Vec3d> soundPath = generateSoundPathFromExpressions(sustain);
+        List<Vec3> soundPath = generateSoundPathFromExpressions(sustain);
 
         // 发送数据包
         ClientModMessages.sendAdvancedSettingsToServer(
-                entity.getPos(),
+                entity.getBlockPos(),
                 volumePoints, // 传点列表
                 pitchBendPoints, // 传点列表
                 soundPath,
-                exprX.getText(), exprY.getText(), exprZ.getText());
+                exprX.getValue(), exprY.getValue(), exprZ.getValue());
+        return true;
     }
 
     private boolean validateExpressions() {
         // 使用 exp4j 验证表达式
-        String[] expressions = { exprX.getText(), exprY.getText(), exprZ.getText() };
+        String[] expressions = { exprX.getValue(), exprY.getValue(), exprZ.getValue() };
         String[] labels = { "X", "Y", "Z" };
 
         for (int i = 0; i < expressions.length; i++) {
@@ -399,7 +413,7 @@ public class AdvancedSettingsScreen extends Screen {
                 double testResult = evaluateExpression(expr, 0.5);
                 if (Double.isNaN(testResult) || Double.isInfinite(testResult)) {
                     showErrorMessage(
-                            Text.translatable("gui.extendednoteblock.advanced.error.invalid_syntax", labels[i]));
+                            Component.translatable("gui.extendednoteblock.advanced.error.invalid_syntax", labels[i]));
                     return false;
                 }
             }
@@ -419,7 +433,7 @@ public class AdvancedSettingsScreen extends Screen {
             double testResult = evaluateExpression(expr, 0.5);
             if (Double.isNaN(testResult) || Double.isInfinite(testResult)) {
                 setErrorMsg.accept(
-                        Text.translatable("gui.extendednoteblock.advanced.error.invalid_syntax", label).getString());
+                        Component.translatable("gui.extendednoteblock.advanced.error.invalid_syntax", label).getString());
                 setErrorTime.accept(System.currentTimeMillis());
             } else {
                 setErrorMsg.accept(null); // 清除错误信息
@@ -429,12 +443,12 @@ public class AdvancedSettingsScreen extends Screen {
         }
     }
 
-    private List<Vec3d> generateSoundPathFromExpressions(int sustain) {
-        List<Vec3d> path = new ArrayList<>();
+    private List<Vec3> generateSoundPathFromExpressions(int sustain) {
+        List<Vec3> path = new ArrayList<>();
 
-        String exprXStr = exprX.getText();
-        String exprYStr = exprY.getText();
-        String exprZStr = exprZ.getText();
+        String exprXStr = exprX.getValue();
+        String exprYStr = exprY.getValue();
+        String exprZStr = exprZ.getValue();
 
         // 如果没有表达式，则返回空列表
         if (exprXStr.isEmpty() && exprYStr.isEmpty() && exprZStr.isEmpty()) {
@@ -454,11 +468,11 @@ public class AdvancedSettingsScreen extends Screen {
             if (Double.isNaN(x) || Double.isInfinite(x) ||
                     Double.isNaN(y) || Double.isInfinite(y) ||
                     Double.isNaN(z) || Double.isInfinite(z)) {
-                showErrorMessage(Text.translatable("gui.extendednoteblock.advanced.error.invalid_result"));
+                showErrorMessage(Component.translatable("gui.extendednoteblock.advanced.error.invalid_result"));
                 return new ArrayList<>(); // 返回空列表
             }
 
-            path.add(new Vec3d(x, y, z));
+            path.add(new Vec3(x, y, z));
         }
 
         return path;
@@ -508,27 +522,27 @@ public class AdvancedSettingsScreen extends Screen {
         return evaluateExpression(expr, t, 0);
     }
 
-    private void showErrorMessage(Text message) {
+    private void showErrorMessage(Component message) {
         this.errorMessageX = message.getString();
         this.errorDisplayTimeX = System.currentTimeMillis();
 
         // 同时在聊天框中显示错误消息
-        if (client != null && client.player != null) {
-            client.player.sendMessage(Text.literal("§c[ExtendedNoteBlock] " + message.getString()), false);
+        if (minecraft != null && minecraft.player != null) {
+            minecraft.player.sendSystemMessage(Component.literal("§c[ExtendedNoteBlock] " + message.getString()));
         }
     }
 
     @Override
-    public void close() {
+    public void onClose() {
         // 自动保存设置
         save();
         // 返回上一级
-        MinecraftClient.getInstance().setScreen(parent);
+        Minecraft.getInstance().setScreen(parent);
     }
 
     // 不暂停游戏
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 }

@@ -2,13 +2,12 @@ package com.atemukesu.extendednoteblock.sound;
 
 import com.atemukesu.extendednoteblock.network.ModMessages;
 import com.atemukesu.extendednoteblock.util.CurvePoint;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-
 import java.util.List;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * 负责在服务器端管理一个正在播放的声音的生命周期，包括淡入、持续和淡出。
@@ -20,7 +19,8 @@ import java.util.UUID;
  * - Velocity: 用于计算基础的最大音量。
  */
 public class ActiveSoundFader {
-    private final ServerWorld world;
+    private final ServerLevel world;
+    private final BlockPos ownerPos;
     private final BlockPos pos;
     private final UUID soundId;
     private final int originalVelocity;
@@ -31,7 +31,7 @@ public class ActiveSoundFader {
     // ============== Advanced Features v1.4.0 ==============
     private List<CurvePoint> pitchBendPoints;
     private List<CurvePoint> volumePoints;
-    private List<Vec3d> soundPath;
+    private List<Vec3> soundPath;
 
     private int currentTick = 0;
     private float currentAbsoluteVolume = 0.0f;
@@ -44,10 +44,16 @@ public class ActiveSoundFader {
     @SuppressWarnings("unused")
     private float volumeOnForcedFadeOut = 1.0f;
 
-    public ActiveSoundFader(ServerWorld world, BlockPos pos, UUID soundId, int velocity,
+    public ActiveSoundFader(ServerLevel world, BlockPos pos, UUID soundId, int velocity,
+            int sustainTicks, int fadeInTicks, int fadeOutTicks) {
+        this(world, pos, pos, soundId, velocity, sustainTicks, fadeInTicks, fadeOutTicks);
+    }
+
+    public ActiveSoundFader(ServerLevel world, BlockPos ownerPos, BlockPos playbackPos, UUID soundId, int velocity,
             int sustainTicks, int fadeInTicks, int fadeOutTicks) {
         this.world = world;
-        this.pos = pos;
+        this.ownerPos = ownerPos;
+        this.pos = playbackPos;
         this.soundId = soundId;
         this.originalVelocity = velocity;
         this.sustainTicks = sustainTicks;
@@ -64,7 +70,7 @@ public class ActiveSoundFader {
         this.volumePoints = points;
     }
 
-    public void setSoundPath(List<Vec3d> path) {
+    public void setSoundPath(List<Vec3> path) {
         this.soundPath = path;
     }
 
@@ -178,8 +184,8 @@ public class ActiveSoundFader {
         double curZ = pos.getZ() + 0.5;
 
         if (soundPath != null && !soundPath.isEmpty()) {
-            int index = MathHelper.clamp((int) (progress * (soundPath.size() - 1)), 0, soundPath.size() - 1);
-            Vec3d offset = soundPath.get(index);
+            int index = Mth.clamp((int) (progress * (soundPath.size() - 1)), 0, soundPath.size() - 1);
+            Vec3 offset = soundPath.get(index);
             curX += offset.x;
             curY += offset.y;
             curZ += offset.z;
@@ -236,12 +242,16 @@ public class ActiveSoundFader {
         }
     }
 
-    public ServerWorld getWorld() {
+    public ServerLevel getWorld() {
         return world;
     }
 
     public BlockPos getPos() {
         return pos;
+    }
+
+    public BlockPos getOwnerPos() {
+        return ownerPos;
     }
 
     public UUID getSoundId() {

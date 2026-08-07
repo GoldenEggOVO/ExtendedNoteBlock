@@ -1,12 +1,12 @@
 package com.atemukesu.extendednoteblock.util;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 
 public class ClientSmoothMoveManager {
 
-    private static Vec3d targetPos = null;
+    private static Vec3 targetPos = null;
     private static final double SMOOTHING_FACTOR = 0.55;
 
     // 回放状态缓存（null表示未检测）
@@ -40,8 +40,8 @@ public class ClientSmoothMoveManager {
         }
     }
 
-    public static void updateMove(Vec3d position, boolean isStop) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    public static void updateMove(Vec3 position, boolean isStop) {
+        Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
 
         // 1. 处理停止包：结束移动，但不清除缓存（保留状态）
@@ -53,8 +53,8 @@ public class ClientSmoothMoveManager {
             }
             // 不在回放中，正常拉回
             if (position != null) {
-                client.player.setPosition(position);
-                client.player.setVelocity(Vec3d.ZERO);
+                client.player.setPos(position);
+                client.player.setDeltaMovement(Vec3.ZERO);
             }
             return;
         }
@@ -74,14 +74,14 @@ public class ClientSmoothMoveManager {
         // 3. 正常平滑逻辑（不在回放中）
         if (position == null) return;
 
-        if (targetPos == null || position.squaredDistanceTo(client.player.getPos()) > 100) {
-            client.player.setPosition(position);
+        if (targetPos == null || position.distanceToSqr(client.player.position()) > 100) {
+            client.player.setPos(position);
         }
         targetPos = position;
     }
 
     // 客户端的 Tick 循环（每帧执行）
-    private static void tick(MinecraftClient client) {
+    private static void tick(Minecraft client) {
         if (client.player == null) return;
 
         // 只有存在移动目标时，才定期刷新回放状态
@@ -97,14 +97,14 @@ public class ClientSmoothMoveManager {
         // 执行平滑插值（原逻辑）
         if (targetPos == null) return;
 
-        Vec3d currentPos = client.player.getPos();
-        if (currentPos.squaredDistanceTo(targetPos) < 0.0001) {
-            client.player.setPosition(targetPos);
+        Vec3 currentPos = client.player.position();
+        if (currentPos.distanceToSqr(targetPos) < 0.0001) {
+            client.player.setPos(targetPos);
             return;
         }
 
-        Vec3d newPos = currentPos.lerp(targetPos, SMOOTHING_FACTOR);
-        client.player.setPosition(newPos);
-        client.player.setVelocity(Vec3d.ZERO);
+        Vec3 newPos = currentPos.lerp(targetPos, SMOOTHING_FACTOR);
+        client.player.setPos(newPos);
+        client.player.setDeltaMovement(Vec3.ZERO);
     }
 }

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "RNR",
+    "SSS"
+  ],
+  "key": {
+    "S": "minecraft:stone",
+    "R": "minecraft:redstone",
+    "N": "minecraft:note_block"
+  },
+  "result": {
+    "id": "extendednoteblock:nbs_projection_receiver",
+    "count": 1
+  }
+}

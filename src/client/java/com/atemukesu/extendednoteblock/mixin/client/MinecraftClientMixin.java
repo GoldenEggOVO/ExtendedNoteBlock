@@ -1,22 +1,22 @@
 package com.atemukesu.extendednoteblock.mixin.client;
 
 import com.atemukesu.extendednoteblock.client.gui.screen.PreLaunchCheckScreen;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.TitleScreen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * 注入 {@link MinecraftClient} 类。
+ * 注入 {@link Minecraft} 类。
  * <p>
  * <b>目的:</b> 这个 Mixin 的主要目的是在游戏启动后、进入主菜单之前，显示一个自定义的预启动检查屏幕。
  * 这对于检查模组配置（如声音包是否正确启用）非常有用，可以提前向用户发出警告。
  * </p>
  */
-@Mixin(MinecraftClient.class)
+@Mixin(Minecraft.class)
 public abstract class MinecraftClientMixin {
     /**
      * 一个静态标志，用于确保预启动检查屏幕在每次游戏启动时只显示一次。
@@ -46,7 +46,7 @@ public abstract class MinecraftClientMixin {
         if (screen instanceof TitleScreen && !hasShownCheckScreen) {
             hasShownCheckScreen = true;
             // 显示我们自己的屏幕，而不是主菜单
-            MinecraftClient.getInstance().setScreen(new PreLaunchCheckScreen());
+            Minecraft.getInstance().setScreen(new PreLaunchCheckScreen());
             // 取消原有的 setScreen(TitleScreen) 调用
             ci.cancel();
         }

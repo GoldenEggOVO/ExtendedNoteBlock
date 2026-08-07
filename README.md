@@ -1,65 +1,117 @@
-**【本项目不再维护】**
-由于本人时间、精力、能力水平的限制，继续维护这个项目不仅难以及时修复问题，而且可能引入更多不确定性。现将此项目归档，您仍然可以 Fork 并自行修改，但将不能再提交 Issue 或 Pull Request，也不会收到任何更新。
-
-**【このプロジェクトはメンテナンス終了】**
-私の時間・労力・能力の限界により、このプロジェクトを継続してメンテナンスすることは、問題への迅速な対応が難しくなるだけでなく、新たな不確実性を招く恐れがあります。つきましては、本プロジェクトをアーカイブ（読み取り専用）とします。引き続き Fork してご自身で修正いただくことは可能ですが、Issue や Pull Request の受け付けは終了させていただきます。また、更新を受け取ることもできなくなります。
-
-**【This project is no longer maintained】**
-Due to limitations of my time, energy, and skill, continuing to maintain this project would not only make it difficult to address issues promptly, but may also introduce further uncertainty. This project has now been archived. You may still fork it and modify it yourself, but you will no longer be able to submit Issues or Pull Requests, nor will you receive any updates.
-
 # Extended Note Block
 
-**English** | [简体中文](/docs/README_zh-cn.md) | [日本語](/docs/README_ja-jp.md)
-
-[![GitHub License](https://img.shields.io/github/license/atemukesu/ExtendedNoteBlock?style=for-the-badge&logo=github&labelColor=24292f)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/atemukesu/ExtendedNoteBlock?style=for-the-badge&logo=github&labelColor=24292f)](https://github.com/atemukesu/ExtendedNoteBlock/stargazers)
-[![Modrinth](https://img.shields.io/modrinth/dt/extendednoteblock?style=for-the-badge&logo=modrinth&color=1BD964&labelColor=24292f)](https://modrinth.com/mod/extendednoteblock)
-[![Modrinth](https://img.shields.io/modrinth/v/extendednoteblock?style=for-the-badge&logo=modrinth&color=1BD964&labelColor=24292f)](https://modrinth.com/mod/extendednoteblock)
-[![Modrinth](https://img.shields.io/modrinth/game-versions/extendednoteblock?style=for-the-badge&logo=modrinth&color=1BD964&labelColor=24292f)](https://modrinth.com/mod/extendednoteblock)
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.1.1-62B47A?style=flat-square)](https://www.minecraft.net/)
+[![Fabric](https://img.shields.io/badge/Fabric-0.19.2-DBD0B4?style=flat-square)](https://fabricmc.net/)
+[![License](https://img.shields.io/github/license/BianFuuuu/ExtendedNoteBlock?style=flat-square)](LICENSE)
 
 ![Extended Note Block Banner](./docs/assets/ENB-Banner.png)
 
-**Extended Note Block** is a Fabric mod dedicated to bringing a professional-grade music creation experience to Minecraft.
+Extended Note Block 是一个面向 Minecraft Java Edition 的 Fabric 音乐模组。它扩展了音符盒的音域、力度、延音和空间控制，并提供 NBS、MIDI、音频导入以及多种音乐结构导出方式。
 
+本仓库 fork 自 [Atemukesu/ExtendedNoteBlock](https://github.com/atemukesu/ExtendedNoteBlock)。原作者为 **Atemukesu**，Minecraft 26.1.1 移植与音乐工坊扩展由 **BF_skt** 继续维护。原作者署名和 MIT 许可证均完整保留。
 
----
+## 运行环境
 
-### Key Features
-* **Extended Note Blocks**: Support for MIDI pitch (0-127), velocity, sustain, delay, and fade control.
-* **Advanced Mode**: Visualized volume and pitch envelope editing, plus mathematical expression-based sound source movement (`x`, `y`, `z`, `t`).
-* **Wireless Redstone**: Global range Redstone signal transmission (Transmitter/Receiver).
-* **Conductor's Wand**: Supports area selection and batch editing of Note Blocks within the selected region.
-* **Smooth Motion**: Smooth movement commands that allow players to glide in a specific direction.
+| 项目 | 版本 |
+| --- | --- |
+| Minecraft | 26.1.1 |
+| Fabric Loader | 0.19.2 或更高 |
+| Fabric API | 0.145.4+26.1.1 或更高 |
+| Java | 25 或更高 |
 
-### Installation
+## 主要功能
 
-1.  Install [Fabric Loader](https://fabricmc.net/) and [Fabric API](https://modrinth.com/mod/fabric-api).
-2.  Download **Extended Note Block** and place it in your `mods` folder.
-3.  *(Optional)* [Carpet Mod](https://github.com/gnembon/fabric-carpet) is highly recommended.
+### 扩展音符盒
 
-### How to Use
+- MIDI 0-127 全音域，不再受原版两八度限制。
+- 可设置力度、延音、播放延迟、淡入与淡出。
+- 支持音量曲线、弯音曲线和基于表达式的声源移动。
+- 指挥棒可框选区域并批量编辑扩展音符盒。
 
-[Click here to view the detailed User Manual](https://atemukesu.github.io/ExtendedNoteBlock/)
+### 红石与投影播放
 
-### Screenshots
+- 全局红石发送器和接收器。
+- NBS 投影使用一对一专用接收器，避免激活其他投影。
+- 长距离音乐由播放管理器集中播放，不受远端音符约 48 格的声音衰减影响。
+- 暂停游戏后会保持音乐时间轴同步。
 
-![GUI](/docs/assets/sh1.png)
-![Advanced Mode](/docs/assets/sh2.png)
-![Conductor's Wand](/docs/assets/sh3.png)
-![Colorful](/docs/assets/sh4.png)
-![ConductorScreen](/docs/assets/sh5.png)
+### NBS 音乐工坊
 
-### Contributing
+- 直接读取 `.nbs` 文件。
+- 导入 `.mid` 和 `.midi`，保留速度、力度、声像与 GM 乐器信息。
+- 拖入 WAV、MP3、OGG、AIFF 或 AU 音频，自动分析音高并转换为 NBS。
+- 提供歌曲搜索、试听、速度、移调、力度、延音、音域和自定义音色设置。
+- 精细预览投影中的每个方块，支持旋转、缩放和平移。
 
-Contributions of any kind are welcome! You can participate by:
+### 原版音乐导出
 
-* **Submitting Issues**: Report bugs, suggest new features, or provide feedback.
-* **Submitting Pull Requests**: Fix known issues, optimize code, or improve documentation.
-* **Localization**: Help us translate the mod into more languages.
+- **红石线路**：用拉杆、中继器、红石粉和原版音符盒构成可工作的实体线路。
+- **直轨结构**：使用矿车、探测铁轨和动力铁轨按时间触发音符盒。
+- **结构格式**：支持 Litematica `.litematic` 和原版结构方块 `.nbt`。
+- **数据包**：生成带播放、停止、加入和离开函数的 ZIP 数据包。
+- 可配置单双侧和弦分布、时间精度、音乐速度、轨道速度、命令方块、矿车、循环、共享播放、线路方块及 16 种原版音色支撑方块。
+- 支持 NBS Tempo Changer、开头留白、MIDI GM 音色映射与大型和弦。
 
-See the [Development Guide](/docs/DEVELOPMENT.md) for the multi-version project setup, build instructions, and development workflow.
+## 安装
 
-Please ensure your code follows the project's coding style before submitting a PR.
+1. 安装与 Minecraft 26.1.1 匹配的 [Fabric Loader](https://fabricmc.net/) 和 [Fabric API](https://modrinth.com/mod/fabric-api)。
+2. 从本仓库 Releases 下载 JAR。
+3. 将 JAR 放入游戏实例的 `mods` 目录。
 
-### License
-This project is licensed under the [MIT License](LICENSE).
+不要同时放入多个 Extended Note Block 版本，否则 Fabric 会报告重复模组 ID。
+
+## 音乐工坊使用
+
+在按键设置中绑定“打开 NBS 音乐工坊”，或把歌曲放入：
+
+```text
+.minecraft/extendednoteblock/songs/
+```
+
+无线投影和原版结构默认输出到：
+
+```text
+.minecraft/schematics/extendednoteblock/
+```
+
+数据包默认输出到：
+
+```text
+.minecraft/extendednoteblock/datapacks/
+```
+
+将数据包 ZIP 放进目标存档的 `datapacks` 目录后执行：
+
+```mcfunction
+/reload
+/function extendednoteblock_music:play
+/function extendednoteblock_music:stop
+```
+
+如果修改了导出设置中的命名空间，请相应替换命令里的 `extendednoteblock_music`。ZIP 内的 `README.txt` 会列出实际命令。
+
+## 从源码构建
+
+Windows：
+
+```powershell
+.\gradlew.bat clean test build
+```
+
+Linux 或 macOS：
+
+```bash
+./gradlew clean test build
+```
+
+构建结果位于 `build/libs/`。由于 Windows 下 Java/Gradle 对部分中文路径的参数文件编码存在兼容问题，运行测试时建议把仓库放在纯英文路径。
+
+## 项目来源与作者
+
+- 原项目与原作者：[Atemukesu/ExtendedNoteBlock](https://github.com/atemukesu/ExtendedNoteBlock) - **Atemukesu**
+- 26.1.1 移植与扩展维护：**BF_skt**（GitHub: [BianFuuuu](https://github.com/BianFuuuu)）
+- 原版详细手册：[atemukesu.github.io/ExtendedNoteBlock](https://atemukesu.github.io/ExtendedNoteBlock/)
+
+## 许可证
+
+本项目继续使用 [MIT License](LICENSE)。原作者的版权声明未被删除；使用、修改或分发时请保留许可证与版权信息。

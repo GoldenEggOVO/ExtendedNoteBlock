@@ -29,6 +29,7 @@
     "block.extendednoteblock.extended_note_block": "拡張ノートブロック",
     "block.extendednoteblock.global_redstone_transmitter": "グローバルレッドストーン送信機",
     "block.extendednoteblock.global_redstone_receiver": "グローバルレッドストーン受信機",
+    "block.extendednoteblock.nbs_projection_receiver": "NBS投影受信機",
     "gui.extendednoteblock.title": "拡張音符ブロック設定",
     "gui.extendednoteblock.instrument": "楽器",
     "gui.extendednoteblock.velocity": "ベロシティ",
@@ -127,7 +128,7 @@
     "nbt_desc.note": "MIDIノートピッチ (0-127)、60は中央Cを表す",
     "nbt_desc.sustainTime": "ノート持続時間、ゲームティック単位 (20ティック = 1秒)",
     "nbt_desc.velocity": "MIDIベロシティ値 (0-127)、ノートの音量に影響",
-    "nbt_desc.delayedPlayingTime": "遅延再生時間 (0-5000)、ノートの再生開始時間を決定",
+    "nbt_desc.delayedPlayingTime": "遅延再生時間 (0-3600000 ms)、ノートの再生開始時間を決定",
     "nbt_desc.fadeInTime": "フェードイン再生時間、ノートのフェードイン効果を決定",
     "nbt_desc.fadeOutTime": "フェードアウト再生時間、ノートのフェードアウト効果を決定",
     "nbt_desc.extendednoteblock.extended_note_block.AdvancedData": "高度な機能データ、ピッチ、ボリュームカーブおよびサウンドソース位置を含む",
@@ -139,6 +140,7 @@
     "nbt_desc.extendednoteblock.extended_note_block.AdvancedData.ExpressionZ": "サウンドソースZ軸位置式、変数t (0.0-1.0)",
     "key.extendednoteblock.open_wand_gui": "Conductor GUIを開く",
     "key.extendednoteblock.clear_selection": "杖の選択を解除",
+    "key.extendednoteblock.open_nbs_workshop": "NBS ワークショップを開く",
     "category.extendednoteblock": "拡張ノートブロック",
     "commands.extendednoteblock.smoothmove.success": "%2$s の方向に %1$d 体のエンティティを滑らかに移動させています",
     "commands.extendednoteblock.smoothmove.success_infinite": "%2$s の方向に %1$d 体のエンティティを滑らかに移動させています（無限）",
@@ -153,5 +155,84 @@
     "gui.extendednoteblock.sponsor.action": "Afdianでスポンサーになる",
     "gui.extendednoteblock.tick_fix.enabled": "§a/tick 修正: ON",
     "gui.extendednoteblock.tick_fix.disabled": "§7/tick 修正: OFF",
-    "gui.extendednoteblock.tick_fix.restart_required": "§7再起動が必要"
+    "gui.extendednoteblock.tick_fix.restart_required": "§7再起動が必要",
+    "gui.extendednoteblock.nbs.title": "NBS ワークショップ",
+    "gui.extendednoteblock.nbs.open_folder": "曲フォルダーを開く",
+    "gui.extendednoteblock.nbs.refresh": "更新",
+    "gui.extendednoteblock.nbs.drop_hint": "NBS、MIDI、音声をドロップすると自動変換します",
+    "gui.extendednoteblock.nbs.no_files": "曲フォルダーに NBS または音声ファイルがありません",
+    "gui.extendednoteblock.nbs.loading": "NBS を読み込み中...",
+    "gui.extendednoteblock.nbs.loaded": "曲を読み込みました",
+    "gui.extendednoteblock.nbs.load_failed": "読み込み失敗: %s",
+    "gui.extendednoteblock.nbs.folder_failed": "フォルダーにアクセスできません: %s",
+    "gui.extendednoteblock.nbs.drop_invalid": "NBS、MIDI、WAV、MP3、OGG、AIFF、AU をドロップしてください",
+    "gui.extendednoteblock.nbs.search": "曲を検索",
+    "gui.extendednoteblock.nbs.search_hint": "ファイル名で検索...",
+    "gui.extendednoteblock.nbs.no_search_results": "一致する曲がありません",
+    "gui.extendednoteblock.nbs.audio_converting": "音声を解析して NBS に変換しています...",
+    "gui.extendednoteblock.nbs.audio_converted": "%1$s を作成しました（%2$s ノート）",
+    "gui.extendednoteblock.nbs.audio_convert_failed": "音声変換に失敗しました: %s",
+    "gui.extendednoteblock.nbs.midi_converting": "MIDI を読み込み NBS に変換しています...",
+    "gui.extendednoteblock.nbs.midi_converted": "%1$s を読み込みました（%2$s ノート）",
+    "gui.extendednoteblock.nbs.midi_convert_failed": "MIDI の読み込みに失敗しました: %s",
+    "gui.extendednoteblock.nbs.summary": "NBS v%s · %s ノート · %s レイヤー · %s TPS",
+    "gui.extendednoteblock.nbs.compatibility": "カスタム楽器 %s · テンポ変更 %s · %s ticks",
+    "gui.extendednoteblock.nbs.global_warning": "この投影は1対1の専用受信機を使用し、他の受信機は反応しません",
+    "gui.extendednoteblock.nbs.transpose": "移調（半音）",
+    "gui.extendednoteblock.nbs.speed": "速度（パーセント）",
+    "gui.extendednoteblock.nbs.velocity": "ベロシティ（パーセント）",
+    "gui.extendednoteblock.nbs.sustain": "持続時間（ゲーム tick）",
+    "gui.extendednoteblock.nbs.columns": "各軸のセル数（4-64）",
+    "gui.extendednoteblock.nbs.output_name": "投影ファイル名",
+    "gui.extendednoteblock.nbs.export": "Litematica 投影を生成",
+    "gui.extendednoteblock.nbs.exporting": "投影を生成中...",
+    "gui.extendednoteblock.nbs.exported": "%1$s を生成しました（%2$s ノート）",
+    "gui.extendednoteblock.nbs.exported_warnings": "%1$s を生成: %2$s ノート、代替楽器 %3$s、音高制限 %4$s",
+    "gui.extendednoteblock.nbs.export_failed": "生成失敗: %s",
+    "gui.extendednoteblock.nbs.invalid_output": "投影ファイル名が無効です",
+    "gui.extendednoteblock.nbs.other_song": "別の曲を選択",
+    "gui.extendednoteblock.nbs.open_output": "投影フォルダーを開く"
+, "gui.extendednoteblock.nbs.speed_mode": "速度モード: %s"
+, "gui.extendednoteblock.nbs.speed_free": "自由"
+, "gui.extendednoteblock.nbs.speed_compatible": "互換ステップ"
+, "gui.extendednoteblock.nbs.octave_range": "音域: %s"
+, "gui.extendednoteblock.nbs.octave_two": "2 オクターブ"
+, "gui.extendednoteblock.nbs.octave_six": "6 オクターブ"
+, "gui.extendednoteblock.nbs.custom_instruments": "カスタム音色: %s"
+, "gui.extendednoteblock.nbs.enabled": "オン"
+, "gui.extendednoteblock.nbs.disabled": "オフ"
+, "gui.extendednoteblock.nbs.custom_fallback": "代替音色 %1$s: %2$s"
+, "gui.extendednoteblock.nbs.preview_start": "試聴"
+, "gui.extendednoteblock.nbs.preview_stop": "試聴停止"
+, "gui.extendednoteblock.nbs.preview_started": "%s ノートを試聴中"
+, "gui.extendednoteblock.nbs.preview_stopped": "試聴を停止しました"
+, "gui.extendednoteblock.nbs.preview_finished": "試聴が完了しました"
+, "gui.extendednoteblock.nbs.preview_no_pack": "試聴に使用できる音色パックがありません"
+, "gui.extendednoteblock.nbs.preview_empty": "現在の設定では試聴できるノートがありません"
+, "gui.extendednoteblock.nbs.vanilla_export": "バニラ レッドストーン / レール / データパック出力"
+, "gui.extendednoteblock.vanilla.title": "バニラ音符ブロック音楽出力"
+, "gui.extendednoteblock.vanilla.target": "出力タイプ: %s"
+, "gui.extendednoteblock.vanilla.format": "形式: %s"
+, "gui.extendednoteblock.vanilla.distribution": "配置: %s"
+, "gui.extendednoteblock.vanilla.pitch": "ピッチ: %s"
+, "gui.extendednoteblock.vanilla.resolution": "時間精度: %s ステップ/秒"
+, "gui.extendednoteblock.vanilla.command": "コマンドブロック: %s"
+, "gui.extendednoteblock.vanilla.minecart": "トロッコ: %s"
+, "gui.extendednoteblock.vanilla.loop": "ループ: %s"
+, "gui.extendednoteblock.vanilla.shared": "共有再生: %s"
+, "gui.extendednoteblock.vanilla.rail_speed": "レール速度 (x10)"
+, "gui.extendednoteblock.vanilla.power_interval": "パワードレール間隔"
+, "gui.extendednoteblock.vanilla.blocks_page": "ブロックとデータパック設定"
+, "gui.extendednoteblock.vanilla.general_page": "一般設定に戻る"
+, "gui.extendednoteblock.vanilla.floor_block": "床ブロック ID"
+, "gui.extendednoteblock.vanilla.circuit_block": "回路ブロック ID"
+, "gui.extendednoteblock.vanilla.rail_block": "レール基礎ブロック ID"
+, "gui.extendednoteblock.vanilla.namespace": "データパック名前空間"
+, "gui.extendednoteblock.vanilla.category": "サウンドカテゴリ: %s"
+, "gui.extendednoteblock.vanilla.instrument_blocks": "16 楽器の支持ブロック"
+, "gui.extendednoteblock.vanilla.mapping_title": "バニラ楽器支持ブロック"
+, "gui.extendednoteblock.vanilla.open_output": "出力フォルダーを開く"
+, "gui.extendednoteblock.vanilla.export": "生成"
+, "gui.extendednoteblock.vanilla.exporting": "バニラ音楽を生成中..."
+, "gui.extendednoteblock.vanilla.exported": "%1$s を生成: %2$s ノート、%3$s 順延、%4$s タイミング調整"
 }

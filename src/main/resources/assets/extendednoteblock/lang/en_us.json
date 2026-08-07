@@ -29,6 +29,7 @@
     "block.extendednoteblock.extended_note_block": "Extended Note Block",
     "block.extendednoteblock.global_redstone_transmitter": "Global Redstone Transmitter",
     "block.extendednoteblock.global_redstone_receiver": "Global Redstone Receiver",
+    "block.extendednoteblock.nbs_projection_receiver": "NBS Projection Receiver",
     "gui.extendednoteblock.title": "Extended Note Block Settings",
     "gui.extendednoteblock.instrument": "Instrument",
     "gui.extendednoteblock.velocity": "Velocity",
@@ -127,7 +128,7 @@
     "nbt_desc.note": "MIDI note pitch (0-127), where 60 represents middle C",
     "nbt_desc.sustainTime": "Note sustain duration in game ticks (20 ticks = 1 second)",
     "nbt_desc.velocity": "MIDI velocity value (0-127), affects note volume",
-    "nbt_desc.delayedPlayingTime": "Delayed playing time (0-5000), determines when the note starts playing",
+    "nbt_desc.delayedPlayingTime": "Delayed playing time (0-3600000 ms), determines when the note starts playing",
     "nbt_desc.fadeInTime": "Fade-in playing time, determines note fade-in effect",
     "nbt_desc.fadeOutTime": "Fade-out playing time, determines note fade-out effect",
     "nbt_desc.extendednoteblock.extended_note_block.AdvancedData": "Advanced feature data, including pitch, volume curves and sound source position",
@@ -139,6 +140,7 @@
     "nbt_desc.extendednoteblock.extended_note_block.AdvancedData.ExpressionZ": "Sound source Z-axis position expression, with variable t (0.0-1.0)",
     "key.extendednoteblock.open_wand_gui": "Open Conductor GUI",
     "key.extendednoteblock.clear_selection": "Clear Wand Selection",
+    "key.extendednoteblock.open_nbs_workshop": "Open NBS Workshop",
     "category.extendednoteblock": "Extended Note Block",
     "commands.extendednoteblock.smoothmove.success": "Smooth moving %d entities in direction %s",
     "commands.extendednoteblock.smoothmove.success_infinite": "Smooth moving %d entities in direction %s (Infinite)",
@@ -153,5 +155,84 @@
     "gui.extendednoteblock.sponsor.action": "Sponsor on Afdian",
     "gui.extendednoteblock.tick_fix.enabled": "§a/tick Fix: ON",
     "gui.extendednoteblock.tick_fix.disabled": "§7/tick Fix: OFF",
-    "gui.extendednoteblock.tick_fix.restart_required": "§7Requires Restart"
+    "gui.extendednoteblock.tick_fix.restart_required": "§7Requires Restart",
+    "gui.extendednoteblock.nbs.title": "NBS Workshop",
+    "gui.extendednoteblock.nbs.open_folder": "Open Songs Folder",
+    "gui.extendednoteblock.nbs.refresh": "Refresh",
+    "gui.extendednoteblock.nbs.drop_hint": "Drop NBS, MIDI, or audio here and convert it automatically",
+    "gui.extendednoteblock.nbs.no_files": "No NBS or audio files found in the songs folder",
+    "gui.extendednoteblock.nbs.loading": "Reading NBS...",
+    "gui.extendednoteblock.nbs.loaded": "Song loaded",
+    "gui.extendednoteblock.nbs.load_failed": "Read failed: %s",
+    "gui.extendednoteblock.nbs.folder_failed": "Cannot access folder: %s",
+    "gui.extendednoteblock.nbs.drop_invalid": "Drop an NBS, MIDI, WAV, MP3, OGG, AIFF, or AU file",
+    "gui.extendednoteblock.nbs.search": "Search songs",
+    "gui.extendednoteblock.nbs.search_hint": "Search by file name...",
+    "gui.extendednoteblock.nbs.no_search_results": "No matching songs",
+    "gui.extendednoteblock.nbs.audio_converting": "Analyzing audio and converting it to NBS...",
+    "gui.extendednoteblock.nbs.audio_converted": "Created %1$s (%2$s notes)",
+    "gui.extendednoteblock.nbs.audio_convert_failed": "Audio conversion failed: %s",
+    "gui.extendednoteblock.nbs.midi_converting": "Importing MIDI and converting it to NBS...",
+    "gui.extendednoteblock.nbs.midi_converted": "Imported %1$s (%2$s notes)",
+    "gui.extendednoteblock.nbs.midi_convert_failed": "MIDI import failed: %s",
+    "gui.extendednoteblock.nbs.summary": "NBS v%s · %s notes · %s layers · %s TPS",
+    "gui.extendednoteblock.nbs.compatibility": "%s custom instruments · %s tempo changes · %s ticks",
+    "gui.extendednoteblock.nbs.global_warning": "This projection uses a dedicated one-to-one receiver; other receivers stay inactive",
+    "gui.extendednoteblock.nbs.transpose": "Transpose (semitones)",
+    "gui.extendednoteblock.nbs.speed": "Speed percent",
+    "gui.extendednoteblock.nbs.velocity": "Velocity percent",
+    "gui.extendednoteblock.nbs.sustain": "Sustain (game ticks)",
+    "gui.extendednoteblock.nbs.columns": "Cells per axis (4-64)",
+    "gui.extendednoteblock.nbs.output_name": "Projection file name",
+    "gui.extendednoteblock.nbs.export": "Generate Litematica Projection",
+    "gui.extendednoteblock.nbs.exporting": "Generating projection...",
+    "gui.extendednoteblock.nbs.exported": "Generated %1$s (%2$s notes)",
+    "gui.extendednoteblock.nbs.exported_warnings": "Generated %1$s: %2$s notes, %3$s custom fallbacks, %4$s pitches clamped",
+    "gui.extendednoteblock.nbs.export_failed": "Generation failed: %s",
+    "gui.extendednoteblock.nbs.invalid_output": "Invalid projection file name",
+    "gui.extendednoteblock.nbs.other_song": "Choose Another Song",
+    "gui.extendednoteblock.nbs.open_output": "Open Projection Folder"
+, "gui.extendednoteblock.nbs.speed_mode": "Speed mode: %s"
+, "gui.extendednoteblock.nbs.speed_free": "Free"
+, "gui.extendednoteblock.nbs.speed_compatible": "Compatible steps"
+, "gui.extendednoteblock.nbs.octave_range": "Range: %s"
+, "gui.extendednoteblock.nbs.octave_two": "2 octaves"
+, "gui.extendednoteblock.nbs.octave_six": "6 octaves"
+, "gui.extendednoteblock.nbs.custom_instruments": "Custom tones: %s"
+, "gui.extendednoteblock.nbs.enabled": "On"
+, "gui.extendednoteblock.nbs.disabled": "Off"
+, "gui.extendednoteblock.nbs.custom_fallback": "Fallback %1$s: %2$s"
+, "gui.extendednoteblock.nbs.preview_start": "Preview"
+, "gui.extendednoteblock.nbs.preview_stop": "Stop Preview"
+, "gui.extendednoteblock.nbs.preview_started": "Previewing %s notes"
+, "gui.extendednoteblock.nbs.preview_stopped": "Preview stopped"
+, "gui.extendednoteblock.nbs.preview_finished": "Preview finished"
+, "gui.extendednoteblock.nbs.preview_no_pack": "No active sound pack is available for preview"
+, "gui.extendednoteblock.nbs.preview_empty": "No previewable notes with the current settings"
+, "gui.extendednoteblock.nbs.vanilla_export": "Vanilla Redstone / Rail / Datapack Export"
+, "gui.extendednoteblock.vanilla.title": "Vanilla Note Block Music Export"
+, "gui.extendednoteblock.vanilla.target": "Target: %s"
+, "gui.extendednoteblock.vanilla.format": "Format: %s"
+, "gui.extendednoteblock.vanilla.distribution": "Distribution: %s"
+, "gui.extendednoteblock.vanilla.pitch": "Pitch: %s"
+, "gui.extendednoteblock.vanilla.resolution": "Resolution: %s steps/s"
+, "gui.extendednoteblock.vanilla.command": "Command block: %s"
+, "gui.extendednoteblock.vanilla.minecart": "Minecart: %s"
+, "gui.extendednoteblock.vanilla.loop": "Loop: %s"
+, "gui.extendednoteblock.vanilla.shared": "Shared: %s"
+, "gui.extendednoteblock.vanilla.rail_speed": "Rail speed (1-8 b/s x10)"
+, "gui.extendednoteblock.vanilla.power_interval": "Powered rail interval"
+, "gui.extendednoteblock.vanilla.blocks_page": "Blocks and Datapack Settings"
+, "gui.extendednoteblock.vanilla.general_page": "Back to General Settings"
+, "gui.extendednoteblock.vanilla.floor_block": "Floor block ID"
+, "gui.extendednoteblock.vanilla.circuit_block": "Circuit block ID"
+, "gui.extendednoteblock.vanilla.rail_block": "Rail base block ID"
+, "gui.extendednoteblock.vanilla.namespace": "Datapack namespace"
+, "gui.extendednoteblock.vanilla.category": "Sound category: %s"
+, "gui.extendednoteblock.vanilla.instrument_blocks": "16 Instrument Support Blocks"
+, "gui.extendednoteblock.vanilla.mapping_title": "Vanilla Instrument Support Blocks"
+, "gui.extendednoteblock.vanilla.open_output": "Open Export Folder"
+, "gui.extendednoteblock.vanilla.export": "Generate"
+, "gui.extendednoteblock.vanilla.exporting": "Generating vanilla music..."
+, "gui.extendednoteblock.vanilla.exported": "Generated %1$s: %2$s notes, %3$s shifted, %4$s timing adjustments"
 }

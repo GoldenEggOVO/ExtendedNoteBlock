@@ -1,15 +1,15 @@
 package com.atemukesu.extendednoteblock.mixin.client;
 
 import com.atemukesu.extendednoteblock.client.gui.screen.SoundPackManagerScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.option.OptionsScreen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Optional;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.options.OptionsScreen;
+import net.minecraft.network.chat.Component;
 
 /**
  * 注入 Minecraft 的选项屏幕 ({@link OptionsScreen})。
@@ -19,7 +19,7 @@ import java.util.Optional;
  */
 @Mixin(OptionsScreen.class)
 public abstract class OptionsScreenMixin extends Screen {
-    protected OptionsScreenMixin(Text title) {
+    protected OptionsScreenMixin(Component title) {
         super(title);
     }
 
@@ -43,34 +43,34 @@ public abstract class OptionsScreenMixin extends Screen {
     private void addSoundPacksButton(CallbackInfo ci) {
         int buttonHeight = 20;
         int verticalSpacing = 4;
-        String doneButtonText = Text.translatable("gui.done").getString();
+        String doneButtonText = Component.translatable("gui.done").getString();
 
         // 通过遍历子元素来查找“完成”按钮
-        Optional<ButtonWidget> doneButtonOpt = this.children().stream()
-                .filter(element -> element instanceof ButtonWidget)
-                .map(element -> (ButtonWidget) element)
+        Optional<Button> doneButtonOpt = this.children().stream()
+                .filter(element -> element instanceof Button)
+                .map(element -> (Button) element)
                 .filter(button -> button.getMessage().getString().equals(doneButtonText))
                 .findFirst();
 
         if (doneButtonOpt.isPresent()) {
-            ButtonWidget doneButton = doneButtonOpt.get();
+            Button doneButton = doneButtonOpt.get();
             int originalDoneY = doneButton.getY();
 
             // 把原来的“完成”按钮往下挪
             doneButton.setY(originalDoneY + buttonHeight + verticalSpacing);
 
             // 在“完成”按钮原来的位置上创建我们的新按钮
-            ButtonWidget soundPacksButton = ButtonWidget.builder(
-                    Text.translatable("gui.extendednoteblock.options.sound_packs_button"),
+            Button soundPacksButton = Button.builder(
+                    Component.translatable("gui.extendednoteblock.options.sound_packs_button"),
                     (button) -> {
-                        if (this.client != null) {
-                            this.client.setScreen(new SoundPackManagerScreen((OptionsScreen) (Object) this));
+                        if (this.minecraft != null) {
+                            this.minecraft.setScreen(new SoundPackManagerScreen((OptionsScreen) (Object) this));
                         }
                     })
-                    .dimensions(doneButton.getX(), originalDoneY, doneButton.getWidth(), buttonHeight)
+                    .bounds(doneButton.getX(), originalDoneY, doneButton.getWidth(), buttonHeight)
                     .build();
 
-            this.addDrawableChild(soundPacksButton);
+            this.addRenderableWidget(soundPacksButton);
         }
     }
 }

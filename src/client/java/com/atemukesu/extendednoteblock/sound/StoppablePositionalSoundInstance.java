@@ -1,13 +1,14 @@
 package com.atemukesu.extendednoteblock.sound;
 
-import net.minecraft.client.sound.Sound;
-import net.minecraft.client.sound.TickableSoundInstance;
-import net.minecraft.client.sound.WeightedSoundSet;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.client.resources.sounds.SoundInstance.Attenuation;
+import net.minecraft.client.resources.sounds.Sound;
+import net.minecraft.client.resources.sounds.TickableSoundInstance;
+import net.minecraft.client.sounds.WeighedSoundEvents;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -17,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 public class StoppablePositionalSoundInstance implements TickableSoundInstance {
     private final BlockPos originPos;
     private final SoundEvent soundEvent;
-    private final SoundCategory category;
+    private final SoundSource category;
 
     // 动态属性
     private float volume;
@@ -31,7 +32,7 @@ public class StoppablePositionalSoundInstance implements TickableSoundInstance {
     private final int repeatDelay;
     private boolean done = false;
     @Nullable
-    private WeightedSoundSet soundSet;
+    private WeighedSoundEvents soundSet;
 
     // 动态位置
     private double x;
@@ -44,7 +45,7 @@ public class StoppablePositionalSoundInstance implements TickableSoundInstance {
      * @param volume 初始播放音量。
      * @param pitch  初始播放音高（即最终计算出的音高）。
      */
-    public StoppablePositionalSoundInstance(SoundEvent soundEvent, SoundCategory category, float volume, float pitch,
+    public StoppablePositionalSoundInstance(SoundEvent soundEvent, SoundSource category, float volume, float pitch,
                                             BlockPos pos) {
         this.soundEvent = soundEvent;
         this.category = category;
@@ -64,15 +65,15 @@ public class StoppablePositionalSoundInstance implements TickableSoundInstance {
     }
 
     @Override
-    public Identifier getId() {
-        return this.soundEvent.getId();
+    public Identifier getIdentifier() {
+        return this.soundEvent.location();
     }
 
     @Override
     @Nullable
-    public WeightedSoundSet getSoundSet(net.minecraft.client.sound.SoundManager soundManager) {
+    public WeighedSoundEvents resolve(net.minecraft.client.sounds.SoundManager soundManager) {
         if (this.soundSet == null) {
-            this.soundSet = soundManager.get(this.getId());
+            this.soundSet = soundManager.getSoundEvent(this.getIdentifier());
         }
         return this.soundSet;
     }
@@ -82,21 +83,21 @@ public class StoppablePositionalSoundInstance implements TickableSoundInstance {
         if (this.soundSet == null) {
             return null;
         }
-        return this.soundSet.getSound(Random.create());
+        return this.soundSet.getSound(RandomSource.create());
     }
 
     @Override
-    public SoundCategory getCategory() {
+    public SoundSource getSource() {
         return this.category;
     }
 
     @Override
-    public boolean isRepeatable() {
+    public boolean isLooping() {
         return this.repeat;
     }
 
     @Override
-    public int getRepeatDelay() {
+    public int getDelay() {
         return this.repeatDelay;
     }
 
@@ -187,8 +188,8 @@ public class StoppablePositionalSoundInstance implements TickableSoundInstance {
     }
 
     @Override
-    public AttenuationType getAttenuationType() {
-        return AttenuationType.LINEAR;
+    public Attenuation getAttenuation() {
+        return Attenuation.LINEAR;
     }
 
     @Override
@@ -203,7 +204,7 @@ public class StoppablePositionalSoundInstance implements TickableSoundInstance {
     }
 
     @Override
-    public boolean isDone() {
+    public boolean isStopped() {
         return this.done;
     }
 
