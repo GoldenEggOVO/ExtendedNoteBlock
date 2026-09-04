@@ -22,6 +22,15 @@ for path in CLIENT.rglob("*.java"):
     # ChatFormatting#getColor was removed in 26.2. Use the vanilla legacy red ARGB value.
     text = text.replace("ChatFormatting.RED.getColor()", "0xFFFF5555")
 
+    # The Paper bridge client must not initialize the full content mod just to
+    # obtain the namespace constant. Keep SoundPackManager registry-independent.
+    if path.name == "SoundPackManager.java":
+        text = text.replace("import com.atemukesu.extendednoteblock.ExtendedNoteBlock;\n", "")
+        text = text.replace(
+            'private static final String DEFAULT_PACK_RESOURCE_PATH = "assets/" + ExtendedNoteBlock.MOD_ID + "/"\n            + DEFAULT_PACK_ZIP_NAME;',
+            'private static final String DEFAULT_PACK_RESOURCE_PATH = "assets/extendednoteblock/"\n            + DEFAULT_PACK_ZIP_NAME;'
+        )
+
     if text != original:
         path.write_text(text, encoding="utf-8")
         print(f"patched {path.relative_to(ROOT)}")
