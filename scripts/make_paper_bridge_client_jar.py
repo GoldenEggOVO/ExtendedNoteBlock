@@ -20,6 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LIBS = ROOT / "build" / "libs"
 OUT_DIR = ROOT / "build" / "paper-bridge-client"
+ASSET_ROOT = ROOT / "src" / "main" / "resources" / "assets" / "extendednoteblock"
 RESOURCE_PACK_FORMAT = 88
 VISUAL_DIRS = ("blockstates/", "items/", "lang/", "models/", "textures/")
 
@@ -75,7 +76,6 @@ out_jar = OUT_DIR / f"ExtendedNoteBlock-Paper-Client-Fabric-{mod_version}-mc{mc_
 
 CLASS_PREFIX = "com/atemukesu/extendednoteblock/"
 ALLOWED_CLASSES = (
-    # Paper/Purpur client runtime.
     CLASS_PREFIX + "bridgeclient/",
     CLASS_PREFIX + "config/ConfigManager",
     CLASS_PREFIX + "config/ModConfig",
@@ -83,14 +83,10 @@ ALLOWED_CLASSES = (
     CLASS_PREFIX + "sound/StoppablePositionalSoundInstance",
     CLASS_PREFIX + "sound/SoundPackManager",
     CLASS_PREFIX + "sound/SoundPackInfo",
-
-    # NBS workshop screens that do not require a custom server registry.
     CLASS_PREFIX + "client/gui/screen/NbsWorkshopScreen",
     CLASS_PREFIX + "client/gui/screen/VanillaExportScreen",
     CLASS_PREFIX + "client/gui/screen/VanillaBlockMappingScreen",
     CLASS_PREFIX + "client/gui/widget/NbsProjectionPreviewWidget",
-
-    # NBS/MIDI/audio parsing, planning and preview.
     CLASS_PREFIX + "nbs/NbsSong",
     CLASS_PREFIX + "nbs/NbsReader",
     CLASS_PREFIX + "nbs/NbsWriter",
@@ -101,8 +97,6 @@ ALLOWED_CLASSES = (
     CLASS_PREFIX + "nbs/AudioFileDecoder",
     CLASS_PREFIX + "nbs/AudioToNbsConverter",
     CLASS_PREFIX + "nbs/NbsPreviewPlayer",
-
-    # Vanilla redstone/rail/litematic/NBT/datapack exporters.
     CLASS_PREFIX + "nbs/vanilla/",
     CLASS_PREFIX + "map/InstrumentMap",
 )
@@ -111,8 +105,6 @@ ALLOWED_CLASSES = (
 def keep_entry(name: str) -> bool:
     if name == "META-INF/MANIFEST.MF":
         return True
-    # Keep ordinary mod assets as a fallback, and also copy the visual subset into
-    # the explicitly registered built-in pack below.
     if name.startswith("assets/extendednoteblock/"):
         return True
     if name.startswith("LICENSE"):
@@ -162,6 +154,11 @@ metadata = {
 if jlayer_jars:
     metadata["jars"] = [{"file": name} for name in jlayer_jars]
 
+# Read the icon from the source tree instead of re-reading the already-streamed
+# Loom JAR entry. Some remapped JARs contain duplicate asset entries and Python's
+# name lookup can then land on a stale local-header offset.
+pack_icon = (ASSET_ROOT / "icon.png").read_bytes() if (ASSET_ROOT / "icon.png").exists() else None
+
 with zipfile.ZipFile(source_jar, "r") as zin, zipfile.ZipFile(
     out_jar, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
 ) as zout:
@@ -170,31 +167,28 @@ with zipfile.ZipFile(source_jar, "r") as zin, zipfile.ZipFile(
             continue
         if not keep_entry(info.filename):
             continue
-        data = zin.read(info.filename)
+        data = zin.read(info)
         zout.writestr(info, data)
 
         if is_visual_asset(info.filename):
             zout.writestr("resourcepacks/bridge_visuals/" + info.filename, data)
 
-    icon_name = "assets/extendednoteblock/icon.png"
-    if icon_name in zin.namelist():
-        zout.writestr("resourcepacks/bridge_visuals/pack.png", zin.read(icon_name))
+    if pack_icon is not None:
+        zout.writestr("resourcepacks/bridge_visuals/pack.png", pack_icon)
     zout.writestr("resourcepacks/bridge_visuals/pack.mcmeta", built_in_pack_metadata())
-
     zout.writestr(
         "fabric.mod.json",
         json.dumps(metadata, ensure_ascii=False, indent=2).encode("utf-8"),
     )
 
-# Safety assertions: fail CI rather than publish a content-mod Paper Client.
 with zipfile.ZipFile(out_jar, "r") as check:
     names = set(check.namelist())
     forbidden_prefixes = (
         CLASS_PREFIX + "block/",
         CLASS_PREFIX + "item/",
-        CLASS_PREFIX + "screen/",       # server menu/screen handlers
+        CLASS_PREFIX + "screen/",
         CLASS_PREFIX + "command/",
-        CLASS_PREFIX + "network/",      # full-mod C2S/server networking
+        CLASS_PREFIX + "network/",
     )
     leaked = sorted(name for name in names if name.endswith(".class") and name.startswith(forbidden_prefixes))
     if leaked:
@@ -217,12 +211,9 @@ with zipfile.ZipFile(out_jar, "r") as check:
         if required not in names:
             raise SystemExit(f"Missing required Paper Client entry: {required}")
 
-    full_mod_entrypoint = CLASS_PREFIX + "ExtendedNoteBlock.class"
-    if full_mod_entrypoint in names:
+    if CLASS_PREFIX + "ExtendedNoteBlock.class" in names:
         raise SystemExit("Full content-mod initializer must not exist in the Paper Client JAR")
 
-    # Retained client/workshop classes may contain string IDs for file export.
-    # What is not allowed is bytecode linkage to the actual registry/server classes.
     forbidden_bytecode_refs = (
         b"com/atemukesu/extendednoteblock/block/",
         b"com/atemukesu/extendednoteblock/item/",
