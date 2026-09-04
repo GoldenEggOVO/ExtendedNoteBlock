@@ -9,24 +9,18 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import com.atemukesu.extendednoteblock.ExtendedNoteBlock;
 import com.atemukesu.extendednoteblock.sound.SoundPackInfo;
 import com.atemukesu.extendednoteblock.sound.SoundPackManager;
 
 public class ConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final String MOD_ID = ExtendedNoteBlock.MOD_ID;
+    // Keep this class safe for the Paper bridge client: do not touch the full
+    // ExtendedNoteBlock initializer merely to obtain a constant.
+    private static final String MOD_ID = "extendednoteblock";
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID + " Config");
     private static File configFile;
     private static ModConfig config;
 
-    /**
-     * 初始化配置管理器。
-     * <p>
-     * 定位配置文件。如果文件存在，则从中加载设置。
-     * 如果文件不存在，则使用默认值创建一个新的配置文件。
-     * 此方法应在模组启动时调用一次。
-     */
     public static void initialize() {
         File configDir = FabricLoader.getInstance().getConfigDir().toFile();
         configFile = new File(configDir, MOD_ID + ".json");
@@ -46,7 +40,6 @@ public class ConfigManager {
                 throw new IOException("Config file is empty or corrupted.");
             }
             LOGGER.info("Successfully loaded config file.");
-            // 在加载后立即保存，以添加可能在新版本中增加的字段
             saveConfig();
         } catch (IOException e) {
             LOGGER.error("Failed to load config file, using default values.", e);
@@ -55,12 +48,6 @@ public class ConfigManager {
         }
     }
 
-    /**
-     * 将当前配置保存到文件。
-     * <p>
-     * 将当前的 {@link ModConfig} 对象序列化为 JSON 格式，并将其写入配置文件，
-     * 覆盖任何现有内容。这对于持久化在运行时所做的更改非常有用。
-     */
     public static void saveConfig() {
         try (FileWriter writer = new FileWriter(configFile)) {
             GSON.toJson(config, writer);
@@ -69,14 +56,6 @@ public class ConfigManager {
         }
     }
 
-    /**
-     * 获取已加载的配置对象。
-     * <p>
-     * 返回当前的 {@link ModConfig} 实例。如果配置尚未初始化，
-     * 此方法将首先触发初始化过程。
-     *
-     * @return 包含所有配置设置的单例 {@link ModConfig} 实例。
-     */
     public static ModConfig getConfig() {
         if (config == null) {
             initialize();
@@ -84,16 +63,6 @@ public class ConfigManager {
         return config;
     }
 
-    // isSoundPackGenerated 方法已被删除，因为它依赖于已移除的 SoundfontRenderer
-
-    /**
-     * 检查当前激活的声音包是否已准备好使用。
-     * <p>
-     * 扫描可用的声音包，然后检查在配置中标记为激活的那个包的状态。
-     * 如果一个包存在并且其状态为 {@link SoundPackInfo.Status#OK}，则认为该包已“准备好”。
-     *
-     * @return 如果存在一个激活的声音包且其状态为 {@code OK}，则返回 {@code true}，否则返回 {@code false}。
-     */
     public static boolean isActiveSoundPackReady() {
         SoundPackManager manager = SoundPackManager.getInstance();
         manager.scanPacks();
