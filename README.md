@@ -11,47 +11,48 @@ Extended Note Block 是一个面向 Minecraft Java Edition 的音乐模组与 Pa
 
 本仓库 fork 自 [Atemukesu/ExtendedNoteBlock](https://github.com/atemukesu/ExtendedNoteBlock)，并基于 [BianFuuuu/ExtendedNoteBlock](https://github.com/BianFuuuu/ExtendedNoteBlock) 的 26.1.1 移植与音乐工坊继续维护。原作者署名和 MIT 许可证均完整保留。
 
-## Minecraft 26.2：三个程序版本
+## Minecraft 26.2：三个程序版本 + 一个共享材质包
 
-同一个 Release 现在固定提供三种程序版本，请按你的服务器类型选择，不要把 Full Fabric 和 Paper Client 同时放入同一个客户端。
+每个正式 Release 固定提供三种程序版本。**Full Fabric 与 Paper Client 不要同时安装在同一个客户端。**
 
 | 文件 | 用途 | 安装位置 |
 | --- | --- | --- |
-| `ExtendedNoteBlock-Full-Fabric-*.jar` | 单人模式、或服务端也安装完整 Fabric Mod 的 Fabric 服务器 | 客户端 `mods/`，Fabric 服务端也需要对应完整 Mod |
-| `ExtendedNoteBlock-PaperClient-Fabric-*.jar` | 连接安装 ENB Bridge 的 Paper/Purpur 服务器 | 客户端 `mods/` |
-| `ExtendedNoteBlock-PaperPlugin-*.jar` | Paper/Purpur 服务端桥接插件 | 服务端 `plugins/` |
+| `ExtendedNoteBlock-Full-Fabric-*.jar` | 单人模式，或服务端也安装 Full Mod 的 Fabric 服务器 | 客户端 `mods/`；Fabric 服务端也安装同版 Full Mod |
+| `ExtendedNoteBlock-Paper-Client-Fabric-*.jar` | 连接安装 ENB Bridge 的 Paper/Purpur 服务器 | 客户端 `mods/` |
+| `ExtendedNoteBlock-Paper-Server-*.jar` | Paper/Purpur 服务端桥接插件 | 服务端 `plugins/` |
+| `ExtendedNoteBlock-Visuals-*.zip` | 可选独立材质包 | 客户端 `resourcepacks/` |
 
 ### Full Fabric
 
-完整内容版本，保留真正的 `extendednoteblock:*` 自定义注册表内容，包括扩展音符盒、指挥棒、无线红石方块、NBS Projection Receiver、完整 GUI 与 Fabric 服务端逻辑。
+完整内容版本，保留真正的 `extendednoteblock:*` 注册表：扩展音符盒、指挥棒、无线红石、NBS Projection Receiver、完整 Fabric GUI 与服务端逻辑都在里面。
 
-它适合：
+适合：
 
 - 单人世界；
-- Fabric 服务端，并且服务端也安装相同的 Full Fabric Mod。
+- Fabric 服务器，并且服务器也安装相同版本的 Full Fabric Mod。
 
-**不要用 Full Fabric JAR 作为纯 Paper/Purpur 的客户端伴侣。** Paper 不认识 Full 版的自定义物品注册表，创造模式物品同步可能因此断开连接。
+**不要把 Full Fabric 当成纯 Paper/Purpur 的客户端伴侣。** Paper 不认识 Full 版自定义物品注册表，创造模式物品同步可能导致服务器解码失败。
 
 ### Paper Client
 
-Paper/Purpur 专用 Fabric 客户端版本。它刻意不注册自定义 Block / Item / BlockEntity / Menu 注册表，因此可以安全连接原版注册表的 Paper/Purpur。
+Paper/Purpur 专用 Fabric 客户端。它刻意不注册 Full 版的自定义 Block / Item / BlockEntity / Menu，因此保持 Paper 原版注册表安全。
 
-Paper Client 与 Full Fabric 尽量共享相同的客户端实现：
+Paper Client 与 Full Fabric 尽量共享同一套客户端能力：
 
 - ExtendedNoteBlock 声音引擎与默认音色包；
 - 音色包 GUI；
 - NBS 音乐工坊；
-- `.nbs` / `.mid` / `.midi` / 音频导入；
-- 本地试听与投影预览；
-- 原版红石、铁轨、Litematica、结构方块、数据包导出；
+- `.nbs` / `.mid` / `.midi` / WAV / MP3 / OGG / AIFF / AU 导入；
+- 本地试听、投影预览；
+- 原版红石、铁轨、Litematica、结构 `.nbt`、数据包 ZIP 导出；
 - Bridge 高级声音与 pitch-cents 协议；
-- 后续 Paper 专用编辑 GUI。
+- Paper 专用音符盒编辑 GUI 协议。
 
-### Paper Plugin
+Paper Client **内置与独立 `Visuals` ZIP 相同来源的 ENB 模型/纹理资源，并作为 always-enabled built-in resource pack 注册**，所以装 Paper Client 的玩家不需要再额外安装 Visuals ZIP。
 
-Paper/Purpur 服务端只保存和运行逻辑数据，世界与背包中只使用 `minecraft:*` 原版载体。没有安装客户端 Mod 的玩家也可以正常进入服务器，并会听到最接近的原版音符盒 fallback。
+### Paper/Purpur Server
 
-当前载体：
+Paper 服务端世界与背包始终只使用 `minecraft:*` 原版载体，逻辑身份由插件 PDC / `objects.yml` 保存。
 
 | ENB 逻辑对象 | Paper 实际载体 |
 | --- | --- |
@@ -62,34 +63,36 @@ Paper/Purpur 服务端只保存和运行逻辑数据，世界与背包中只使�
 | Global Redstone Receiver（ON） | `minecraft:redstone_block` |
 | NBS Projection Receiver | `minecraft:purple_concrete` |
 
-逻辑身份通过插件 PDC 与 `objects.yml` 保存，而不是通过自定义物品 ID 保存。
+没有安装任何 Mod 的玩家仍然可以正常进入服务器；扩展音符会自动回退到最接近的原版 Note Block 音高与音色。
 
-## Shared Visual Compatibility Pack
+## Shared Visuals：原 Mod 材质分离与内置
 
-Release 还提供：
+Release 额外提供：
 
 `ExtendedNoteBlock-Visuals-*.zip`
 
-这是一个 Minecraft 26.2 Resource Pack，直接复用 Full Fabric 原来的 ExtendedNoteBlock 模型和纹理，让 Paper Client 上的原版载体尽可能接近 Full Fabric 的外观。
+它直接复用 Full Fabric 的原始 `extendednoteblock` 模型、纹理、物品模型与语言资源；Paper Client 内置的材质包也来自同一套资源源文件，因此两个客户端版本尽量保持一致。
 
-把 ZIP 原样放到：
+### Paper 物品如何只改变 ENB 物品外观
 
-```text
-.minecraft/resourcepacks/
-```
+Paper 插件给 `/enb give` 产生的 ENB 载体物品写入 Minecraft 26.2 自带的 `minecraft:item_model` 数据组件，例如：
 
-然后在游戏资源包界面启用即可。
+- 标记的烈焰棒 -> `extendednoteblock:conductor_wand`
+- 标记的音符盒 -> `extendednoteblock:extended_note_block`
+- 标记的红/绿/紫混凝土 -> 对应 ENB 模型
 
-### 当前视觉包限制
+因此：
 
-纯原版 Resource Pack 无法读取 Paper 插件写入的 PDC / `enb_type`，因此它目前无法区分：
+- 有 Paper Client：内置材质自动提供这些模型；
+- 没有 Mod、但手动启用 Visuals ZIP：标记的 ENB **物品**也可以使用原 Mod 外观；
+- 什么都不装：仍然看到正常的原版载体；
+- 普通烈焰棒、普通音符盒物品、普通混凝土物品不会被全局替换。
 
-- “这个红色混凝土是 ENB Transmitter”；
-- “旁边那个红色混凝土只是普通方块”。
+### 已放置方块的当前限制
 
-所以 **启用 Visuals Pack 的客户端会全局替换这些载体的外观**。不启用材质包的玩家仍然看到完全正常的原版方块和物品。
+纯原版 Resource Pack 无法读取 Paper PDC，也无法知道“某个坐标的绿色混凝土是 ENB Receiver、另一个只是普通绿色混凝土”。因此 Visuals ZIP **故意不全局覆盖**原版 Note Block / Concrete / Redstone Block 的 blockstate。
 
-后续 Paper Client 会增加 ENB 对象位置同步与客户端定向渲染，届时可以只给真正的 ENB Bridge 对象显示 Full Fabric 外观，而不影响普通原版载体。
+目前 Paper 世界里已经放置的 Bridge 方块仍使用原版方块外观。后续 Paper Client 会通过 ENB 对象位置同步 + 客户端定向渲染，只对真正的 Bridge 对象显示 Full Fabric 方块外观，而不影响普通原版方块。
 
 ## 运行环境
 
@@ -105,10 +108,10 @@ Release 还提供：
 
 ### 扩展音符盒
 
-- MIDI 0-127 全音域，不再受原版两八度限制。
-- 可设置力度、延音、播放延迟、淡入与淡出。
-- Full Fabric 支持音量曲线、弯音曲线和基于表达式的声源移动。
-- Paper Bridge 已实现基础扩展播放、pitch-cents 投影播放与无 Mod 原版 fallback。
+- MIDI 0-127 全音域；
+- 力度、延音、播放延迟、淡入、淡出；
+- Full Fabric 支持音量曲线、弯音曲线和表达式声源移动；
+- Paper Bridge 支持扩展播放、pitch-cents 投影与无 Mod 原版 fallback。
 
 ### 指挥棒
 
@@ -124,13 +127,13 @@ Paper Bridge 中指挥棒使用带 ENB 标记的烈焰棒：
 
 - Paper Transmitter 读取真实邻接红石输入；
 - Receiver 激活时提供真实 15 级原版红石输出；
-- Dedicated Projection Transmitter 使用上升沿触发，不会在持续高电平时重复重播完整歌曲。
+- Dedicated Projection Transmitter 使用上升沿触发，持续高电平不会让歌曲播完后重复启动。
 
 ### NBS Projection
 
 - 每个 Projection Receiver 保存独立时间轴；
-- 支持 MIDI Note、GM Instrument、Velocity、Sustain 与 pitch cents；
-- 装 Paper Client 的玩家听扩展音色；
+- 支持 MIDI Note、GM Instrument、Velocity、Sustain、pitch cents；
+- Paper Client 玩家听完整扩展音色；
 - 未装客户端 Mod 的玩家听最接近的原版 fallback。
 
 ### NBS 音乐工坊
@@ -138,10 +141,9 @@ Paper Bridge 中指挥棒使用带 ENB 标记的烈焰棒：
 默认按 `N` 打开 Paper Client / Full Fabric 的 NBS 音乐工坊。
 
 - 直接读取 `.nbs`；
-- 导入 `.mid` 和 `.midi`，保留速度、力度、声像与 GM 乐器信息；
-- 导入 WAV、MP3、OGG、AIFF/AIF、AU 并分析音高转换为 NBS；
-- 本地试听；
-- 投影布局预览；
+- 导入 `.mid` / `.midi`，保留速度、力度、声像与 GM 乐器信息；
+- WAV、MP3、OGG、AIFF/AIF、AU 音频分析并转换为 NBS；
+- 本地试听与投影布局预览；
 - 速度、移调、力度、延音、音域、自定义音色等设置。
 
 ### 原版音乐导出
@@ -149,38 +151,36 @@ Paper Bridge 中指挥棒使用带 ENB 标记的烈焰棒：
 - 红石线路；
 - 矿车 / 探测铁轨 / 动力铁轨线路；
 - Litematica `.litematic`；
-- 原版结构方块 `.nbt`；
+- 原版结构 `.nbt`；
 - 数据包 ZIP；
-- NBS Tempo Changer、开头留白、MIDI GM 映射、大型和弦等。
+- 支持 NBS Tempo Changer、开头留白、MIDI GM 映射与大型和弦。
 
 ## Paper/Purpur 快速安装
 
-1. 服务端 `plugins/` 放入 `ExtendedNoteBlock-PaperPlugin-*.jar`。
-2. 需要完整 ENB 音色与客户端工具的玩家，在 Fabric 26.2 客户端 `mods/` 放入 `ExtendedNoteBlock-PaperClient-Fabric-*.jar`。
-3. 想让 Paper 载体看起来接近 Full Fabric 的玩家，把 `ExtendedNoteBlock-Visuals-*.zip` 放入 `resourcepacks/` 并启用。
-4. 不想安装任何客户端内容的玩家可以直接进入服务器，无需额外 Mod。
+1. 服务端 `plugins/` 放 `ExtendedNoteBlock-Paper-Server-*.jar`。
+2. 需要完整 ENB 音色和客户端工具的玩家，在 Fabric 26.2 客户端 `mods/` 放 `ExtendedNoteBlock-Paper-Client-Fabric-*.jar`。
+3. Paper Client 已内置 Visuals，不需要再装独立 ZIP。
+4. 不装 Paper Client 的玩家也可以直接进入服务器；如果只想要 ENB 物品模型，可单独启用 `ExtendedNoteBlock-Visuals-*.zip`。
 
-OP 可以使用：
+OP：
 
 ```text
 /enb give all
 ```
 
-获取所有 Paper Bridge 载体。
-
 ## Full Fabric 快速安装
 
 单人模式：
 
-1. 安装 Fabric Loader 26.2 与 Fabric API。
-2. 只把 `ExtendedNoteBlock-Full-Fabric-*.jar` 放入 `mods/`。
-3. 不需要 Paper Plugin。
+1. Fabric Loader 26.2 + Fabric API；
+2. 只把 `ExtendedNoteBlock-Full-Fabric-*.jar` 放入 `mods/`；
+3. 不需要 Paper Server 插件。
 
 Fabric 多人服务器则要求服务端也安装对应 Full Fabric Mod。
 
 ## 音乐工坊目录
 
-歌曲目录：
+歌曲：
 
 ```text
 .minecraft/extendednoteblock/songs/
@@ -198,28 +198,16 @@ Fabric 多人服务器则要求服务端也安装对应 Full Fabric Mod。
 .minecraft/extendednoteblock/datapacks/
 ```
 
-## 从源码构建
-
-Windows：
-
-```powershell
-.\gradlew.bat clean test build
-```
-
-Linux / macOS：
-
-```bash
-./gradlew clean test build
-```
-
-Full Fabric 构建位于 `build/libs/`。Paper Client 与 Visuals Pack 由 `scripts/` 中的安全打包脚本生成，Paper Plugin 位于 `bridge/` 子工程。
+## 构建与发布检查
 
 GitHub Actions 发布前会验证：
 
 - Full Fabric 真实包含完整模组入口与自定义物品；
 - Paper Client 不泄漏自定义 Block / Item / Server Registry 类；
-- Paper Plugin JAR 包含 `plugin.yml` 与 `config.yml`；
-- Visuals Pack 不包含 Java class，并包含所有必要载体映射。
+- Paper Client JAR 内存在 built-in Visuals pack；
+- 独立 Visuals ZIP 不包含 Java class，也不全局覆盖 `minecraft:*` 载体 blockstate/item 定义；
+- Paper Server 能在 Java 25 / Paper 26.2 API 下编译，并包含 `plugin.yml` / `config.yml`；
+- Paper Server 标记物品会写入 `minecraft:item_model` 对应 ENB 模型。
 
 ## 项目来源与作者
 
@@ -230,4 +218,4 @@ GitHub Actions 发布前会验证：
 
 ## 许可证
 
-本项目继续使用 [MIT License](LICENSE)。原作者的版权声明未被删除；使用、修改或分发时请保留许可证与版权信息。
+本项目继续使用 [MIT License](LICENSE)。原作者版权声明保留。
