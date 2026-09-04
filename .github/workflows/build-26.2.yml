@@ -28,11 +28,19 @@ jobs:
       - run: chmod +x gradlew
       - name: Build Fabric mod
         run: ./gradlew clean test build --stacktrace
-      - name: Upload Fabric artifacts
+      - name: Build Paper-safe bridge client jar
+        run: python3 scripts/make_paper_bridge_client_jar.py
+      - name: Upload full Fabric artifacts
         uses: actions/upload-artifact@v4
         with:
           name: extendednoteblock-26.2
           path: build/libs/*.jar
+          if-no-files-found: error
+      - name: Upload Paper bridge client artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extendednoteblock-paper-bridge-client-26.2
+          path: build/paper-bridge-client/*.jar
           if-no-files-found: error
 
   build-bridge:
