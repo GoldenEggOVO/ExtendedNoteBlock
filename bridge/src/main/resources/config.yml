@@ -1,12 +1,22 @@
 # ExtendedNoteBlockBridge configuration
 # Minecraft 26.2 / Paper / Purpur
-#
-# The current bridge keeps its per-block state in notes.yml and objects.yml.
-# This file is intentionally minimal so Bukkit's saveDefaultConfig() always has
-# a bundled default resource and the plugin can enable safely.
 
 # Maximum distance used by player-facing bridge interactions.
 interaction-range: 6
 
-# Maximum distance at which bridge sounds are intended to be relevant.
+# Maximum distance at which bridge sounds are sent to clients.
 audible-radius: 64
+
+wand:
+  # Safety cap for conductor-wand cuboid edits.
+  max-selection-volume: 262144
+
+wireless-redstone:
+  # 1 tick matches normal redstone responsiveness.
+  poll-period-ticks: 1
+
+# Global Redstone Receiver implementation note:
+# its inventory/placement carrier is GREEN_CONCRETE. While the receiver is ON,
+# the plugin temporarily changes the world block to REDSTONE_BLOCK so vanilla
+# redstone components receive a real 15-strength signal. It changes back to
+# GREEN_CONCRETE when the global signal turns off.
