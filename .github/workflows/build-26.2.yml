@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - port/26.2
+      - release/three-editions
   pull_request:
     branches:
       - main
@@ -17,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
@@ -28,9 +29,9 @@ jobs:
       - run: chmod +x gradlew
       - name: Build Full Fabric mod
         run: ./gradlew clean test build --stacktrace
-      - name: Build Paper-safe bridge client jar
+      - name: Build Paper-safe client jar with built-in visual pack
         run: python3 scripts/make_paper_bridge_client_jar.py
-      - name: Build shared visual resource pack
+      - name: Build standalone visual resource pack
         run: python3 scripts/make_visual_resource_pack.py
       - name: Verify Full Fabric runtime jar
         shell: bash
@@ -40,16 +41,28 @@ jobs:
           test -n "$FULL_JAR"
           jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/ExtendedNoteBlock.class'
           jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/item/ConductorWandItem.class'
+      - name: Verify Paper Client built-in resource pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          CLIENT_JAR="$(find build/paper-bridge-client -maxdepth 1 -type f -name '*.jar' | head -n 1)"
+          test -n "$CLIENT_JAR"
+          jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_visuals/pack.mcmeta'
+          jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_visuals/assets/extendednoteblock/items/conductor_wand.json'
+          if jar tf "$CLIENT_JAR" | grep -q '^com/atemukesu/extendednoteblock/item/'; then
+            echo 'Unsafe Full Fabric item classes leaked into Paper Client' >&2
+            exit 1
+          fi
       - name: Upload Full Fabric artifacts
         uses: actions/upload-artifact@v4
         with:
           name: extendednoteblock-full-26.2
           path: build/libs/*.jar
           if-no-files-found: error
-      - name: Upload Paper bridge client artifact
+      - name: Upload Paper Client artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extendednoteblock-paper-bridge-client-26.2
+          name: extendednoteblock-paper-client-26.2
           path: build/paper-bridge-client/*.jar
           if-no-files-found: error
       - name: Upload visual resource pack
@@ -67,15 +80,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Build Paper bridge
+      - name: Prepare Paper 26.2 item-model source
+        run: python3 ../scripts/prepare_paper_bridge_sources.py
+      - name: Build Paper/Purpur server plugin
         run: gradle clean build --stacktrace
-      - name: Verify Paper bridge runtime resources
+      - name: Verify Paper plugin runtime resources
         shell: bash
         run: |
           set -euo pipefail
@@ -83,10 +98,12 @@ jobs:
           test -n "$JAR"
           jar tf "$JAR" | grep -qx 'plugin.yml'
           jar tf "$JAR" | grep -qx 'config.yml'
-      - name: Upload Bridge artifact
+          javap -classpath "$JAR" -c com.goldenegggovo.extendednoteblock.bridge.ExtendedNoteBlockBridge \
+            | grep -q 'ITEM_MODEL'
+      - name: Upload Paper server plugin artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extendednoteblock-bridge-26.2
+          name: extendednoteblock-paper-server-26.2
           path: bridge/build/libs/*.jar
           if-no-files-found: error
 
@@ -105,19 +122,19 @@ jobs:
           name: extendednoteblock-full-26.2
           path: artifacts/full
 
-      - name: Download Paper-safe Fabric bridge client
+      - name: Download Paper Client
         uses: actions/download-artifact@v4
         with:
-          name: extendednoteblock-paper-bridge-client-26.2
+          name: extendednoteblock-paper-client-26.2
           path: artifacts/client
 
-      - name: Download Paper Bridge plugin
+      - name: Download Paper/Purpur server plugin
         uses: actions/download-artifact@v4
         with:
-          name: extendednoteblock-bridge-26.2
-          path: artifacts/bridge
+          name: extendednoteblock-paper-server-26.2
+          path: artifacts/server
 
-      - name: Download visual resource pack
+      - name: Download standalone visual pack
         uses: actions/download-artifact@v4
         with:
           name: extendednoteblock-visuals-26.2
@@ -129,28 +146,28 @@ jobs:
           set -euo pipefail
           MOD_VERSION="$(grep '^mod_version=' gradle.properties | cut -d= -f2)"
           MC_VERSION="$(grep '^minecraft_version=' gradle.properties | cut -d= -f2)"
-          BRIDGE_VERSION="$(grep "^version = '" bridge/build.gradle | head -n1 | sed -E "s/version = '([^']+)'/\1/")"
+          SERVER_VERSION="$(grep "^version = '" bridge/build.gradle | head -n1 | sed -E "s/version = '([^']+)'/\1/")"
 
           mkdir -p release
           FULL_JAR="$(find artifacts/full -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           CLIENT_JAR="$(find artifacts/client -maxdepth 1 -type f -name '*.jar' | head -n 1)"
-          BRIDGE_JAR="$(find artifacts/bridge -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          SERVER_JAR="$(find artifacts/server -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           VISUALS_ZIP="$(find artifacts/visuals -maxdepth 1 -type f -name '*.zip' | head -n 1)"
 
           test -n "$FULL_JAR"
           test -n "$CLIENT_JAR"
-          test -n "$BRIDGE_JAR"
+          test -n "$SERVER_JAR"
           test -n "$VISUALS_ZIP"
 
           cp "$FULL_JAR" "release/ExtendedNoteBlock-Full-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
-          cp "$CLIENT_JAR" "release/ExtendedNoteBlock-PaperClient-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
-          cp "$BRIDGE_JAR" "release/ExtendedNoteBlock-PaperPlugin-${BRIDGE_VERSION}-mc${MC_VERSION}.jar"
+          cp "$CLIENT_JAR" "release/ExtendedNoteBlock-Paper-Client-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
+          cp "$SERVER_JAR" "release/ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar"
           cp "$VISUALS_ZIP" "release/ExtendedNoteBlock-Visuals-${MOD_VERSION}-mc${MC_VERSION}.zip"
           sha256sum release/* > release/SHA256SUMS.txt
 
           echo "MOD_VERSION=$MOD_VERSION" >> "$GITHUB_ENV"
           echo "MC_VERSION=$MC_VERSION" >> "$GITHUB_ENV"
-          echo "BRIDGE_VERSION=$BRIDGE_VERSION" >> "$GITHUB_ENV"
+          echo "SERVER_VERSION=$SERVER_VERSION" >> "$GITHUB_ENV"
 
       - name: Create GitHub Release
         env:
@@ -160,43 +177,38 @@ jobs:
           set -euo pipefail
           TAG="v${MOD_VERSION}-mc${MC_VERSION}"
           cat > release-notes.md <<EOF
-          # ExtendedNoteBlock ${MOD_VERSION} for Minecraft ${MC_VERSION}
+          # ExtendedNoteBlock ${MOD_VERSION} - Minecraft ${MC_VERSION}
 
-          This release is intentionally split into three program variants plus one shared visual pack.
+          This release is split into **three program editions** plus one shared visual resource pack.
 
-          ## 1. Full Fabric
+          ## Full Fabric
           **ExtendedNoteBlock-Full-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
-          - Full content mod for singleplayer and Fabric servers that also install ExtendedNoteBlock.
-          - Keeps the real ExtendedNoteBlock custom blocks/items, complete GUI, NBS workshop and full Fabric behavior.
-          - Do **not** use this jar as the client companion for a vanilla-registry Paper/Purpur server.
+          - For singleplayer, or Fabric servers where the server also installs the Full mod.
+          - Contains the real ExtendedNoteBlock custom blocks/items and the complete Fabric feature set.
+          - Do not use this as the Paper/Purpur companion client.
 
-          ## 2. Paper/Purpur server plugin
-          **ExtendedNoteBlock-PaperPlugin-${BRIDGE_VERSION}-mc${MC_VERSION}.jar**
-          - Install in Paper/Purpur `plugins/`.
-          - Uses only vanilla block/item carriers on the server.
-          - Players without any client mod can still join and receive vanilla fallback audio.
+          ## Paper/Purpur Server
+          **ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar**
+          - Install in the Paper/Purpur server `plugins/` folder.
+          - Keeps the server registry vanilla-safe by using vanilla carrier blocks/items plus plugin metadata.
+          - Marked carrier items use Minecraft 26.2's `item_model` component to reference the original ENB models.
+          - Players with no mod/resource pack can still join and see normal vanilla carriers.
 
-          ## 3. Paper Fabric client
-          **ExtendedNoteBlock-PaperClient-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
-          - Install in Fabric client `mods/` when joining the Paper/Purpur bridge server.
-          - Registry-safe: no custom block/item registration is exposed to Paper.
-          - Shares the Full version's sound engine, sound packs, NBS/MIDI/audio workshop and as much client GUI code as can safely be shared.
+          ## Paper Client
+          **ExtendedNoteBlock-Paper-Client-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
+          - Optional Fabric client companion for the Paper/Purpur server.
+          - Registry-safe: it does not register Full Fabric custom blocks/items.
+          - Shares the Full version's sound engine, sound packs, NBS/MIDI/audio workshop and compatible client GUI code.
+          - Contains an **always-enabled built-in copy of the shared ENB visual resource pack**.
 
-          ## 4. Shared Visual Compatibility Pack
+          ## Standalone Visual Pack
           **ExtendedNoteBlock-Visuals-${MOD_VERSION}-mc${MC_VERSION}.zip**
-          - Optional client resource pack built from the Full Fabric mod's original ENB models/textures.
-          - Makes the Paper bridge's vanilla carriers look much closer to Full Fabric.
-          - Because a vanilla resource pack cannot inspect Paper PDC/enb_type, carrier visual replacements are currently global for users who enable this pack. Players without the pack see normal vanilla blocks/items.
+          - The same original ENB models/textures used by the two client editions.
+          - Optional for players who do not install Paper Client but want marked Paper bridge items to use the original ENB item appearance.
+          - Ordinary vanilla items are not replaced; the Paper plugin's `item_model` component selects the ENB model only for marked bridge items.
+          - Placed blocks remain vanilla-looking without Paper Client because a plain resource pack cannot distinguish Paper PDC by world position. We intentionally do not globally replace Note Blocks/concrete/redstone blocks.
 
-          Current Paper carrier mapping:
-          - Note Block -> Extended Note Block
-          - Blaze Rod -> Conductor Wand
-          - Red Concrete -> Global Redstone Transmitter
-          - Green Concrete -> Global Redstone Receiver (off)
-          - Redstone Block -> Global Redstone Receiver (on)
-          - Purple Concrete -> NBS Projection Receiver
-
-          Built with Java 25. Full Fabric, Paper-safe client bytecode checks, Paper plugin resources, and the visual pack are all verified by CI before publishing.
+          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety, the embedded built-in pack, the standalone pack, and Paper plugin runtime resources before publishing.
           EOF
 
           gh release create "$TAG" \
