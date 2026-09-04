@@ -2,14 +2,13 @@
 """Create a registry-safe client-only JAR for Paper/Purpur bridge servers.
 
 The normal ExtendedNoteBlock JAR is a content mod: it contains and registers
-custom blocks/items. That is correct for Fabric servers, but unsafe against a
-vanilla-registry Paper/Purpur server (creative slot sync can contain unknown
-items and the server will disconnect while decoding the packet).
+custom blocks/items. That is correct for single-player/Fabric servers, but unsafe
+against a vanilla-registry Paper/Purpur server.
 
 This script starts from Loom's remapped JAR and emits a strict whitelist JAR.
-Besides the bridge sound/runtime code, the whitelist contains the NBS/MIDI/audio
-workshop and the vanilla-only exporters. CI additionally scans retained class
-files for references to the content-mod registry/server packages.
+It also embeds the same visual pack that is published as a standalone resource
+pack under resourcepacks/bridge_visuals/, so the Paper Client can register it as
+an always-enabled built-in pack.
 """
 
 from __future__ import annotations
@@ -21,6 +20,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LIBS = ROOT / "build" / "libs"
 OUT_DIR = ROOT / "build" / "paper-bridge-client"
+RESOURCE_PACK_FORMAT = 88
+VISUAL_DIRS = ("blockstates/", "items/", "lang/", "models/", "textures/")
 
 
 def read_properties(path: Path) -> dict[str, str]:
@@ -41,10 +42,24 @@ def find_runtime_jar() -> Path:
         if not p.name.endswith("-sources.jar")
         and "bridgeclient" not in p.name.lower()
         and "bridge-client" not in p.name.lower()
+        and "paper-client" not in p.name.lower()
     ]
     if len(jars) != 1:
         raise SystemExit(f"Expected exactly one runtime JAR in {LIBS}, found: {[p.name for p in jars]}")
     return jars[0]
+
+
+def built_in_pack_metadata() -> bytes:
+    return json.dumps(
+        {
+            "pack": {
+                "pack_format": RESOURCE_PACK_FORMAT,
+                "description": "ExtendedNoteBlock Paper Client built-in visuals",
+            }
+        },
+        ensure_ascii=False,
+        indent=2,
+    ).encode("utf-8")
 
 
 props = read_properties(ROOT / "gradle.properties")
@@ -56,7 +71,7 @@ java_version = props["java_version"]
 
 source_jar = find_runtime_jar()
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-out_jar = OUT_DIR / f"ExtendedNoteBlockBridgeClient-Fabric-{mod_version}-mc{mc_version}.jar"
+out_jar = OUT_DIR / f"ExtendedNoteBlock-Paper-Client-Fabric-{mod_version}-mc{mc_version}.jar"
 
 CLASS_PREFIX = "com/atemukesu/extendednoteblock/"
 ALLOWED_CLASSES = (
@@ -96,6 +111,8 @@ ALLOWED_CLASSES = (
 def keep_entry(name: str) -> bool:
     if name == "META-INF/MANIFEST.MF":
         return True
+    # Keep ordinary mod assets as a fallback, and also copy the visual subset into
+    # the explicitly registered built-in pack below.
     if name.startswith("assets/extendednoteblock/"):
         return True
     if name.startswith("LICENSE"):
@@ -105,6 +122,14 @@ def keep_entry(name: str) -> bool:
     if name.endswith(".class") and any(name.startswith(prefix) for prefix in ALLOWED_CLASSES):
         return True
     return False
+
+
+def is_visual_asset(name: str) -> bool:
+    prefix = "assets/extendednoteblock/"
+    if not name.startswith(prefix):
+        return False
+    relative = name[len(prefix):]
+    return any(relative.startswith(directory) for directory in VISUAL_DIRS)
 
 
 with zipfile.ZipFile(source_jar, "r") as source_check:
@@ -118,8 +143,8 @@ metadata = {
     "schemaVersion": 1,
     "id": "extendednoteblock_bridge_client",
     "version": f"{mod_version}+mc{mc_version}",
-    "name": "ExtendedNoteBlock Bridge Client",
-    "description": "Client-only Paper/Purpur companion with ExtendedNoteBlock audio and NBS music tools.",
+    "name": "ExtendedNoteBlock Paper Client",
+    "description": "Registry-safe client companion for ExtendedNoteBlockBridge on Paper/Purpur.",
     "authors": ["Atemukesu", "BF_skt", "GoldenEggOVO"],
     "license": "MIT",
     "icon": "assets/extendednoteblock/icon.png",
@@ -145,14 +170,23 @@ with zipfile.ZipFile(source_jar, "r") as zin, zipfile.ZipFile(
             continue
         if not keep_entry(info.filename):
             continue
-        zout.writestr(info, zin.read(info.filename))
+        data = zin.read(info.filename)
+        zout.writestr(info, data)
+
+        if is_visual_asset(info.filename):
+            zout.writestr("resourcepacks/bridge_visuals/" + info.filename, data)
+
+    icon_name = "assets/extendednoteblock/icon.png"
+    if icon_name in zin.namelist():
+        zout.writestr("resourcepacks/bridge_visuals/pack.png", zin.read(icon_name))
+    zout.writestr("resourcepacks/bridge_visuals/pack.mcmeta", built_in_pack_metadata())
 
     zout.writestr(
         "fabric.mod.json",
         json.dumps(metadata, ensure_ascii=False, indent=2).encode("utf-8"),
     )
 
-# Safety assertions: fail CI rather than publish a content-mod bridge client.
+# Safety assertions: fail CI rather than publish a content-mod Paper Client.
 with zipfile.ZipFile(out_jar, "r") as check:
     names = set(check.namelist())
     forbidden_prefixes = (
@@ -164,7 +198,7 @@ with zipfile.ZipFile(out_jar, "r") as check:
     )
     leaked = sorted(name for name in names if name.endswith(".class") and name.startswith(forbidden_prefixes))
     if leaked:
-        raise SystemExit(f"Registry-unsafe classes leaked into bridge client: {leaked[:20]}")
+        raise SystemExit(f"Registry-unsafe classes leaked into Paper Client: {leaked[:20]}")
 
     for required in (
         CLASS_PREFIX + "bridgeclient/PaperBridgeClient.class",
@@ -176,19 +210,19 @@ with zipfile.ZipFile(out_jar, "r") as check:
         CLASS_PREFIX + "nbs/NbsReader.class",
         CLASS_PREFIX + "nbs/MidiToNbsConverter.class",
         CLASS_PREFIX + "nbs/vanilla/VanillaStructureGenerator.class",
+        "resourcepacks/bridge_visuals/pack.mcmeta",
+        "resourcepacks/bridge_visuals/assets/extendednoteblock/items/conductor_wand.json",
         "fabric.mod.json",
     ):
         if required not in names:
-            raise SystemExit(f"Missing required bridge-client entry: {required}")
+            raise SystemExit(f"Missing required Paper Client entry: {required}")
 
     full_mod_entrypoint = CLASS_PREFIX + "ExtendedNoteBlock.class"
     if full_mod_entrypoint in names:
-        raise SystemExit("Full content-mod initializer must not exist in the Paper bridge client JAR")
+        raise SystemExit("Full content-mod initializer must not exist in the Paper Client JAR")
 
-    # Retained client/workshop classes may contain string IDs such as
-    # 'extendednoteblock:extended_note_block' for file export, which are harmless.
-    # What is not allowed is a bytecode reference to the actual registry/server
-    # implementation classes. This catches accidental future dependencies.
+    # Retained client/workshop classes may contain string IDs for file export.
+    # What is not allowed is bytecode linkage to the actual registry/server classes.
     forbidden_bytecode_refs = (
         b"com/atemukesu/extendednoteblock/block/",
         b"com/atemukesu/extendednoteblock/item/",
@@ -204,7 +238,7 @@ with zipfile.ZipFile(out_jar, "r") as check:
             if marker in data:
                 bad_refs.append((name, marker.decode("ascii")))
     if bad_refs:
-        raise SystemExit(f"Registry/server bytecode references leaked into bridge client: {bad_refs[:20]}")
+        raise SystemExit(f"Registry/server bytecode references leaked into Paper Client: {bad_refs[:20]}")
 
     if not jlayer_jars:
         raise SystemExit("NBS audio import requires the bundled JLayer dependency, but no jlayer jar was found")
