@@ -26,12 +26,7 @@ Extended Note Block 是一个面向 Minecraft Java Edition 的音乐模组与 Pa
 
 完整内容版本，保留真正的 `extendednoteblock:*` 注册表：扩展音符盒、指挥棒、无线红石、NBS Projection Receiver、完整 Fabric GUI 与服务端逻辑都在里面。
 
-适合：
-
-- 单人世界；
-- Fabric 服务器，并且服务器也安装相同版本的 Full Fabric Mod。
-
-**不要把 Full Fabric 当成纯 Paper/Purpur 的客户端伴侣。** Paper 不认识 Full 版自定义物品注册表，创造模式物品同步可能导致服务器解码失败。
+适合单人世界，或服务端也安装相同版本 Full Mod 的 Fabric 服务器。**不要把 Full Fabric 当成纯 Paper/Purpur 的客户端伴侣**，因为 Paper 不认识 Full 版自定义物品注册表。
 
 ### Paper Client
 
@@ -48,7 +43,7 @@ Paper Client 与 Full Fabric 尽量共享同一套客户端能力：
 - Bridge 高级声音与 pitch-cents 协议；
 - Paper 专用音符盒编辑 GUI 协议。
 
-Paper Client **内置与独立 `Visuals` ZIP 相同来源的 ENB 模型/纹理资源，并作为 always-enabled built-in resource pack 注册**，所以装 Paper Client 的玩家不需要再额外安装 Visuals ZIP。
+Paper Client **内置与独立 `Visuals` ZIP 同源的 ENB 模型/纹理，并作为 always-enabled built-in resource pack 注册**，所以安装 Paper Client 后不需要再单独安装 Visuals ZIP。
 
 ### Paper/Purpur Server
 
@@ -67,32 +62,33 @@ Paper 服务端世界与背包始终只使用 `minecraft:*` 原版载体，逻�
 
 ## Shared Visuals：原 Mod 材质分离与内置
 
-Release 额外提供：
+Release 额外提供 `ExtendedNoteBlock-Visuals-*.zip`。它直接复用 Full Fabric 的原始 ENB 模型、纹理、物品模型与语言资源；Paper Client 内置包来自同一套资源源文件。
 
-`ExtendedNoteBlock-Visuals-*.zip`
+### 如何只改变 ENB 标记物品，而不影响普通原版物品
 
-它直接复用 Full Fabric 的原始 `extendednoteblock` 模型、纹理、物品模型与语言资源；Paper Client 内置的材质包也来自同一套资源源文件，因此两个客户端版本尽量保持一致。
+Paper 插件**不会**给物品强制写一个必须由资源包提供的自定义 `item_model`。插件只保存原本就需要的 Bukkit PDC：
 
-### Paper 物品如何只改变 ENB 物品外观
+`extendednoteblockbridge:enb_type`
 
-Paper 插件给 `/enb give` 产生的 ENB 载体物品写入 Minecraft 26.2 自带的 `minecraft:item_model` 数据组件，例如：
+在物品序列化后，这个标记位于 `minecraft:custom_data / PublicBukkitValues`。Minecraft 26.2 的物品模型映射可以用 `minecraft:component` + `minecraft:custom_data` 条件判断它。
 
-- 标记的烈焰棒 -> `extendednoteblock:conductor_wand`
-- 标记的音符盒 -> `extendednoteblock:extended_note_block`
-- 标记的红/绿/紫混凝土 -> 对应 ENB 模型
+因此 Visuals Pack / Paper Client 内置包的逻辑是：
 
-因此：
+- PDC 匹配 ENB 类型 -> 使用对应的 `extendednoteblock:*` 原 Mod 模型；
+- PDC 不匹配或不存在 -> 明确 fallback 到该载体的原版模型。
 
-- 有 Paper Client：内置材质自动提供这些模型；
-- 没有 Mod、但手动启用 Visuals ZIP：标记的 ENB **物品**也可以使用原 Mod 外观；
-- 什么都不装：仍然看到正常的原版载体；
-- 普通烈焰棒、普通音符盒物品、普通混凝土物品不会被全局替换。
+所以最终效果是：
+
+- 安装 Paper Client：ENB 标记物品自动使用原 Mod 外观；
+- 不装 Mod、但手动启用 Visuals ZIP：ENB 标记物品同样使用原 Mod 外观；
+- 什么都不装：看到普通原版音符盒 / 烈焰棒 / 混凝土，不会出现缺失模型；
+- 普通烈焰棒、普通音符盒、普通混凝土始终保持原版外观。
 
 ### 已放置方块的当前限制
 
-纯原版 Resource Pack 无法读取 Paper PDC，也无法知道“某个坐标的绿色混凝土是 ENB Receiver、另一个只是普通绿色混凝土”。因此 Visuals ZIP **故意不全局覆盖**原版 Note Block / Concrete / Redstone Block 的 blockstate。
+纯 Resource Pack 无法读取某个世界坐标对应的 Paper PDC，因此它无法区分“这个绿色混凝土是 ENB Receiver”和“旁边那个只是普通绿色混凝土”。为避免误伤原版方块，Visuals ZIP **故意不全局覆盖** Note Block / Concrete / Redstone Block 的 blockstate。
 
-目前 Paper 世界里已经放置的 Bridge 方块仍使用原版方块外观。后续 Paper Client 会通过 ENB 对象位置同步 + 客户端定向渲染，只对真正的 Bridge 对象显示 Full Fabric 方块外观，而不影响普通原版方块。
+目前 Paper 世界里已放置的 Bridge 方块仍使用原版方块外观。后续 Paper Client 会通过 ENB 对象位置同步 + 客户端定向渲染，只对真正的 Bridge 对象显示 Full Fabric 方块外观。
 
 ## 运行环境
 
@@ -160,9 +156,9 @@ Paper Bridge 中指挥棒使用带 ENB 标记的烈焰棒：
 1. 服务端 `plugins/` 放 `ExtendedNoteBlock-Paper-Server-*.jar`。
 2. 需要完整 ENB 音色和客户端工具的玩家，在 Fabric 26.2 客户端 `mods/` 放 `ExtendedNoteBlock-Paper-Client-Fabric-*.jar`。
 3. Paper Client 已内置 Visuals，不需要再装独立 ZIP。
-4. 不装 Paper Client 的玩家也可以直接进入服务器；如果只想要 ENB 物品模型，可单独启用 `ExtendedNoteBlock-Visuals-*.zip`。
+4. 不装 Paper Client 的玩家也可以直接进入服务器；如果只想要 ENB 标记物品的原 Mod 外观，可单独启用 `ExtendedNoteBlock-Visuals-*.zip`。
 
-OP：
+OP 可使用：
 
 ```text
 /enb give all
@@ -170,33 +166,17 @@ OP：
 
 ## Full Fabric 快速安装
 
-单人模式：
+单人模式：安装 Fabric Loader 26.2 + Fabric API，然后只把 `ExtendedNoteBlock-Full-Fabric-*.jar` 放进 `mods/`。不需要 Paper Server 插件。
 
-1. Fabric Loader 26.2 + Fabric API；
-2. 只把 `ExtendedNoteBlock-Full-Fabric-*.jar` 放入 `mods/`；
-3. 不需要 Paper Server 插件。
-
-Fabric 多人服务器则要求服务端也安装对应 Full Fabric Mod。
+Fabric 多人服务器要求服务端也安装对应 Full Fabric Mod。
 
 ## 音乐工坊目录
 
-歌曲：
+歌曲：`.minecraft/extendednoteblock/songs/`
 
-```text
-.minecraft/extendednoteblock/songs/
-```
+结构输出：`.minecraft/schematics/extendednoteblock/`
 
-结构输出：
-
-```text
-.minecraft/schematics/extendednoteblock/
-```
-
-数据包输出：
-
-```text
-.minecraft/extendednoteblock/datapacks/
-```
+数据包输出：`.minecraft/extendednoteblock/datapacks/`
 
 ## 构建与发布检查
 
@@ -205,9 +185,9 @@ GitHub Actions 发布前会验证：
 - Full Fabric 真实包含完整模组入口与自定义物品；
 - Paper Client 不泄漏自定义 Block / Item / Server Registry 类；
 - Paper Client JAR 内存在 built-in Visuals pack；
-- 独立 Visuals ZIP 不包含 Java class，也不全局覆盖 `minecraft:*` 载体 blockstate/item 定义；
-- Paper Server 能在 Java 25 / Paper 26.2 API 下编译，并包含 `plugin.yml` / `config.yml`；
-- Paper Server 标记物品会写入 `minecraft:item_model` 对应 ENB 模型。
+- Paper Client 与独立 Visuals ZIP 都包含 PDC 条件选择器与明确的原版 fallback；
+- 独立 Visuals ZIP 不全局覆盖原版方块 blockstate；
+- Paper Server 只依赖原版载体 + PDC，并包含 `plugin.yml` / `config.yml`。
 
 ## 项目来源与作者
 
