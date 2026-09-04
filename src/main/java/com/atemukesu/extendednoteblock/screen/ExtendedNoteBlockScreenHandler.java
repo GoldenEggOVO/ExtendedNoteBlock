@@ -43,17 +43,14 @@ public class ExtendedNoteBlockScreenHandler extends AbstractContainerMenu {
         this(syncId, inventory,
                 (ExtendedNoteBlockEntity) inventory.player.level().getBlockEntity(buf.readBlockPos()),
                 new SimpleContainerData(7));
-        this.propertyDelegate.set(0, buf.readInt()); // note
-        this.propertyDelegate.set(1, buf.readInt()); // velocity
-        this.propertyDelegate.set(2, buf.readInt()); // sustain
-        this.propertyDelegate.set(3, buf.readInt()); // delayedPlayingTime
-        this.propertyDelegate.set(4, buf.readInt()); // fadeInTime
-        this.propertyDelegate.set(5, buf.readInt()); // fadeOutTime
-        this.propertyDelegate.set(6, buf.readInt()); // instrumentId
+        this.propertyDelegate.set(0, buf.readInt());
+        this.propertyDelegate.set(1, buf.readInt());
+        this.propertyDelegate.set(2, buf.readInt());
+        this.propertyDelegate.set(3, buf.readInt());
+        this.propertyDelegate.set(4, buf.readInt());
+        this.propertyDelegate.set(5, buf.readInt());
+        this.propertyDelegate.set(6, buf.readInt());
 
-        // ============== Advanced Features v1.4.0 ==============
-        // Read advanced settings data from buffer
-        // 读取弯音关键点
         int pitchBendPointsSize = buf.readInt();
         List<CurvePoint> pitchBendPoints = new ArrayList<>();
         for (int i = 0; i < pitchBendPointsSize; i++) {
@@ -62,7 +59,6 @@ public class ExtendedNoteBlockScreenHandler extends AbstractContainerMenu {
             pitchBendPoints.add(new CurvePoint(t, v));
         }
 
-        // 读取音量关键点
         int volumePointsSize = buf.readInt();
         List<CurvePoint> volumePoints = new ArrayList<>();
         for (int i = 0; i < volumePointsSize; i++) {
@@ -84,9 +80,6 @@ public class ExtendedNoteBlockScreenHandler extends AbstractContainerMenu {
         String storedExpressionY = buf.readUtf();
         String storedExpressionZ = buf.readUtf();
 
-        // 在主线程中设置这些值，以确保它们在GUI打开时可用
-        // 在客户端，直接设置值（客户端方块实体是只读副本）
-        // 在服务器端，也直接设置值（已在正确的线程中）
         this.blockEntity.setPitchBendPoints(pitchBendPoints);
         this.blockEntity.setVolumePoints(volumePoints);
         this.blockEntity.setSoundPath(soundPath);
@@ -130,13 +123,15 @@ public class ExtendedNoteBlockScreenHandler extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return this.blockEntity.getLevel().getBlockEntity(this.blockPos) == this.blockEntity &&
-                player.distanceToSqr(this.blockPos.getCenter()) < 64.0;
+        return this.blockEntity.getLevel().getBlockEntity(this.blockPos) == this.blockEntity
+                && player.distanceToSqr(
+                        this.blockPos.getX() + 0.5D,
+                        this.blockPos.getY() + 0.5D,
+                        this.blockPos.getZ() + 0.5D) < 64.0D;
     }
 
     @Override
     public void removed(Player player) {
         super.removed(player);
-        // previewNote 已由 PreviewRequestPayload 处理，此处不再重复触发
     }
 }
