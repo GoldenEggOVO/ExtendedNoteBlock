@@ -3,11 +3,11 @@ version: '${version}'
 main: com.goldenegggovo.extendednoteblock.bridge.ExtendedNoteBlockBridge
 api-version: '26.2'
 author: GoldenEggOVO
-description: Paper/Purpur bridge for ExtendedNoteBlock Fabric clients.
+description: Paper/Purpur bridge for ExtendedNoteBlock Fabric clients using vanilla item and block carriers.
 commands:
   enb:
-    description: Configure ExtendedNoteBlock bridge note blocks
-    usage: /enb <set|info|remove|play|reload>
+    description: Manage ExtendedNoteBlock bridge items and note blocks
+    usage: /enb <give|set|info|remove|play|list|reload>
     permission: extendednoteblockbridge.use
 permissions:
   extendednoteblockbridge.use:
