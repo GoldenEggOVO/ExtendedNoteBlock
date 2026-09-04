@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory;
  * Client-only companion for Paper/Purpur servers running ExtendedNoteBlockBridge.
  *
  * IMPORTANT: this initializer intentionally contains no custom block, item,
- * block-entity, menu, command, C2S or server lifecycle registration. A jar using
- * this entrypoint is safe to use against an unmodded Paper/Purpur registry.
+ * block-entity, menu or server lifecycle registration. The bridge can therefore
+ * be used against a vanilla-registry Paper/Purpur server.
  */
 public final class PaperBridgeClient implements ClientModInitializer {
     public static final String MOD_ID = "extendednoteblock_bridge_client";
@@ -30,10 +30,7 @@ public final class PaperBridgeClient implements ClientModInitializer {
             packs.setActivePack(SoundPackManager.DEFAULT_PACK_ZIP_NAME);
         }
 
-        // 26.2-safe GUI entry. This uses Fabric ScreenEvents rather than a mixin,
-        // so it does not depend on vanilla OptionsScreen footer dimensions.
         SoundPackOptionsButton.register(BridgeSoundPackScreen::new);
-
         BridgeClientPayloads.registerTypes();
 
         ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.StartSoundPayload.ID,
@@ -49,8 +46,18 @@ public final class PaperBridgeClient implements ClientModInitializer {
                 (payload, context) -> context.client().execute(
                         () -> ClientSoundManager.stopSound(payload.soundId())));
 
-        ClientTickEvents.END_CLIENT_TICK.register(ClientSoundManager::tickPauseRecovery);
+        ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.StartAdvancedSoundPayload.ID,
+                (payload, context) -> context.client().execute(() -> ClientSoundManager.playAdvancedSound(
+                        payload.pos(), payload.soundId(), payload.instrumentId(), payload.note(),
+                        payload.initialVolume(), payload.initialPitchMul(),
+                        payload.x(), payload.y(), payload.z())));
 
+        ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.AdvancedUpdatePayload.ID,
+                (payload, context) -> context.client().execute(() -> ClientSoundManager.updateAdvanced(
+                        payload.soundId(), payload.volume(), payload.pitchMultiplier(),
+                        payload.x(), payload.y(), payload.z())));
+
+        ClientTickEvents.END_CLIENT_TICK.register(ClientSoundManager::tickPauseRecovery);
         LOGGER.info("ExtendedNoteBlock Paper Bridge Client loaded (client-only registry-safe mode).");
     }
 }
