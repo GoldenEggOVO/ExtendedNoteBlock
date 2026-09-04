@@ -32,6 +32,23 @@ for path in CLIENT.rglob("*.java"):
         path.write_text(text, encoding="utf-8")
         print(f"patched {path.relative_to(ROOT)}")
 
+# The NBS projection planner used one constant from ExtendedNoteBlockEntity.
+# That created a bytecode dependency on the full content-mod block package even
+# though the value is simply the one-hour delay limit. Inline the same value so
+# the planner/preview can be retained in the registry-safe Paper bridge client.
+projection_writer = ROOT / "src" / "main" / "java" / "com" / "atemukesu" / "extendednoteblock" / "nbs" / "NbsProjectionWriter.java"
+if projection_writer.exists():
+    text = projection_writer.read_text(encoding="utf-8")
+    original = text
+    text = text.replace(
+        "import com.atemukesu.extendednoteblock.block.entity.ExtendedNoteBlockEntity;\n",
+        "",
+    )
+    text = text.replace("ExtendedNoteBlockEntity.MAX_DELAY_MS", "3_600_000L")
+    if text != original:
+        projection_writer.write_text(text, encoding="utf-8")
+        print(f"patched {projection_writer.relative_to(ROOT)}")
+
 # Minecraft#setScreen no longer exists in 26.2, so this old mixin target cannot be applied.
 # The pre-launch check is non-essential; disable only this mixin until it is reimplemented on Gui#setScreen.
 mixins = ROOT / "src" / "client" / "resources" / "extendednoteblock.client.mixins.json"
