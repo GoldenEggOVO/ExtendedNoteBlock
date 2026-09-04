@@ -1,11 +1,17 @@
 package com.atemukesu.extendednoteblock.bridgeclient;
 
+import com.atemukesu.extendednoteblock.client.gui.screen.NbsWorkshopScreen;
 import com.atemukesu.extendednoteblock.config.ConfigManager;
 import com.atemukesu.extendednoteblock.sound.ClientSoundManager;
 import com.atemukesu.extendednoteblock.sound.SoundPackManager;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.Identifier;
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +25,9 @@ import org.slf4j.LoggerFactory;
 public final class PaperBridgeClient implements ClientModInitializer {
     public static final String MOD_ID = "extendednoteblock_bridge_client";
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
+            Identifier.fromNamespaceAndPath(MOD_ID, "controls"));
+    private static KeyMapping openNbsWorkshopKey;
 
     @Override
     public void onInitializeClient() {
@@ -32,6 +41,12 @@ public final class PaperBridgeClient implements ClientModInitializer {
 
         SoundPackOptionsButton.register(BridgeSoundPackScreen::new);
         BridgeClientPayloads.registerTypes();
+
+        openNbsWorkshopKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.extendednoteblock.open_nbs_workshop",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_N,
+                KEY_CATEGORY));
 
         ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.StartSoundPayload.ID,
                 (payload, context) -> context.client().execute(() -> ClientSoundManager.playSound(
@@ -57,7 +72,15 @@ public final class PaperBridgeClient implements ClientModInitializer {
                         payload.soundId(), payload.volume(), payload.pitchMultiplier(),
                         payload.x(), payload.y(), payload.z())));
 
-        ClientTickEvents.END_CLIENT_TICK.register(ClientSoundManager::tickPauseRecovery);
-        LOGGER.info("ExtendedNoteBlock Paper Bridge Client loaded (client-only registry-safe mode).");
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            ClientSoundManager.tickPauseRecovery(client);
+            while (openNbsWorkshopKey.consumeClick()) {
+                if (client.gui.screen() == null) {
+                    client.gui.setScreen(new NbsWorkshopScreen(null));
+                }
+            }
+        });
+
+        LOGGER.info("ExtendedNoteBlock Paper Bridge Client loaded (registry-safe mode with NBS workshop).");
     }
 }
