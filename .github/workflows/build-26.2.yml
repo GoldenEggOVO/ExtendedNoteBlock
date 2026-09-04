@@ -59,6 +59,14 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
       - name: Build Paper bridge
         run: gradle clean build --stacktrace
+      - name: Verify Paper bridge runtime resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          test -n "$JAR"
+          jar tf "$JAR" | grep -qx 'plugin.yml'
+          jar tf "$JAR" | grep -qx 'config.yml'
       - name: Upload Bridge artifact
         uses: actions/upload-artifact@v4
         with:
@@ -94,8 +102,8 @@ jobs:
           BRIDGE_JAR="$(find artifacts/bridge -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           test -n "$CLIENT_JAR"
           test -n "$BRIDGE_JAR"
-          cp "$CLIENT_JAR" release/ExtendedNoteBlockBridgeClient-Fabric-2.1.4-mc26.2.jar
-          cp "$BRIDGE_JAR" release/ExtendedNoteBlockBridge-Paper-0.3.0-mc26.2.jar
+          cp "$CLIENT_JAR" release/ExtendedNoteBlockBridgeClient-Fabric-2.1.5-mc26.2.jar
+          cp "$BRIDGE_JAR" release/ExtendedNoteBlockBridge-Paper-0.3.1-mc26.2.jar
           sha256sum release/*.jar > release/SHA256SUMS.txt
 
       - name: Create GitHub Release
@@ -104,29 +112,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="v2.1.4-mc26.2"
+          TAG="v2.1.5-mc26.2"
           cat > release-notes.md <<'EOF'
           # ExtendedNoteBlock Paper/Purpur Bridge for Minecraft 26.2
 
-          ## GUI fix in Bridge Client 2.1.4
-          - Replaced the old OptionsScreen mixin entry with Fabric 26.2 `ScreenEvents` integration.
-          - The "Extended Note Block Sound Packs" button is now compact and independent of vanilla's oversized footer button layout.
-          - Added a registry-safe sound-pack manager GUI directly to the Paper/Purpur Bridge Client.
-          - Bridge users can view/select ExtendedNoteBlock sound packs and open the sound-pack folder without installing the full content mod.
-          - The Bridge Client still contains no custom block/item registry classes.
+          ## Paper Bridge startup fix
+          - Fixed a startup failure where `saveDefaultConfig()` was called but the plugin JAR did not contain `config.yml`.
+          - Added a bundled default `config.yml` so the plugin can enable normally on Paper/Purpur.
+          - CI now inspects the built plugin JAR and refuses to publish it unless both `plugin.yml` and `config.yml` are present.
 
           ## Install
-          - **ExtendedNoteBlockBridgeClient-Fabric-2.1.4-mc26.2.jar** — Fabric 26.2 client `mods/`.
-          - **ExtendedNoteBlockBridge-Paper-0.3.0-mc26.2.jar** — Paper/Purpur 26.2 server `plugins/`.
+          - **ExtendedNoteBlockBridgeClient-Fabric-2.1.5-mc26.2.jar** — Fabric 26.2 client `mods/`.
+          - **ExtendedNoteBlockBridge-Paper-0.3.1-mc26.2.jar** — Paper/Purpur 26.2 server `plugins/`.
 
-          ## Vanilla carrier mapping
-          - Extended Note Block -> `minecraft:note_block`
-          - Conductor Wand -> `minecraft:blaze_rod`
-          - Global Redstone Transmitter -> `minecraft:red_concrete`
-          - Global Redstone Receiver -> `minecraft:green_concrete`
-          - NBS Projection Receiver -> `minecraft:purple_concrete`
-
-          Use `/enb give <note|transmitter|receiver|projection|wand|all> [amount]` to obtain the bridge items.
+          The vanilla-carrier mapping and GUI fixes from 2.1.4/0.3.0 are retained.
 
           Built and verified with Java 25 on GitHub Actions.
           EOF
@@ -135,5 +134,5 @@ jobs:
             release/*.jar release/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "ExtendedNoteBlock Paper Bridge 2.1.4 - Minecraft 26.2" \
+            --title "ExtendedNoteBlock Paper Bridge 2.1.5 - Minecraft 26.2" \
             --notes-file release-notes.md
