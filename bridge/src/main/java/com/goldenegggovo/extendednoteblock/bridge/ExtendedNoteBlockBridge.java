@@ -1,8 +1,10 @@
 package com.goldenegggovo.extendednoteblock.bridge;
 
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
@@ -11,7 +13,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.NotePlayEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -20,6 +27,8 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,18 +38,33 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
     private static final String STOP_SOUND = "extendednoteblock:stop_sound";
 
     private final Map<String, NoteConfig> notes = new HashMap<>();
+    private final Map<String, BridgeItemType> objects = new HashMap<>();
     private final Map<String, UUID> activeSounds = new HashMap<>();
     private final Map<String, BukkitTask> activeTasks = new HashMap<>();
+    private NamespacedKey bridgeTypeKey;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        bridgeTypeKey = new NamespacedKey(this, "enb_type");
         loadNotes();
+        loadObjects();
+
+        boolean migrated = false;
+        for (String key : notes.keySet()) {
+            if (!objects.containsKey(key)) {
+                objects.put(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
+                migrated = true;
+            }
+        }
+        if (migrated) saveObjects();
+
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getMessenger().registerOutgoingPluginChannel(this, START_SOUND);
         getServer().getMessenger().registerOutgoingPluginChannel(this, UPDATE_VOLUME);
         getServer().getMessenger().registerOutgoingPluginChannel(this, STOP_SOUND);
         getLogger().info("ExtendedNoteBlockBridge enabled for Paper/Purpur 26.2");
+        getLogger().info("Vanilla carriers enabled for all ExtendedNoteBlock logical items.");
     }
 
     @Override
@@ -49,17 +73,55 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         activeTasks.clear();
         activeSounds.clear();
         saveNotes();
+        saveObjects();
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        BridgeItemType type = getBridgeItemType(event.getItemInHand());
+        if (type == null || !type.placeable) return;
+
+        Block block = event.getBlockPlaced();
+        if (block.getType() != type.carrier) return;
+
+        String key = key(block);
+        objects.put(key, type);
+        if (type == BridgeItemType.EXTENDED_NOTE_BLOCK) {
+            notes.putIfAbsent(key, defaultNoteConfig());
+            saveNotes();
+        }
+        saveObjects();
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent event) {
+        Block block = event.getBlock();
+        String key = key(block);
+        BridgeItemType type = objects.remove(key);
+        if (type == null) return;
+
+        if (type == BridgeItemType.EXTENDED_NOTE_BLOCK) {
+            notes.remove(key);
+            stopActive(key);
+            saveNotes();
+        }
+        saveObjects();
+
+        if (event.getPlayer().getGameMode() != GameMode.CREATIVE) {
+            event.setDropItems(false);
+            block.getWorld().dropItemNaturally(block.getLocation(), createBridgeItem(type, 1));
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onNotePlay(NotePlayEvent event) {
         String key = key(event.getBlock());
+        if (objects.get(key) != BridgeItemType.EXTENDED_NOTE_BLOCK) return;
         NoteConfig cfg = notes.get(key);
         if (cfg == null) return;
 
         event.setCancelled(true);
         stopActive(key);
-
         long delayTicks = Math.max(0L, Math.round(cfg.delayMs / 50.0));
         Bukkit.getScheduler().runTaskLater(this, () -> startConfiguredSound(event.getBlock(), cfg), delayTicks);
     }
@@ -75,9 +137,6 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         sendToListeningPlayers(origin, START_SOUND,
                 PayloadCodec.startSound(block.getX(), block.getY(), block.getZ(), soundId,
                         cfg.instrumentId, cfg.note, cfg.velocity, initialVolume));
-
-        // Clients without ExtendedNoteBlock still hear an approximate vanilla note-block sound.
-        // Modded clients are deliberately excluded to avoid double audio.
         playVanillaFallback(origin, cfg);
 
         BukkitTask task = Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
@@ -107,7 +166,6 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         Sound sound = vanillaSoundForInstrument(cfg.instrumentId);
         float volume = Math.max(0.0f, Math.min(1.0f, cfg.velocity / 127.0f));
         float pitch = vanillaPitchForMidi(cfg.note);
-
         for (Player player : origin.getWorld().getPlayers()) {
             if (supportsExtendedNoteBlock(player)) continue;
             player.playSound(origin, sound, SoundCategory.RECORDS, volume, pitch);
@@ -118,47 +176,35 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         return player.getListeningPluginChannels().contains(START_SOUND);
     }
 
-    /**
-     * Vanilla note blocks cover MIDI F#3..F#5 (54..78) when represented as
-     * Bukkit sound pitch 0.5..2.0. Notes outside that range are clamped to the
-     * nearest note the vanilla client can reproduce.
-     */
     private float vanillaPitchForMidi(int midiNote) {
         int vanillaMidi = clamp(midiNote, 54, 78);
         return (float) Math.pow(2.0, (vanillaMidi - 66) / 12.0);
     }
 
-    /**
-     * General MIDI families mapped to the closest useful vanilla note-block
-     * instrument. The goal is musical recognisability for clients without the
-     * Fabric mod, not a bit-perfect replacement for the ExtendedNoteBlock pack.
-     */
     private Sound vanillaSoundForInstrument(int instrumentId) {
         int instrument = clamp(instrumentId, 0, 128);
-
         if (instrument == 128) return Sound.BLOCK_NOTE_BLOCK_BASEDRUM;
-        if (instrument <= 7) return Sound.BLOCK_NOTE_BLOCK_HARP;           // Piano
-        if (instrument <= 15) return Sound.BLOCK_NOTE_BLOCK_XYLOPHONE;     // Chromatic percussion
-        if (instrument <= 23) return Sound.BLOCK_NOTE_BLOCK_FLUTE;         // Organ
-        if (instrument <= 31) return Sound.BLOCK_NOTE_BLOCK_GUITAR;        // Guitar
-        if (instrument <= 39) return Sound.BLOCK_NOTE_BLOCK_BASS;          // Bass
-        if (instrument <= 47) return Sound.BLOCK_NOTE_BLOCK_HARP;          // Strings
-        if (instrument <= 55) return Sound.BLOCK_NOTE_BLOCK_CHIME;         // Ensemble
-        if (instrument <= 63) return Sound.BLOCK_NOTE_BLOCK_DIDGERIDOO;    // Brass
-        if (instrument <= 71) return Sound.BLOCK_NOTE_BLOCK_FLUTE;         // Reed
-        if (instrument <= 79) return Sound.BLOCK_NOTE_BLOCK_FLUTE;         // Pipe
-        if (instrument <= 87) return Sound.BLOCK_NOTE_BLOCK_BIT;           // Synth lead
-        if (instrument <= 95) return Sound.BLOCK_NOTE_BLOCK_CHIME;         // Synth pad
-        if (instrument <= 103) return Sound.BLOCK_NOTE_BLOCK_PLING;        // Synth effects
-        if (instrument <= 111) return Sound.BLOCK_NOTE_BLOCK_BANJO;        // Ethnic
-        if (instrument <= 119) return Sound.BLOCK_NOTE_BLOCK_COW_BELL;     // Percussive
-        return Sound.BLOCK_NOTE_BLOCK_PLING;                               // Sound effects
+        if (instrument <= 7) return Sound.BLOCK_NOTE_BLOCK_HARP;
+        if (instrument <= 15) return Sound.BLOCK_NOTE_BLOCK_XYLOPHONE;
+        if (instrument <= 23) return Sound.BLOCK_NOTE_BLOCK_FLUTE;
+        if (instrument <= 31) return Sound.BLOCK_NOTE_BLOCK_GUITAR;
+        if (instrument <= 39) return Sound.BLOCK_NOTE_BLOCK_BASS;
+        if (instrument <= 47) return Sound.BLOCK_NOTE_BLOCK_HARP;
+        if (instrument <= 55) return Sound.BLOCK_NOTE_BLOCK_CHIME;
+        if (instrument <= 63) return Sound.BLOCK_NOTE_BLOCK_DIDGERIDOO;
+        if (instrument <= 71) return Sound.BLOCK_NOTE_BLOCK_FLUTE;
+        if (instrument <= 79) return Sound.BLOCK_NOTE_BLOCK_FLUTE;
+        if (instrument <= 87) return Sound.BLOCK_NOTE_BLOCK_BIT;
+        if (instrument <= 95) return Sound.BLOCK_NOTE_BLOCK_CHIME;
+        if (instrument <= 103) return Sound.BLOCK_NOTE_BLOCK_PLING;
+        if (instrument <= 111) return Sound.BLOCK_NOTE_BLOCK_BANJO;
+        if (instrument <= 119) return Sound.BLOCK_NOTE_BLOCK_COW_BELL;
+        return Sound.BLOCK_NOTE_BLOCK_PLING;
     }
 
     private float volumeAtTick(NoteConfig cfg, int tick) {
         float base = cfg.velocity / 127.0f;
         float multiplier = 1.0f;
-
         if (cfg.fadeInTicks > 0 && tick < cfg.fadeInTicks) {
             multiplier = Math.min(multiplier, tick / (float) cfg.fadeInTicks);
         }
@@ -187,27 +233,59 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player player) && (args.length == 0 || !args[0].equalsIgnoreCase("reload"))) {
+        if (!(sender instanceof Player) && (args.length == 0 || !args[0].equalsIgnoreCase("reload"))) {
             sender.sendMessage("This subcommand requires a player.");
             return true;
         }
         if (args.length == 0) {
-            sender.sendMessage("/enb set <note 0-127> <instrument 0-128> [velocity] [sustainTicks] [delayMs] [fadeIn] [fadeOut]");
-            sender.sendMessage("/enb info | /enb remove | /enb play | /enb reload");
+            sendHelp(sender);
             return true;
         }
 
-        switch (args[0].toLowerCase()) {
+        switch (args[0].toLowerCase(Locale.ROOT)) {
             case "reload" -> {
                 loadNotes();
+                loadObjects();
+                for (String key : notes.keySet()) objects.putIfAbsent(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
                 sender.sendMessage("ExtendedNoteBlockBridge reloaded.");
+            }
+            case "give" -> {
+                Player player = (Player) sender;
+                if (args.length < 2) {
+                    sender.sendMessage("Usage: /enb give <note|transmitter|receiver|projection|wand|all> [amount]");
+                    return true;
+                }
+                int amount = 1;
+                if (args.length >= 3) {
+                    try {
+                        amount = clamp(Integer.parseInt(args[2]), 1, 64);
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage("Amount must be an integer.");
+                        return true;
+                    }
+                }
+                if (args[1].equalsIgnoreCase("all")) {
+                    for (BridgeItemType type : BridgeItemType.values()) {
+                        player.getInventory().addItem(createBridgeItem(type, amount));
+                    }
+                    sender.sendMessage("Given all ExtendedNoteBlock vanilla carriers.");
+                    return true;
+                }
+                BridgeItemType type = BridgeItemType.fromToken(args[1]);
+                if (type == null) {
+                    sender.sendMessage("Unknown type. Use note, transmitter, receiver, projection, wand, or all.");
+                    return true;
+                }
+                player.getInventory().addItem(createBridgeItem(type, amount));
+                sender.sendMessage("Given " + amount + "x " + type.displayName + ".");
             }
             case "set" -> {
                 if (args.length < 3) {
                     sender.sendMessage("Usage: /enb set <note> <instrument> [velocity] [sustainTicks] [delayMs] [fadeIn] [fadeOut]");
                     return true;
                 }
-                Block block = targetNoteBlock((Player) sender);
+                Player player = (Player) sender;
+                Block block = targetNoteBlock(player, true);
                 if (block == null) return true;
                 try {
                     int note = clamp(Integer.parseInt(args[1]), 0, 127);
@@ -216,8 +294,11 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
                     int sustain = args.length > 4 ? clamp(Integer.parseInt(args[4]), 1, 400) : 20;
                     int delay = args.length > 5 ? clamp(Integer.parseInt(args[5]), 0, 600000) : 0;
                     int fadeIn = args.length > 6 ? clamp(Integer.parseInt(args[6]), 0, 400) : 0;
-                    int fadeOut = args.length > 7 ? clamp(Integer.parseInt(args[7]), 0, 400) : 0;
-                    notes.put(key(block), new NoteConfig(note, instrument, velocity, sustain, delay, fadeIn, fadeOut));
+                    int fadeOut = args.length > 7 ? clamp(Integer.parseInt(args[7]), 0, 400) : 3;
+                    String key = key(block);
+                    objects.put(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
+                    notes.put(key, new NoteConfig(note, instrument, velocity, sustain, delay, fadeIn, fadeOut));
+                    saveObjects();
                     saveNotes();
                     sender.sendMessage("Configured ENB note block: MIDI " + note + ", instrument " + instrument);
                 } catch (NumberFormatException e) {
@@ -225,42 +306,132 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
                 }
             }
             case "info" -> {
-                Block block = targetNoteBlock((Player) sender);
-                if (block == null) return true;
-                NoteConfig cfg = notes.get(key(block));
-                sender.sendMessage(cfg == null ? "This note block is not configured." : cfg.toString());
+                Player player = (Player) sender;
+                Block block = player.getTargetBlockExact(6);
+                if (block == null) {
+                    sender.sendMessage("Look at an ENB bridge block within 6 blocks.");
+                    return true;
+                }
+                String key = key(block);
+                BridgeItemType type = objects.get(key);
+                if (type == null) {
+                    sender.sendMessage("This is not an ExtendedNoteBlock bridge object.");
+                    return true;
+                }
+                sender.sendMessage(type.displayName + " -> vanilla carrier " + type.carrier.name());
+                if (type == BridgeItemType.EXTENDED_NOTE_BLOCK) {
+                    NoteConfig cfg = notes.get(key);
+                    if (cfg != null) sender.sendMessage(cfg.toString());
+                }
             }
             case "remove" -> {
-                Block block = targetNoteBlock((Player) sender);
-                if (block == null) return true;
-                notes.remove(key(block));
-                stopActive(key(block));
+                Player player = (Player) sender;
+                Block block = player.getTargetBlockExact(6);
+                if (block == null) {
+                    sender.sendMessage("Look at an ENB bridge block within 6 blocks.");
+                    return true;
+                }
+                String key = key(block);
+                BridgeItemType removed = objects.remove(key);
+                notes.remove(key);
+                stopActive(key);
+                saveObjects();
                 saveNotes();
-                sender.sendMessage("Removed ENB configuration.");
+                sender.sendMessage(removed == null ? "This block was not managed by ENB." : "Removed ENB identity from this vanilla block.");
             }
             case "play" -> {
-                Block block = targetNoteBlock((Player) sender);
+                Player player = (Player) sender;
+                Block block = targetNoteBlock(player, false);
                 if (block == null) return true;
                 NoteConfig cfg = notes.get(key(block));
                 if (cfg == null) sender.sendMessage("This note block is not configured.");
                 else startConfiguredSound(block, cfg);
             }
-            default -> sender.sendMessage("Unknown subcommand.");
+            case "list" -> {
+                for (BridgeItemType type : BridgeItemType.values()) {
+                    sender.sendMessage(type.id + " -> " + type.carrier.name() + " (" + type.displayName + ")");
+                }
+            }
+            default -> sendHelp(sender);
         }
         return true;
     }
 
-    private Block targetNoteBlock(Player player) {
+    private void sendHelp(CommandSender sender) {
+        sender.sendMessage("/enb give <note|transmitter|receiver|projection|wand|all> [amount]");
+        sender.sendMessage("/enb set <note 0-127> <instrument 0-128> [velocity] [sustainTicks] [delayMs] [fadeIn] [fadeOut]");
+        sender.sendMessage("/enb info | /enb remove | /enb play | /enb list | /enb reload");
+    }
+
+    private Block targetNoteBlock(Player player, boolean autoConvert) {
         Block block = player.getTargetBlockExact(6);
         if (block == null || block.getType() != Material.NOTE_BLOCK) {
-            player.sendMessage("Look at a vanilla note block within 6 blocks.");
+            player.sendMessage("Look at a note block within 6 blocks.");
             return null;
+        }
+        String key = key(block);
+        if (objects.get(key) != BridgeItemType.EXTENDED_NOTE_BLOCK) {
+            if (!autoConvert) {
+                player.sendMessage("This note block is not an Extended Note Block bridge object.");
+                return null;
+            }
+            objects.put(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
+            notes.putIfAbsent(key, defaultNoteConfig());
+            saveObjects();
+            saveNotes();
         }
         return block;
     }
 
+    private ItemStack createBridgeItem(BridgeItemType type, int amount) {
+        ItemStack stack = new ItemStack(type.carrier, amount);
+        ItemMeta meta = stack.getItemMeta();
+        meta.setDisplayName(type.displayName);
+        meta.setLore(List.of(
+                "ExtendedNoteBlock Bridge item",
+                "Vanilla carrier: minecraft:" + type.carrier.name().toLowerCase(Locale.ROOT)));
+        meta.getPersistentDataContainer().set(bridgeTypeKey, PersistentDataType.STRING, type.id);
+        stack.setItemMeta(meta);
+        return stack;
+    }
+
+    private BridgeItemType getBridgeItemType(ItemStack stack) {
+        if (stack == null || stack.getType().isAir() || !stack.hasItemMeta()) return null;
+        ItemMeta meta = stack.getItemMeta();
+        String id = meta.getPersistentDataContainer().get(bridgeTypeKey, PersistentDataType.STRING);
+        return BridgeItemType.fromId(id);
+    }
+
+    private NoteConfig defaultNoteConfig() {
+        return new NoteConfig(60, 0, 100, 20, 0, 0, 3);
+    }
+
     private String key(Block block) {
         return block.getWorld().getUID() + ":" + block.getX() + ":" + block.getY() + ":" + block.getZ();
+    }
+
+    private void loadObjects() {
+        objects.clear();
+        File file = new File(getDataFolder(), "objects.yml");
+        if (!file.exists()) return;
+        org.bukkit.configuration.file.YamlConfiguration yml = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(file);
+        for (String key : yml.getKeys(false)) {
+            BridgeItemType type = BridgeItemType.fromId(yml.getString(key));
+            if (type != null) objects.put(key, type);
+        }
+    }
+
+    private void saveObjects() {
+        org.bukkit.configuration.file.YamlConfiguration yml = new org.bukkit.configuration.file.YamlConfiguration();
+        for (Map.Entry<String, BridgeItemType> entry : objects.entrySet()) {
+            yml.set(entry.getKey(), entry.getValue().id);
+        }
+        try {
+            if (!getDataFolder().exists()) getDataFolder().mkdirs();
+            yml.save(new File(getDataFolder(), "objects.yml"));
+        } catch (IOException e) {
+            getLogger().severe("Failed to save objects.yml: " + e.getMessage());
+        }
     }
 
     private void loadNotes() {
@@ -276,7 +447,7 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
                     yml.getInt(key + ".sustain", 20),
                     yml.getInt(key + ".delayMs", 0),
                     yml.getInt(key + ".fadeIn", 0),
-                    yml.getInt(key + ".fadeOut", 0)));
+                    yml.getInt(key + ".fadeOut", 3)));
         }
     }
 
@@ -303,6 +474,46 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
 
     private static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private enum BridgeItemType {
+        EXTENDED_NOTE_BLOCK("extended_note_block", "Extended Note Block", Material.NOTE_BLOCK, true),
+        GLOBAL_REDSTONE_TRANSMITTER("global_redstone_transmitter", "Global Redstone Transmitter", Material.RED_CONCRETE, true),
+        GLOBAL_REDSTONE_RECEIVER("global_redstone_receiver", "Global Redstone Receiver", Material.GREEN_CONCRETE, true),
+        NBS_PROJECTION_RECEIVER("nbs_projection_receiver", "NBS Projection Receiver", Material.PURPLE_CONCRETE, true),
+        CONDUCTOR_WAND("conductor_wand", "Conductor Wand", Material.BLAZE_ROD, false);
+
+        private final String id;
+        private final String displayName;
+        private final Material carrier;
+        private final boolean placeable;
+
+        BridgeItemType(String id, String displayName, Material carrier, boolean placeable) {
+            this.id = id;
+            this.displayName = displayName;
+            this.carrier = carrier;
+            this.placeable = placeable;
+        }
+
+        static BridgeItemType fromId(String id) {
+            if (id == null) return null;
+            for (BridgeItemType type : values()) {
+                if (type.id.equalsIgnoreCase(id)) return type;
+            }
+            return null;
+        }
+
+        static BridgeItemType fromToken(String token) {
+            String value = token.toLowerCase(Locale.ROOT);
+            return switch (value) {
+                case "note", "noteblock", "extended_note_block", "extended" -> EXTENDED_NOTE_BLOCK;
+                case "transmitter", "tx", "global_redstone_transmitter" -> GLOBAL_REDSTONE_TRANSMITTER;
+                case "receiver", "rx", "global_redstone_receiver" -> GLOBAL_REDSTONE_RECEIVER;
+                case "projection", "nbs", "nbs_projection_receiver" -> NBS_PROJECTION_RECEIVER;
+                case "wand", "conductor", "conductor_wand" -> CONDUCTOR_WAND;
+                default -> fromId(value);
+            };
+        }
     }
 
     private record NoteConfig(int note, int instrumentId, int velocity, int sustainTicks,
