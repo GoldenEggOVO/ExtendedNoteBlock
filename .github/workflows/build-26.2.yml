@@ -86,8 +86,8 @@ jobs:
           BRIDGE_JAR="$(find artifacts/bridge -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           test -n "$MOD_JAR"
           test -n "$BRIDGE_JAR"
-          cp "$MOD_JAR" release/ExtendedNoteBlock-Fabric-2.1.0-mc26.2.jar
-          cp "$BRIDGE_JAR" release/ExtendedNoteBlockBridge-Paper-0.1.0-mc26.2.jar
+          cp "$MOD_JAR" release/ExtendedNoteBlock-Fabric-2.1.1-mc26.2.jar
+          cp "$BRIDGE_JAR" release/ExtendedNoteBlockBridge-Paper-0.2.0-mc26.2.jar
           sha256sum release/*.jar > release/SHA256SUMS.txt
 
       - name: Create GitHub Release
@@ -96,27 +96,28 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="v2.1.0-mc26.2"
+          TAG="v2.1.1-mc26.2"
           cat > release-notes.md <<'EOF'
           # ExtendedNoteBlock for Minecraft 26.2
 
-          This release contains the two files needed for a Paper/Purpur + Fabric client setup.
+          This release contains the Fabric client mod and the Paper/Purpur bridge plugin.
 
-          - **ExtendedNoteBlock-Fabric-2.1.0-mc26.2.jar** — install on the Fabric 26.2 client in `mods/`.
-          - **ExtendedNoteBlockBridge-Paper-0.1.0-mc26.2.jar** — install on the Paper/Purpur 26.2 server in `plugins/`.
+          - **ExtendedNoteBlock-Fabric-2.1.1-mc26.2.jar** — install on Fabric 26.2 clients in `mods/`.
+          - **ExtendedNoteBlockBridge-Paper-0.2.0-mc26.2.jar** — install on Paper/Purpur 26.2 servers in `plugins/`.
 
-          The Paper Bridge uses vanilla note blocks as server-side anchors and sends ExtendedNoteBlock-compatible sound payloads to clients that have the Fabric mod installed. It supports extended MIDI pitch, GM instruments, velocity, sustain, delay, fade-in and fade-out for bridge-managed note blocks.
+          ## Bridge 0.2.0
+          - Clients with ExtendedNoteBlock receive full extended MIDI pitch and instrument playback.
+          - Clients without the mod can still join normally and now hear an automatic vanilla note-block fallback.
+          - MIDI notes outside vanilla's F#3..F#5 range are clamped to the nearest vanilla-reproducible note.
+          - General MIDI instrument families are mapped to the closest vanilla note-block instrument.
+          - Modded clients are excluded from fallback playback to prevent doubled audio.
 
           Built and verified with Java 25 on GitHub Actions.
           EOF
 
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" release/*.jar release/SHA256SUMS.txt --clobber --repo "$GITHUB_REPOSITORY"
-          else
-            gh release create "$TAG" \
-              release/*.jar release/SHA256SUMS.txt \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "ExtendedNoteBlock 2.1.0 - Minecraft 26.2" \
-              --notes-file release-notes.md
-          fi
+          gh release create "$TAG" \
+            release/*.jar release/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "ExtendedNoteBlock 2.1.1 - Minecraft 26.2" \
+            --notes-file release-notes.md
