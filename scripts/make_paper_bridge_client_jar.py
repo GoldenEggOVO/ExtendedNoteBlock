@@ -6,16 +6,15 @@ custom blocks/items. That is correct for Fabric servers, but unsafe against a
 vanilla-registry Paper/Purpur server (creative slot sync can contain unknown
 items and the server will disconnect while decoding the packet).
 
-This script starts from Loom's remapped JAR and emits a strict whitelist JAR
-containing only the Paper bridge client initializer, the three S2C payloads,
-client config/sound code, and ExtendedNoteBlock assets.
+This script starts from Loom's remapped JAR and emits a strict whitelist JAR.
+Besides the bridge sound/runtime code, the whitelist contains the NBS/MIDI/audio
+workshop and the vanilla-only exporters. CI additionally scans retained class
+files for references to the content-mod registry/server packages.
 """
 
 from __future__ import annotations
 
 import json
-import re
-import sys
 import zipfile
 from pathlib import Path
 
@@ -59,12 +58,68 @@ source_jar = find_runtime_jar()
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 out_jar = OUT_DIR / f"ExtendedNoteBlockBridgeClient-Fabric-{mod_version}-mc{mc_version}.jar"
 
+CLASS_PREFIX = "com/atemukesu/extendednoteblock/"
+ALLOWED_CLASSES = (
+    # Paper/Purpur client runtime.
+    CLASS_PREFIX + "bridgeclient/",
+    CLASS_PREFIX + "config/ConfigManager",
+    CLASS_PREFIX + "config/ModConfig",
+    CLASS_PREFIX + "sound/ClientSoundManager",
+    CLASS_PREFIX + "sound/StoppablePositionalSoundInstance",
+    CLASS_PREFIX + "sound/SoundPackManager",
+    CLASS_PREFIX + "sound/SoundPackInfo",
+
+    # NBS workshop screens that do not require a custom server registry.
+    CLASS_PREFIX + "client/gui/screen/NbsWorkshopScreen",
+    CLASS_PREFIX + "client/gui/screen/VanillaExportScreen",
+    CLASS_PREFIX + "client/gui/screen/VanillaBlockMappingScreen",
+    CLASS_PREFIX + "client/gui/widget/NbsProjectionPreviewWidget",
+
+    # NBS/MIDI/audio parsing, planning and preview.
+    CLASS_PREFIX + "nbs/NbsSong",
+    CLASS_PREFIX + "nbs/NbsReader",
+    CLASS_PREFIX + "nbs/NbsWriter",
+    CLASS_PREFIX + "nbs/NbsProjectionOptions",
+    CLASS_PREFIX + "nbs/NbsProjectionWriter",
+    CLASS_PREFIX + "nbs/MidiToNbsConverter",
+    CLASS_PREFIX + "nbs/AudioPitchAnalyzer",
+    CLASS_PREFIX + "nbs/AudioFileDecoder",
+    CLASS_PREFIX + "nbs/AudioToNbsConverter",
+    CLASS_PREFIX + "nbs/NbsPreviewPlayer",
+
+    # Vanilla redstone/rail/litematic/NBT/datapack exporters.
+    CLASS_PREFIX + "nbs/vanilla/",
+    CLASS_PREFIX + "map/InstrumentMap",
+)
+
+
+def keep_entry(name: str) -> bool:
+    if name == "META-INF/MANIFEST.MF":
+        return True
+    if name.startswith("assets/extendednoteblock/"):
+        return True
+    if name.startswith("LICENSE"):
+        return True
+    if name.startswith("META-INF/jars/jlayer-") and name.endswith(".jar"):
+        return True
+    if name.endswith(".class") and any(name.startswith(prefix) for prefix in ALLOWED_CLASSES):
+        return True
+    return False
+
+
+with zipfile.ZipFile(source_jar, "r") as source_check:
+    source_names = set(source_check.namelist())
+    jlayer_jars = sorted(
+        name for name in source_names
+        if name.startswith("META-INF/jars/jlayer-") and name.endswith(".jar")
+    )
+
 metadata = {
     "schemaVersion": 1,
     "id": "extendednoteblock_bridge_client",
     "version": f"{mod_version}+mc{mc_version}",
     "name": "ExtendedNoteBlock Bridge Client",
-    "description": "Client-only sound companion for ExtendedNoteBlockBridge on Paper/Purpur servers.",
+    "description": "Client-only Paper/Purpur companion with ExtendedNoteBlock audio and NBS music tools.",
     "authors": ["Atemukesu", "BF_skt", "GoldenEggOVO"],
     "license": "MIT",
     "icon": "assets/extendednoteblock/icon.png",
@@ -79,30 +134,8 @@ metadata = {
         "fabric-api": f">={fabric_api_version}",
     },
 }
-
-CLASS_PREFIX = "com/atemukesu/extendednoteblock/"
-ALLOWED_CLASSES = (
-    CLASS_PREFIX + "bridgeclient/",
-    CLASS_PREFIX + "config/ConfigManager",
-    CLASS_PREFIX + "config/ModConfig",
-    CLASS_PREFIX + "sound/ClientSoundManager",
-    CLASS_PREFIX + "sound/StoppablePositionalSoundInstance",
-    CLASS_PREFIX + "sound/SoundPackManager",
-    CLASS_PREFIX + "sound/SoundPackInfo",
-)
-
-
-def keep_entry(name: str) -> bool:
-    if name == "META-INF/MANIFEST.MF":
-        return True
-    if name.startswith("assets/extendednoteblock/"):
-        return True
-    if name.startswith("LICENSE"):
-        return True
-    if name.endswith(".class") and any(name.startswith(prefix) for prefix in ALLOWED_CLASSES):
-        return True
-    return False
-
+if jlayer_jars:
+    metadata["jars"] = [{"file": name} for name in jlayer_jars]
 
 with zipfile.ZipFile(source_jar, "r") as zin, zipfile.ZipFile(
     out_jar, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
@@ -125,9 +158,9 @@ with zipfile.ZipFile(out_jar, "r") as check:
     forbidden_prefixes = (
         CLASS_PREFIX + "block/",
         CLASS_PREFIX + "item/",
-        CLASS_PREFIX + "screen/",
+        CLASS_PREFIX + "screen/",       # server menu/screen handlers
         CLASS_PREFIX + "command/",
-        CLASS_PREFIX + "network/",
+        CLASS_PREFIX + "network/",      # full-mod C2S/server networking
     )
     leaked = sorted(name for name in names if name.endswith(".class") and name.startswith(forbidden_prefixes))
     if leaked:
@@ -138,6 +171,11 @@ with zipfile.ZipFile(out_jar, "r") as check:
         CLASS_PREFIX + "bridgeclient/BridgeClientPayloads.class",
         CLASS_PREFIX + "sound/ClientSoundManager.class",
         CLASS_PREFIX + "sound/SoundPackManager.class",
+        CLASS_PREFIX + "client/gui/screen/NbsWorkshopScreen.class",
+        CLASS_PREFIX + "client/gui/screen/VanillaExportScreen.class",
+        CLASS_PREFIX + "nbs/NbsReader.class",
+        CLASS_PREFIX + "nbs/MidiToNbsConverter.class",
+        CLASS_PREFIX + "nbs/vanilla/VanillaStructureGenerator.class",
         "fabric.mod.json",
     ):
         if required not in names:
@@ -146,5 +184,32 @@ with zipfile.ZipFile(out_jar, "r") as check:
     full_mod_entrypoint = CLASS_PREFIX + "ExtendedNoteBlock.class"
     if full_mod_entrypoint in names:
         raise SystemExit("Full content-mod initializer must not exist in the Paper bridge client JAR")
+
+    # Retained client/workshop classes may contain string IDs such as
+    # 'extendednoteblock:extended_note_block' for file export, which are harmless.
+    # What is not allowed is a bytecode reference to the actual registry/server
+    # implementation classes. This catches accidental future dependencies.
+    forbidden_bytecode_refs = (
+        b"com/atemukesu/extendednoteblock/block/",
+        b"com/atemukesu/extendednoteblock/item/",
+        b"com/atemukesu/extendednoteblock/screen/",
+        b"com/atemukesu/extendednoteblock/network/",
+    )
+    bad_refs: list[tuple[str, str]] = []
+    for name in sorted(names):
+        if not name.endswith(".class"):
+            continue
+        data = check.read(name)
+        for marker in forbidden_bytecode_refs:
+            if marker in data:
+                bad_refs.append((name, marker.decode("ascii")))
+    if bad_refs:
+        raise SystemExit(f"Registry/server bytecode references leaked into bridge client: {bad_refs[:20]}")
+
+    if not jlayer_jars:
+        raise SystemExit("NBS audio import requires the bundled JLayer dependency, but no jlayer jar was found")
+    for jar_name in jlayer_jars:
+        if jar_name not in names:
+            raise SystemExit(f"Missing JLayer nested dependency: {jar_name}")
 
 print(out_jar)
