@@ -9,8 +9,12 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
+import net.fabricmc.fabric.api.resource.v1.pack.PackActivationType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -32,6 +36,7 @@ public final class PaperBridgeClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        registerBuiltInVisualPack();
         ConfigManager.initialize();
 
         SoundPackManager packs = SoundPackManager.getInstance();
@@ -88,6 +93,19 @@ public final class PaperBridgeClient implements ClientModInitializer {
             }
         });
 
-        LOGGER.info("ExtendedNoteBlock Paper Bridge Client loaded (registry-safe mode with NBS workshop and note editor).");
+        LOGGER.info("ExtendedNoteBlock Paper Client loaded (registry-safe mode, built-in visuals, NBS workshop and note editor).");
+    }
+
+    private static void registerBuiltInVisualPack() {
+        FabricLoader.getInstance().getModContainer(MOD_ID).ifPresent(container -> {
+            boolean registered = ResourceLoader.registerBuiltinPack(
+                    Identifier.fromNamespaceAndPath(MOD_ID, "bridge_visuals"),
+                    container,
+                    Component.literal("ExtendedNoteBlock Paper Client Visuals"),
+                    PackActivationType.ALWAYS_ENABLED);
+            if (!registered) {
+                LOGGER.warn("Could not register the built-in ExtendedNoteBlock visual resource pack; root assets remain available as fallback.");
+            }
+        });
     }
 }
