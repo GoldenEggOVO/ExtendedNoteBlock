@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   build-mod:
     runs-on: ubuntu-latest
@@ -26,12 +29,11 @@ jobs:
       - name: Build Fabric mod
         run: ./gradlew clean test build --stacktrace
       - name: Upload Fabric artifacts
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: extendednoteblock-26.2
           path: build/libs/*.jar
-          if-no-files-found: ignore
+          if-no-files-found: error
 
   build-bridge:
     runs-on: ubuntu-latest
@@ -50,9 +52,71 @@ jobs:
       - name: Build Paper bridge
         run: gradle clean build --stacktrace
       - name: Upload Bridge artifact
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: extendednoteblock-bridge-26.2
           path: bridge/build/libs/*.jar
-          if-no-files-found: ignore
+          if-no-files-found: error
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/port/26.2'
+    needs:
+      - build-mod
+      - build-bridge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Fabric artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: extendednoteblock-26.2
+          path: artifacts/mod
+
+      - name: Download Paper Bridge artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: extendednoteblock-bridge-26.2
+          path: artifacts/bridge
+
+      - name: Prepare release files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          MOD_JAR="$(find artifacts/mod -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          BRIDGE_JAR="$(find artifacts/bridge -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          test -n "$MOD_JAR"
+          test -n "$BRIDGE_JAR"
+          cp "$MOD_JAR" release/ExtendedNoteBlock-Fabric-2.1.0-mc26.2.jar
+          cp "$BRIDGE_JAR" release/ExtendedNoteBlockBridge-Paper-0.1.0-mc26.2.jar
+          sha256sum release/*.jar > release/SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v2.1.0-mc26.2"
+          cat > release-notes.md <<'EOF'
+          # ExtendedNoteBlock for Minecraft 26.2
+
+          This release contains the two files needed for a Paper/Purpur + Fabric client setup.
+
+          - **ExtendedNoteBlock-Fabric-2.1.0-mc26.2.jar** — install on the Fabric 26.2 client in `mods/`.
+          - **ExtendedNoteBlockBridge-Paper-0.1.0-mc26.2.jar** — install on the Paper/Purpur 26.2 server in `plugins/`.
+
+          The Paper Bridge uses vanilla note blocks as server-side anchors and sends ExtendedNoteBlock-compatible sound payloads to clients that have the Fabric mod installed. It supports extended MIDI pitch, GM instruments, velocity, sustain, delay, fade-in and fade-out for bridge-managed note blocks.
+
+          Built and verified with Java 25 on GitHub Actions.
+          EOF
+
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" release/*.jar release/SHA256SUMS.txt --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" \
+              release/*.jar release/SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "ExtendedNoteBlock 2.1.0 - Minecraft 26.2" \
+              --notes-file release-notes.md
+          fi
