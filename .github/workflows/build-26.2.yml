@@ -26,14 +26,24 @@ jobs:
       - name: Prepare Minecraft 26.2 sources
         run: python3 scripts/prepare_26_2_sources.py
       - run: chmod +x gradlew
-      - name: Build Fabric mod
+      - name: Build Full Fabric mod
         run: ./gradlew clean test build --stacktrace
       - name: Build Paper-safe bridge client jar
         run: python3 scripts/make_paper_bridge_client_jar.py
-      - name: Upload full Fabric artifacts
+      - name: Build shared visual resource pack
+        run: python3 scripts/make_visual_resource_pack.py
+      - name: Verify Full Fabric runtime jar
+        shell: bash
+        run: |
+          set -euo pipefail
+          FULL_JAR="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          test -n "$FULL_JAR"
+          jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/ExtendedNoteBlock.class'
+          jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/item/ConductorWandItem.class'
+      - name: Upload Full Fabric artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: extendednoteblock-26.2
+          name: extendednoteblock-full-26.2
           path: build/libs/*.jar
           if-no-files-found: error
       - name: Upload Paper bridge client artifact
@@ -41,6 +51,12 @@ jobs:
         with:
           name: extendednoteblock-paper-bridge-client-26.2
           path: build/paper-bridge-client/*.jar
+          if-no-files-found: error
+      - name: Upload visual resource pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: extendednoteblock-visuals-26.2
+          path: build/visual-resource-pack/*.zip
           if-no-files-found: error
 
   build-bridge:
@@ -81,6 +97,14 @@ jobs:
       - build-bridge
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Full Fabric mod
+        uses: actions/download-artifact@v4
+        with:
+          name: extendednoteblock-full-26.2
+          path: artifacts/full
+
       - name: Download Paper-safe Fabric bridge client
         uses: actions/download-artifact@v4
         with:
@@ -93,18 +117,40 @@ jobs:
           name: extendednoteblock-bridge-26.2
           path: artifacts/bridge
 
+      - name: Download visual resource pack
+        uses: actions/download-artifact@v4
+        with:
+          name: extendednoteblock-visuals-26.2
+          path: artifacts/visuals
+
       - name: Prepare release files
         shell: bash
         run: |
           set -euo pipefail
+          MOD_VERSION="$(grep '^mod_version=' gradle.properties | cut -d= -f2)"
+          MC_VERSION="$(grep '^minecraft_version=' gradle.properties | cut -d= -f2)"
+          BRIDGE_VERSION="$(grep "^version = '" bridge/build.gradle | head -n1 | sed -E "s/version = '([^']+)'/\1/")"
+
           mkdir -p release
+          FULL_JAR="$(find artifacts/full -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           CLIENT_JAR="$(find artifacts/client -maxdepth 1 -type f -name '*.jar' | head -n 1)"
           BRIDGE_JAR="$(find artifacts/bridge -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          VISUALS_ZIP="$(find artifacts/visuals -maxdepth 1 -type f -name '*.zip' | head -n 1)"
+
+          test -n "$FULL_JAR"
           test -n "$CLIENT_JAR"
           test -n "$BRIDGE_JAR"
-          cp "$CLIENT_JAR" release/ExtendedNoteBlockBridgeClient-Fabric-2.3.0-mc26.2.jar
-          cp "$BRIDGE_JAR" release/ExtendedNoteBlockBridge-Paper-0.4.1-mc26.2.jar
-          sha256sum release/*.jar > release/SHA256SUMS.txt
+          test -n "$VISUALS_ZIP"
+
+          cp "$FULL_JAR" "release/ExtendedNoteBlock-Full-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
+          cp "$CLIENT_JAR" "release/ExtendedNoteBlock-PaperClient-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
+          cp "$BRIDGE_JAR" "release/ExtendedNoteBlock-PaperPlugin-${BRIDGE_VERSION}-mc${MC_VERSION}.jar"
+          cp "$VISUALS_ZIP" "release/ExtendedNoteBlock-Visuals-${MOD_VERSION}-mc${MC_VERSION}.zip"
+          sha256sum release/* > release/SHA256SUMS.txt
+
+          echo "MOD_VERSION=$MOD_VERSION" >> "$GITHUB_ENV"
+          echo "MC_VERSION=$MC_VERSION" >> "$GITHUB_ENV"
+          echo "BRIDGE_VERSION=$BRIDGE_VERSION" >> "$GITHUB_ENV"
 
       - name: Create GitHub Release
         env:
@@ -112,44 +158,50 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="v2.3.0-mc26.2"
-          cat > release-notes.md <<'EOF'
-          # ExtendedNoteBlock Paper/Purpur Bridge 2.3.0 for Minecraft 26.2
+          TAG="v${MOD_VERSION}-mc${MC_VERSION}"
+          cat > release-notes.md <<EOF
+          # ExtendedNoteBlock ${MOD_VERSION} for Minecraft ${MC_VERSION}
 
-          ## NBS Music Workshop in the Paper-safe client
-          - Press **N** to open the NBS Music Workshop.
-          - Reads `.nbs` files.
-          - Imports `.mid` / `.midi` with tempo, velocity, pan and GM instrument information.
-          - Imports WAV, MP3, OGG, AIFF/AIF and AU audio and converts detected pitches to NBS.
-          - Includes local preview and projection preview tools.
-          - Includes vanilla-only export tools for redstone lines, rail layouts, Litematica `.litematic`, vanilla structure `.nbt`, and datapack ZIP output.
-          - JLayer is bundled for MP3 decoding.
+          This release is intentionally split into three program variants plus one shared visual pack.
 
-          ## Paper safety
-          - NBS/workshop classes are bytecode-scanned during CI.
-          - Publishing fails if retained client classes reference ExtendedNoteBlock custom block/item/server registry code.
-          - The unnecessary NBS planner dependency on `ExtendedNoteBlockEntity` was removed while keeping the same one-hour delay limit.
+          ## 1. Full Fabric
+          **ExtendedNoteBlock-Full-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
+          - Full content mod for singleplayer and Fabric servers that also install ExtendedNoteBlock.
+          - Keeps the real ExtendedNoteBlock custom blocks/items, complete GUI, NBS workshop and full Fabric behavior.
+          - Do **not** use this jar as the client companion for a vanilla-registry Paper/Purpur server.
 
-          ## Wireless/projection fixes
-          - Dedicated NBS projection receivers now start on the transmitter's redstone rising edge only, so a completed song does not restart while power remains ON.
-          - Receiver ON/OFF state is synchronized after server startup to avoid a stale redstone-block state.
+          ## 2. Paper/Purpur server plugin
+          **ExtendedNoteBlock-PaperPlugin-${BRIDGE_VERSION}-mc${MC_VERSION}.jar**
+          - Install in Paper/Purpur `plugins/`.
+          - Uses only vanilla block/item carriers on the server.
+          - Players without any client mod can still join and receive vanilla fallback audio.
 
-          ## Existing 2.2 features retained
-          - Conductor Wand Pos1/Pos2 selection and bulk note edits.
-          - Global wireless redstone transmitter/receiver.
-          - Per-receiver NBS projection timeline playback with pitch-cents support.
-          - Vanilla fallback audio for clients without the Bridge Client.
+          ## 3. Paper Fabric client
+          **ExtendedNoteBlock-PaperClient-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
+          - Install in Fabric client `mods/` when joining the Paper/Purpur bridge server.
+          - Registry-safe: no custom block/item registration is exposed to Paper.
+          - Shares the Full version's sound engine, sound packs, NBS/MIDI/audio workshop and as much client GUI code as can safely be shared.
 
-          ## Install
-          - **ExtendedNoteBlockBridgeClient-Fabric-2.3.0-mc26.2.jar** -> Fabric 26.2 client `mods/`.
-          - **ExtendedNoteBlockBridge-Paper-0.4.1-mc26.2.jar** -> Paper/Purpur 26.2 server `plugins/`.
+          ## 4. Shared Visual Compatibility Pack
+          **ExtendedNoteBlock-Visuals-${MOD_VERSION}-mc${MC_VERSION}.zip**
+          - Optional client resource pack built from the Full Fabric mod's original ENB models/textures.
+          - Makes the Paper bridge's vanilla carriers look much closer to Full Fabric.
+          - Because a vanilla resource pack cannot inspect Paper PDC/enb_type, carrier visual replacements are currently global for users who enable this pack. Players without the pack see normal vanilla blocks/items.
 
-          Built and verified with Java 25 on GitHub Actions. In-game behavior still needs normal server/client testing.
+          Current Paper carrier mapping:
+          - Note Block -> Extended Note Block
+          - Blaze Rod -> Conductor Wand
+          - Red Concrete -> Global Redstone Transmitter
+          - Green Concrete -> Global Redstone Receiver (off)
+          - Redstone Block -> Global Redstone Receiver (on)
+          - Purple Concrete -> NBS Projection Receiver
+
+          Built with Java 25. Full Fabric, Paper-safe client bytecode checks, Paper plugin resources, and the visual pack are all verified by CI before publishing.
           EOF
 
           gh release create "$TAG" \
-            release/*.jar release/SHA256SUMS.txt \
+            release/* \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "ExtendedNoteBlock Paper Bridge 2.3.0 - Minecraft 26.2" \
+            --title "ExtendedNoteBlock ${MOD_VERSION} - Minecraft ${MC_VERSION}" \
             --notes-file release-notes.md
