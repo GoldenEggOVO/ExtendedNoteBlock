@@ -33,10 +33,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -325,50 +325,61 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         Map<UUID, Boolean> poweredByWorld = new HashMap<>();
         Set<UUID> knownWorlds = new HashSet<>(globalPower.keySet());
 
+        // Receiver worlds must also be evaluated at least once after startup so
+        // an ON-state REDSTONE_BLOCK left by a previous shutdown cannot linger.
+        for (String receiverKey : receiverKeys) {
+            BlockRef receiverRef = parseKey(receiverKey);
+            if (receiverRef != null) knownWorlds.add(receiverRef.worldId());
+        }
+
         for (String transmitterKey : List.copyOf(transmitterKeys)) {
             BlockRef ref = parseKey(transmitterKey);
             if (ref == null) continue;
             knownWorlds.add(ref.worldId());
 
+            boolean wasPowered = transmitterPower.getOrDefault(transmitterKey, false);
+            String previousProjectionTarget = transmitterProjectionTarget.get(transmitterKey);
+            boolean powered = wasPowered;
+            String projectionTarget = previousProjectionTarget;
             Block transmitter = getLoadedBlock(transmitterKey);
-            boolean powered = transmitterPower.getOrDefault(transmitterKey, false);
-            String projectionTarget = transmitterProjectionTarget.get(transmitterKey);
 
             if (transmitter != null) {
-                if (transmitter.getType() != Material.RED_CONCRETE) {
-                    powered = false;
-                } else {
-                    powered = transmitter.getBlockPower() > 0;
-                }
+                powered = transmitter.getType() == Material.RED_CONCRETE && transmitter.getBlockPower() > 0;
                 projectionTarget = findAdjacentProjectionKey(transmitter);
-                transmitterPower.put(transmitterKey, powered);
-                if (projectionTarget == null) transmitterProjectionTarget.remove(transmitterKey);
-                else transmitterProjectionTarget.put(transmitterKey, projectionTarget);
+            } else if (objects.get(transmitterKey) != BridgeItemType.GLOBAL_REDSTONE_TRANSMITTER) {
+                powered = false;
+                projectionTarget = null;
             }
 
-            boolean previous = transmitterPower.getOrDefault(transmitterKey, false);
+            boolean targetChanged = !Objects.equals(previousProjectionTarget, projectionTarget);
+
+            // Stop the previous dedicated projection on falling edge or if the
+            // transmitter was re-routed to another projection receiver.
+            if (previousProjectionTarget != null && ((wasPowered && !powered) || targetChanged)) {
+                stopProjection(previousProjectionTarget);
+            }
+
             if (projectionTarget != null) {
-                ProjectionSession session = projectionSessions.get(projectionTarget);
-                boolean currentlyRunning = session != null;
-                if (powered && !currentlyRunning && transmitter != null) {
+                // Start only on a genuine rising edge (or when a powered
+                // transmitter is newly routed to this receiver). A completed
+                // song therefore does not loop just because redstone stays ON.
+                if (powered && transmitter != null && (!wasPowered || targetChanged)) {
                     startProjection(projectionTarget, transmitter);
-                } else if (!powered && currentlyRunning) {
-                    stopProjection(projectionTarget);
                 }
             } else if (powered) {
                 poweredByWorld.put(ref.worldId(), true);
             }
 
             transmitterPower.put(transmitterKey, powered);
-            if (previous && !powered && projectionTarget != null) {
-                stopProjection(projectionTarget);
-            }
+            if (projectionTarget == null) transmitterProjectionTarget.remove(transmitterKey);
+            else transmitterProjectionTarget.put(transmitterKey, projectionTarget);
         }
 
         for (UUID worldId : knownWorlds) {
             boolean newPower = poweredByWorld.getOrDefault(worldId, false);
+            boolean hadOldState = globalPower.containsKey(worldId);
             boolean oldPower = globalPower.getOrDefault(worldId, false);
-            if (newPower != oldPower) {
+            if (!hadOldState || newPower != oldPower) {
                 globalPower.put(worldId, newPower);
                 updateReceivers(worldId, newPower);
             }
