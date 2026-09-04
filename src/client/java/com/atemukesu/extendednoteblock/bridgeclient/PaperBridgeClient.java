@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -72,6 +73,12 @@ public final class PaperBridgeClient implements ClientModInitializer {
                         payload.soundId(), payload.volume(), payload.pitchMultiplier(),
                         payload.x(), payload.y(), payload.z())));
 
+        ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.NoteEditPayload.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    Screen parent = context.client().gui.screen();
+                    context.client().gui.setScreen(new BridgeNoteBlockScreen(parent, payload));
+                }));
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             ClientSoundManager.tickPauseRecovery(client);
             while (openNbsWorkshopKey.consumeClick()) {
@@ -81,6 +88,6 @@ public final class PaperBridgeClient implements ClientModInitializer {
             }
         });
 
-        LOGGER.info("ExtendedNoteBlock Paper Bridge Client loaded (registry-safe mode with NBS workshop).");
+        LOGGER.info("ExtendedNoteBlock Paper Bridge Client loaded (registry-safe mode with NBS workshop and note editor).");
     }
 }
