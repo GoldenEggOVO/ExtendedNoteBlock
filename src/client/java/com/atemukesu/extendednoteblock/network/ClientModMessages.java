@@ -12,11 +12,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class ClientModMessages {
     public static void registerS2CPackets() {
-        // ============== Sound Packets ==============
         ClientPlayNetworking.registerGlobalReceiver(ModPayloads.StartSoundPayload.ID, (payload, context) -> {
             context.client().execute(() -> ClientSoundManager.playSound(
                     payload.pos(), payload.soundId(), payload.instrumentId(),
@@ -31,7 +29,6 @@ public class ClientModMessages {
             context.client().execute(() -> ClientSoundManager.stopSound(payload.soundId()));
         });
 
-        // ============== Advanced Sound Packets ==============
         ClientPlayNetworking.registerGlobalReceiver(ModPayloads.StartAdvancedSoundPayload.ID, (payload, context) -> {
             context.client().execute(() -> ClientSoundManager.playAdvancedSound(
                     payload.pos(), payload.soundId(), payload.instrumentId(), payload.note(),
@@ -45,22 +42,18 @@ public class ClientModMessages {
                     payload.x(), payload.y(), payload.z()));
         });
 
-        // ============== Conductor's Wand ==============
         ClientPlayNetworking.registerGlobalReceiver(ModPayloads.ScanResponsePayload.ID, (payload, context) -> {
             context.client().execute(() -> {
-                context.client().setScreen(new ConductorScreen(
+                context.client().gui.setScreen(new ConductorScreen(
                         payload.min(), payload.max(), payload.counts(), payload.samples()));
             });
         });
 
-        // ============== Smooth Move ==============
         ClientPlayNetworking.registerGlobalReceiver(ModPayloads.SmoothMovePayload.ID, (payload, context) -> {
             context.client().execute(() -> com.atemukesu.extendednoteblock.util.ClientSmoothMoveManager
                     .updateMove(new Vec3(payload.x(), payload.y(), payload.z()), payload.isStop()));
         });
     }
-
-    // ============== Conductor's Wand Methods ==============
 
     public static class BulkUpdateEntry {
         public final String path;
@@ -76,7 +69,6 @@ public class ClientModMessages {
 
     public static void sendSmartBulkUpdateToServer(BlockPos min, BlockPos max, String targetBlockId,
             List<BulkUpdateEntry> updates, CompoundTag advancedPatch) {
-        // Serialize updates list to JSON
         List<Map<String, Object>> updatesList = new ArrayList<>();
         for (BulkUpdateEntry entry : updates) {
             Map<String, Object> map = new HashMap<>();
@@ -101,7 +93,6 @@ public class ClientModMessages {
         ClientPlayNetworking.send(new ModPayloads.SetWandPosPayload(0, null));
     }
 
-    // ============== Advanced Settings v1.4.0 ==============
     public static void sendAdvancedSettingsToServer(BlockPos pos, List<CurvePoint> volumePoints,
             List<CurvePoint> pitchBendPoints, List<Vec3> soundPath,
             String storedExprX, String storedExprY, String storedExprZ) {
