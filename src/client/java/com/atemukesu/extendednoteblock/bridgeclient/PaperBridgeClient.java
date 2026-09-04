@@ -27,11 +27,12 @@ public final class PaperBridgeClient implements ClientModInitializer {
         SoundPackManager packs = SoundPackManager.getInstance();
         packs.scanPacks();
         if (packs.getActivePackInfo() == null) {
-            // The full mod normally guides the player through pack selection.
-            // The bridge client has no server-side GUI/content, so make the bundled
-            // default pack usable automatically on first launch.
             packs.setActivePack(SoundPackManager.DEFAULT_PACK_ZIP_NAME);
         }
+
+        // 26.2-safe GUI entry. This uses Fabric ScreenEvents rather than a mixin,
+        // so it does not depend on vanilla OptionsScreen footer dimensions.
+        SoundPackOptionsButton.register(BridgeSoundPackScreen::new);
 
         BridgeClientPayloads.registerTypes();
 
