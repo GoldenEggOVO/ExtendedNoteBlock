@@ -3,6 +3,8 @@ package com.goldenegggovo.extendednoteblock.bridge;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -68,9 +70,15 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         activeSounds.put(key, soundId);
 
         float initialVolume = cfg.fadeInTicks <= 1 ? cfg.velocity / 127.0f : 0.0001f;
-        sendToListeningPlayers(block.getLocation(), START_SOUND,
+        Location origin = block.getLocation().add(0.5, 0.5, 0.5);
+
+        sendToListeningPlayers(origin, START_SOUND,
                 PayloadCodec.startSound(block.getX(), block.getY(), block.getZ(), soundId,
                         cfg.instrumentId, cfg.note, cfg.velocity, initialVolume));
+
+        // Clients without ExtendedNoteBlock still hear an approximate vanilla note-block sound.
+        // Modded clients are deliberately excluded to avoid double audio.
+        playVanillaFallback(origin, cfg);
 
         BukkitTask task = Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
             int tick = 0;
@@ -81,18 +89,70 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
                 if (!soundId.equals(current)) return;
 
                 if (tick >= cfg.sustainTicks) {
-                    sendToListeningPlayers(block.getLocation(), STOP_SOUND, PayloadCodec.stopSound(soundId));
+                    sendToListeningPlayers(origin, STOP_SOUND, PayloadCodec.stopSound(soundId));
                     stopActive(key);
                     return;
                 }
 
                 float volume = volumeAtTick(cfg, tick);
-                sendToListeningPlayers(block.getLocation(), UPDATE_VOLUME, PayloadCodec.updateVolume(soundId, volume));
+                sendToListeningPlayers(origin, UPDATE_VOLUME, PayloadCodec.updateVolume(soundId, volume));
                 tick++;
             }
         }, 1L, 1L);
 
         activeTasks.put(key, task);
+    }
+
+    private void playVanillaFallback(Location origin, NoteConfig cfg) {
+        Sound sound = vanillaSoundForInstrument(cfg.instrumentId);
+        float volume = Math.max(0.0f, Math.min(1.0f, cfg.velocity / 127.0f));
+        float pitch = vanillaPitchForMidi(cfg.note);
+
+        for (Player player : origin.getWorld().getPlayers()) {
+            if (supportsExtendedNoteBlock(player)) continue;
+            player.playSound(origin, sound, SoundCategory.RECORDS, volume, pitch);
+        }
+    }
+
+    private boolean supportsExtendedNoteBlock(Player player) {
+        return player.getListeningPluginChannels().contains(START_SOUND);
+    }
+
+    /**
+     * Vanilla note blocks cover MIDI F#3..F#5 (54..78) when represented as
+     * Bukkit sound pitch 0.5..2.0. Notes outside that range are clamped to the
+     * nearest note the vanilla client can reproduce.
+     */
+    private float vanillaPitchForMidi(int midiNote) {
+        int vanillaMidi = clamp(midiNote, 54, 78);
+        return (float) Math.pow(2.0, (vanillaMidi - 66) / 12.0);
+    }
+
+    /**
+     * General MIDI families mapped to the closest useful vanilla note-block
+     * instrument. The goal is musical recognisability for clients without the
+     * Fabric mod, not a bit-perfect replacement for the ExtendedNoteBlock pack.
+     */
+    private Sound vanillaSoundForInstrument(int instrumentId) {
+        int instrument = clamp(instrumentId, 0, 128);
+
+        if (instrument == 128) return Sound.BLOCK_NOTE_BLOCK_BASEDRUM;
+        if (instrument <= 7) return Sound.BLOCK_NOTE_BLOCK_HARP;           // Piano
+        if (instrument <= 15) return Sound.BLOCK_NOTE_BLOCK_XYLOPHONE;     // Chromatic percussion
+        if (instrument <= 23) return Sound.BLOCK_NOTE_BLOCK_FLUTE;         // Organ
+        if (instrument <= 31) return Sound.BLOCK_NOTE_BLOCK_GUITAR;        // Guitar
+        if (instrument <= 39) return Sound.BLOCK_NOTE_BLOCK_BASS;          // Bass
+        if (instrument <= 47) return Sound.BLOCK_NOTE_BLOCK_HARP;          // Strings
+        if (instrument <= 55) return Sound.BLOCK_NOTE_BLOCK_CHIME;         // Ensemble
+        if (instrument <= 63) return Sound.BLOCK_NOTE_BLOCK_DIDGERIDOO;    // Brass
+        if (instrument <= 71) return Sound.BLOCK_NOTE_BLOCK_FLUTE;         // Reed
+        if (instrument <= 79) return Sound.BLOCK_NOTE_BLOCK_FLUTE;         // Pipe
+        if (instrument <= 87) return Sound.BLOCK_NOTE_BLOCK_BIT;           // Synth lead
+        if (instrument <= 95) return Sound.BLOCK_NOTE_BLOCK_CHIME;         // Synth pad
+        if (instrument <= 103) return Sound.BLOCK_NOTE_BLOCK_PLING;        // Synth effects
+        if (instrument <= 111) return Sound.BLOCK_NOTE_BLOCK_BANJO;        // Ethnic
+        if (instrument <= 119) return Sound.BLOCK_NOTE_BLOCK_COW_BELL;     // Percussive
+        return Sound.BLOCK_NOTE_BLOCK_PLING;                               // Sound effects
     }
 
     private float volumeAtTick(NoteConfig cfg, int tick) {
