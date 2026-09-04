@@ -59,7 +59,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/port/26.2'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/port/26.2' && startsWith(github.event.head_commit.message, 'release:')
     needs:
       - build-mod
       - build-bridge
