@@ -41,7 +41,7 @@ jobs:
           test -n "$FULL_JAR"
           jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/ExtendedNoteBlock.class'
           jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/item/ConductorWandItem.class'
-      - name: Verify Paper Client built-in resource pack
+      - name: Verify Paper Client PDC-selective built-in resource pack
         shell: bash
         run: |
           set -euo pipefail
@@ -49,6 +49,9 @@ jobs:
           test -n "$CLIENT_JAR"
           jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_visuals/pack.mcmeta'
           jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_visuals/assets/extendednoteblock/items/conductor_wand.json'
+          jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json'
+          unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'extendednoteblockbridge:enb_type'
+          unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'minecraft:item/blaze_rod'
           if jar tf "$CLIENT_JAR" | grep -q '^com/atemukesu/extendednoteblock/item/'; then
             echo 'Unsafe Full Fabric item classes leaked into Paper Client' >&2
             exit 1
@@ -86,11 +89,14 @@ jobs:
           java-version: '25'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Prepare Paper 26.2 item-model source
+      - name: Verify vanilla-safe PDC item identity source
         run: |
-          python3 ../scripts/prepare_paper_bridge_sources.py
-          grep -q 'DataComponentTypes.ITEM_MODEL' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'extendednoteblock.*type.id' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'PersistentDataType.STRING' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'bridgeTypeKey' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          if grep -q 'DataComponentTypes.ITEM_MODEL' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
+            echo 'Paper server must not require a custom item_model resource on no-pack clients' >&2
+            exit 1
+          fi
       - name: Build Paper/Purpur server plugin
         run: gradle clean build --stacktrace
       - name: Verify Paper plugin runtime resources
@@ -190,26 +196,26 @@ jobs:
 
           ## Paper/Purpur Server
           **ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar**
-          - Install in the Paper/Purpur server `plugins/` folder.
-          - Keeps the server registry vanilla-safe by using vanilla carrier blocks/items plus plugin metadata.
-          - Marked carrier items use Minecraft 26.2's `item_model` component to reference the original ENB models.
-          - Players with no mod/resource pack can still join and see normal vanilla carriers.
+          - Install in Paper/Purpur `plugins/`.
+          - Uses only vanilla carrier ItemStacks/blocks plus PDC metadata.
+          - Does not force a custom item-model component, so clients with no Mod and no resource pack retain normal vanilla carrier models.
 
           ## Paper Client
           **ExtendedNoteBlock-Paper-Client-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
           - Optional Fabric client companion for the Paper/Purpur server.
-          - Registry-safe: it does not register Full Fabric custom blocks/items.
+          - Registry-safe: no Full Fabric custom block/item registration is exposed to Paper.
           - Shares the Full version's sound engine, sound packs, NBS/MIDI/audio workshop and compatible client GUI code.
           - Contains an **always-enabled built-in copy of the shared ENB visual resource pack**.
 
           ## Standalone Visual Pack
           **ExtendedNoteBlock-Visuals-${MOD_VERSION}-mc${MC_VERSION}.zip**
-          - The same original ENB models/textures used by the two client editions.
-          - Optional for players who do not install Paper Client but want marked Paper bridge items to use the original ENB item appearance.
-          - Ordinary vanilla items are not replaced; the Paper plugin's `item_model` component selects the ENB model only for marked bridge items.
-          - Placed blocks remain vanilla-looking without Paper Client because a plain resource pack cannot distinguish Paper PDC by world position. We intentionally do not globally replace Note Blocks/concrete/redstone blocks.
+          - Uses Minecraft 26.2 `minecraft:component` / `minecraft:custom_data` item-model conditions to detect the Paper plugin's `enb_type` PDC marker.
+          - Marked ENB carrier item -> original ExtendedNoteBlock model.
+          - Ordinary carrier item -> explicit vanilla fallback model.
+          - A client with no pack therefore still sees completely normal vanilla carriers.
+          - Placed bridge blocks remain vanilla-looking for now; a plain resource pack cannot distinguish PDC by world coordinate.
 
-          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety, the embedded built-in pack, the standalone pack, and Paper plugin runtime resources before publishing.
+          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety and built-in PDC selectors, standalone pack vanilla fallbacks, and Paper plugin runtime resources before publishing.
           EOF
 
           gh release create "$TAG" \
