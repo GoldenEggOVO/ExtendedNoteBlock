@@ -20,6 +20,8 @@ jobs:
           java-version: '25'
           cache: gradle
       - uses: gradle/actions/wrapper-validation@v4
+      - name: Prepare Minecraft 26.2 sources
+        run: python3 scripts/prepare_26_2_sources.py
       - run: chmod +x gradlew
       - name: Build Fabric mod
         run: ./gradlew clean test build --stacktrace
