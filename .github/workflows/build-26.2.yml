@@ -87,7 +87,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
       - name: Prepare Paper 26.2 item-model source
-        run: python3 ../scripts/prepare_paper_bridge_sources.py
+        run: |
+          python3 ../scripts/prepare_paper_bridge_sources.py
+          grep -q 'DataComponentTypes.ITEM_MODEL' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'extendednoteblock.*type.id' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
       - name: Build Paper/Purpur server plugin
         run: gradle clean build --stacktrace
       - name: Verify Paper plugin runtime resources
@@ -98,8 +101,6 @@ jobs:
           test -n "$JAR"
           jar tf "$JAR" | grep -qx 'plugin.yml'
           jar tf "$JAR" | grep -qx 'config.yml'
-          javap -classpath "$JAR" -c com.goldenegggovo.extendednoteblock.bridge.ExtendedNoteBlockBridge \
-            | grep -q 'ITEM_MODEL'
       - name: Upload Paper server plugin artifact
         uses: actions/upload-artifact@v4
         with:
