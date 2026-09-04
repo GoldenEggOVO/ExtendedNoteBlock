@@ -1,0 +1,12 @@
+# ExtendedNoteBlockBridge configuration
+# Minecraft 26.2 / Paper / Purpur
+#
+# The current bridge keeps its per-block state in notes.yml and objects.yml.
+# This file is intentionally minimal so Bukkit's saveDefaultConfig() always has
+# a bundled default resource and the plugin can enable safely.
+
+# Maximum distance used by player-facing bridge interactions.
+interaction-range: 6
+
+# Maximum distance at which bridge sounds are intended to be relevant.
+audible-radius: 64
