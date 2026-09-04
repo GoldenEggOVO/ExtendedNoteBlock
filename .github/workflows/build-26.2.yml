@@ -102,8 +102,8 @@ jobs:
           BRIDGE_JAR="$(find artifacts/bridge -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           test -n "$CLIENT_JAR"
           test -n "$BRIDGE_JAR"
-          cp "$CLIENT_JAR" release/ExtendedNoteBlockBridgeClient-Fabric-2.1.5-mc26.2.jar
-          cp "$BRIDGE_JAR" release/ExtendedNoteBlockBridge-Paper-0.3.1-mc26.2.jar
+          cp "$CLIENT_JAR" release/ExtendedNoteBlockBridgeClient-Fabric-2.2.0-mc26.2.jar
+          cp "$BRIDGE_JAR" release/ExtendedNoteBlockBridge-Paper-0.4.0-mc26.2.jar
           sha256sum release/*.jar > release/SHA256SUMS.txt
 
       - name: Create GitHub Release
@@ -112,21 +112,41 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="v2.1.5-mc26.2"
+          TAG="v2.2.0-mc26.2"
           cat > release-notes.md <<'EOF'
-          # ExtendedNoteBlock Paper/Purpur Bridge for Minecraft 26.2
+          # ExtendedNoteBlock Paper/Purpur Bridge 2.2.0 for Minecraft 26.2
 
-          ## Paper Bridge startup fix
-          - Fixed a startup failure where `saveDefaultConfig()` was called but the plugin JAR did not contain `config.yml`.
-          - Added a bundled default `config.yml` so the plugin can enable normally on Paper/Purpur.
-          - CI now inspects the built plugin JAR and refuses to publish it unless both `plugin.yml` and `config.yml` are present.
+          This release begins the full Paper/Purpur feature port instead of only providing sound playback.
+
+          ## New: Conductor Wand core
+          - The vanilla carrier is still `minecraft:blaze_rod`.
+          - Left-click a block with the marked Conductor Wand to set Pos1.
+          - Right-click a block to set Pos2.
+          - `/enb wand info` shows the current cuboid.
+          - `/enb wand clear` clears it.
+          - `/enb wand set <note|instrument|velocity|sustain|delay|fadein|fadeout> <value>` bulk-edits all bridge Extended Note Blocks inside the selection.
+          - A configurable selection-volume safety cap is included.
+
+          ## New: Global wireless redstone core
+          - Global Redstone Transmitter remains `minecraft:red_concrete` and reads real neighboring redstone power.
+          - Global Redstone Receiver remains `minecraft:green_concrete` while OFF.
+          - While ON, the receiver temporarily becomes `minecraft:redstone_block`, giving vanilla circuits a real strength-15 output.
+          - Transmitters adjacent to an NBS Projection Receiver are routed only to that receiver rather than the global bus.
+
+          ## New: NBS Projection playback core
+          - Projection Receiver remains `minecraft:purple_concrete`.
+          - Per-receiver projection timelines are persisted in `projections.yml`.
+          - Dedicated adjacent transmitters can start/stop the projection.
+          - `/enb projection add <delayMs> <note> <instrument> [velocity] [sustainTicks] [pitchCents]` adds timeline notes.
+          - `/enb projection info`, `/enb projection clear`, and `/enb projection test` are available for testing.
+          - The Bridge Client now supports `start_adv_sound` and `adv_update`, preserving projection pitch-cents playback for modded clients.
+          - Clients without the Bridge Client still receive the closest vanilla Note Block fallback.
 
           ## Install
-          - **ExtendedNoteBlockBridgeClient-Fabric-2.1.5-mc26.2.jar** — Fabric 26.2 client `mods/`.
-          - **ExtendedNoteBlockBridge-Paper-0.3.1-mc26.2.jar** — Paper/Purpur 26.2 server `plugins/`.
+          - **ExtendedNoteBlockBridgeClient-Fabric-2.2.0-mc26.2.jar** -> Fabric 26.2 client `mods/`.
+          - **ExtendedNoteBlockBridge-Paper-0.4.0-mc26.2.jar** -> Paper/Purpur 26.2 server `plugins/`.
 
-          The vanilla-carrier mapping and GUI fixes from 2.1.4/0.3.0 are retained.
-
+          The client remains registry-safe: it does not register ExtendedNoteBlock custom items or blocks.
           Built and verified with Java 25 on GitHub Actions.
           EOF
 
@@ -134,5 +154,5 @@ jobs:
             release/*.jar release/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "ExtendedNoteBlock Paper Bridge 2.1.5 - Minecraft 26.2" \
+            --title "ExtendedNoteBlock Paper Bridge 2.2.0 - Minecraft 26.2" \
             --notes-file release-notes.md
