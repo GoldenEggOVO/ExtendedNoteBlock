@@ -10,12 +10,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
 /**
- * Minimal clientbound payload set used by the Paper/Purpur bridge.
- *
- * This deliberately does not reference the full mod networking bootstrap or
- * any custom block/item registry classes. The channel IDs and byte layout are
- * identical to ExtendedNoteBlock's normal S2C payloads so the Paper plugin can
- * talk to either client implementation.
+ * Registry-safe clientbound payload set used by the Paper/Purpur bridge.
+ * Channel IDs and byte layouts intentionally match the full mod.
  */
 public final class BridgeClientPayloads {
     private BridgeClientPayloads() {
@@ -25,6 +21,8 @@ public final class BridgeClientPayloads {
         PayloadTypeRegistry.clientboundPlay().register(StartSoundPayload.ID, StartSoundPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(UpdateVolumePayload.ID, UpdateVolumePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(StopSoundPayload.ID, StopSoundPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(StartAdvancedSoundPayload.ID, StartAdvancedSoundPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(AdvancedUpdatePayload.ID, AdvancedUpdatePayload.CODEC);
     }
 
     public record StartSoundPayload(
@@ -48,12 +46,8 @@ public final class BridgeClientPayloads {
                     buf.writeFloat(payload.initialVolume);
                 },
                 buf -> new StartSoundPayload(
-                        buf.readBlockPos(),
-                        buf.readUUID(),
-                        buf.readInt(),
-                        buf.readInt(),
-                        buf.readInt(),
-                        buf.readFloat()));
+                        buf.readBlockPos(), buf.readUUID(), buf.readInt(), buf.readInt(),
+                        buf.readInt(), buf.readFloat()));
 
         @Override
         public Type<? extends CustomPacketPayload> type() {
@@ -85,6 +79,72 @@ public final class BridgeClientPayloads {
         public static final StreamCodec<FriendlyByteBuf, StopSoundPayload> CODEC = StreamCodec.ofMember(
                 (payload, buf) -> buf.writeUUID(payload.soundId),
                 buf -> new StopSoundPayload(buf.readUUID()));
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return ID;
+        }
+    }
+
+    public record StartAdvancedSoundPayload(
+            BlockPos pos,
+            UUID soundId,
+            int instrumentId,
+            int note,
+            float initialVolume,
+            float initialPitchMul,
+            double x,
+            double y,
+            double z) implements CustomPacketPayload {
+
+        public static final Type<StartAdvancedSoundPayload> ID = new Type<>(
+                Identifier.fromNamespaceAndPath("extendednoteblock", "start_adv_sound"));
+
+        public static final StreamCodec<FriendlyByteBuf, StartAdvancedSoundPayload> CODEC = StreamCodec.ofMember(
+                (payload, buf) -> {
+                    buf.writeBlockPos(payload.pos);
+                    buf.writeUUID(payload.soundId);
+                    buf.writeInt(payload.instrumentId);
+                    buf.writeInt(payload.note);
+                    buf.writeFloat(payload.initialVolume);
+                    buf.writeFloat(payload.initialPitchMul);
+                    buf.writeDouble(payload.x);
+                    buf.writeDouble(payload.y);
+                    buf.writeDouble(payload.z);
+                },
+                buf -> new StartAdvancedSoundPayload(
+                        buf.readBlockPos(), buf.readUUID(), buf.readInt(), buf.readInt(),
+                        buf.readFloat(), buf.readFloat(), buf.readDouble(), buf.readDouble(), buf.readDouble()));
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return ID;
+        }
+    }
+
+    public record AdvancedUpdatePayload(
+            UUID soundId,
+            float volume,
+            float pitchMultiplier,
+            double x,
+            double y,
+            double z) implements CustomPacketPayload {
+
+        public static final Type<AdvancedUpdatePayload> ID = new Type<>(
+                Identifier.fromNamespaceAndPath("extendednoteblock", "adv_update"));
+
+        public static final StreamCodec<FriendlyByteBuf, AdvancedUpdatePayload> CODEC = StreamCodec.ofMember(
+                (payload, buf) -> {
+                    buf.writeUUID(payload.soundId);
+                    buf.writeFloat(payload.volume);
+                    buf.writeFloat(payload.pitchMultiplier);
+                    buf.writeDouble(payload.x);
+                    buf.writeDouble(payload.y);
+                    buf.writeDouble(payload.z);
+                },
+                buf -> new AdvancedUpdatePayload(
+                        buf.readUUID(), buf.readFloat(), buf.readFloat(),
+                        buf.readDouble(), buf.readDouble(), buf.readDouble()));
 
         @Override
         public Type<? extends CustomPacketPayload> type() {
