@@ -23,8 +23,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
+import com.atemukesu.extendednoteblock.bridgeclient.SoundPackOptionsButton;
 import com.atemukesu.extendednoteblock.client.gui.screen.ExtendedNoteBlockScreen;
 import com.atemukesu.extendednoteblock.client.gui.screen.NbsWorkshopScreen;
+import com.atemukesu.extendednoteblock.client.gui.screen.SoundPackManagerScreen;
 import com.atemukesu.extendednoteblock.config.ConfigManager;
 import com.atemukesu.extendednoteblock.network.ClientModMessages;
 
@@ -48,6 +50,11 @@ public class ExtendedNoteBlockClient implements ClientModInitializer {
         SoundPackManager.getInstance().scanPacks();
         ClientModMessages.registerS2CPackets();
         com.atemukesu.extendednoteblock.util.ClientSmoothMoveManager.init();
+
+        // Minecraft 26.2: use Fabric's screen event API instead of injecting into
+        // OptionsScreen's footer. This keeps the entry button compact and avoids
+        // the oversized button caused by copying vanilla's Done-button width.
+        SoundPackOptionsButton.register(SoundPackManagerScreen::new);
 
         openWandGuiKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.extendednoteblock.open_wand_gui",
