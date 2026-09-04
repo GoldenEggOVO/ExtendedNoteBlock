@@ -7,15 +7,19 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.NotePlayEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -26,22 +30,45 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
     private static final String START_SOUND = "extendednoteblock:start_sound";
     private static final String UPDATE_VOLUME = "extendednoteblock:update_volume";
     private static final String STOP_SOUND = "extendednoteblock:stop_sound";
+    private static final String START_ADV_SOUND = "extendednoteblock:start_adv_sound";
+    private static final String ADV_UPDATE = "extendednoteblock:adv_update";
 
     private final Map<String, NoteConfig> notes = new HashMap<>();
     private final Map<String, BridgeItemType> objects = new HashMap<>();
+    private final Set<String> transmitterKeys = new HashSet<>();
+    private final Set<String> receiverKeys = new HashSet<>();
+    private final Set<String> projectionReceiverKeys = new HashSet<>();
+
     private final Map<String, UUID> activeSounds = new HashMap<>();
     private final Map<String, BukkitTask> activeTasks = new HashMap<>();
+
+    private final Map<UUID, WandSelection> wandSelections = new HashMap<>();
+
+    private final Map<String, Boolean> transmitterPower = new HashMap<>();
+    private final Map<String, String> transmitterProjectionTarget = new HashMap<>();
+    private final Map<UUID, Boolean> globalPower = new HashMap<>();
+
+    private final Map<String, List<ProjectionNote>> projectionNotes = new HashMap<>();
+    private final Map<String, ProjectionSession> projectionSessions = new HashMap<>();
+    private final Map<String, Set<UUID>> projectionActiveSounds = new HashMap<>();
+    private final Map<UUID, BukkitTask> projectionStopTasks = new HashMap<>();
+
     private NamespacedKey bridgeTypeKey;
+    private BukkitTask logicTask;
 
     @Override
     public void onEnable() {
@@ -49,6 +76,7 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         bridgeTypeKey = new NamespacedKey(this, "enb_type");
         loadNotes();
         loadObjects();
+        loadProjections();
 
         boolean migrated = false;
         for (String key : notes.keySet()) {
@@ -58,22 +86,33 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
             }
         }
         if (migrated) saveObjects();
+        rebuildObjectIndexes();
 
         getServer().getPluginManager().registerEvents(this, this);
-        getServer().getMessenger().registerOutgoingPluginChannel(this, START_SOUND);
-        getServer().getMessenger().registerOutgoingPluginChannel(this, UPDATE_VOLUME);
-        getServer().getMessenger().registerOutgoingPluginChannel(this, STOP_SOUND);
+        for (String channel : List.of(START_SOUND, UPDATE_VOLUME, STOP_SOUND, START_ADV_SOUND, ADV_UPDATE)) {
+            getServer().getMessenger().registerOutgoingPluginChannel(this, channel);
+        }
+
+        long pollPeriod = Math.max(1L, getConfig().getLong("wireless-redstone.poll-period-ticks", 1L));
+        logicTask = Bukkit.getScheduler().runTaskTimer(this, this::tickBridgeLogic, 1L, pollPeriod);
+
         getLogger().info("ExtendedNoteBlockBridge enabled for Paper/Purpur 26.2");
-        getLogger().info("Vanilla carriers enabled for all ExtendedNoteBlock logical items.");
+        getLogger().info("Core bridge features: vanilla carriers, conductor selection, wireless redstone, projection playback.");
     }
 
     @Override
     public void onDisable() {
+        if (logicTask != null) logicTask.cancel();
         activeTasks.values().forEach(BukkitTask::cancel);
+        projectionStopTasks.values().forEach(BukkitTask::cancel);
         activeTasks.clear();
+        projectionStopTasks.clear();
         activeSounds.clear();
+        projectionSessions.clear();
+        projectionActiveSounds.clear();
         saveNotes();
         saveObjects();
+        saveProjections();
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -86,9 +125,16 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
 
         String key = key(block);
         objects.put(key, type);
+        indexObject(key, type);
         if (type == BridgeItemType.EXTENDED_NOTE_BLOCK) {
             notes.putIfAbsent(key, defaultNoteConfig());
             saveNotes();
+        } else if (type == BridgeItemType.NBS_PROJECTION_RECEIVER) {
+            projectionNotes.putIfAbsent(key, new ArrayList<>());
+            saveProjections();
+        } else if (type == BridgeItemType.GLOBAL_REDSTONE_RECEIVER) {
+            Bukkit.getScheduler().runTask(this,
+                    () -> setReceiverPowered(block, globalPower.getOrDefault(block.getWorld().getUID(), false)));
         }
         saveObjects();
     }
@@ -100,10 +146,18 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         BridgeItemType type = objects.remove(key);
         if (type == null) return;
 
+        unindexObject(key, type);
+        transmitterPower.remove(key);
+        transmitterProjectionTarget.remove(key);
+
         if (type == BridgeItemType.EXTENDED_NOTE_BLOCK) {
             notes.remove(key);
             stopActive(key);
             saveNotes();
+        } else if (type == BridgeItemType.NBS_PROJECTION_RECEIVER) {
+            stopProjection(key);
+            projectionNotes.remove(key);
+            saveProjections();
         }
         saveObjects();
 
@@ -111,6 +165,31 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
             event.setDropItems(false);
             block.getWorld().dropItemNaturally(block.getLocation(), createBridgeItem(type, 1));
         }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND) return;
+        ItemStack held = event.getItem();
+        if (getBridgeItemType(held) != BridgeItemType.CONDUCTOR_WAND) return;
+        if (event.getClickedBlock() == null) return;
+
+        Action action = event.getAction();
+        if (action != Action.LEFT_CLICK_BLOCK && action != Action.RIGHT_CLICK_BLOCK) return;
+
+        event.setCancelled(true);
+        Player player = event.getPlayer();
+        BlockRef pos = BlockRef.of(event.getClickedBlock());
+        WandSelection old = wandSelections.getOrDefault(player.getUniqueId(), new WandSelection(null, null));
+        WandSelection updated;
+        if (action == Action.LEFT_CLICK_BLOCK) {
+            updated = new WandSelection(pos, old.pos2());
+            player.sendMessage("ENB Conductor: Pos1 = " + pos.shortText());
+        } else {
+            updated = new WandSelection(old.pos1(), pos);
+            player.sendMessage("ENB Conductor: Pos2 = " + pos.shortText());
+        }
+        wandSelections.put(player.getUniqueId(), updated);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -221,15 +300,212 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
     private void stopActive(String key) {
         BukkitTask task = activeTasks.remove(key);
         if (task != null) task.cancel();
-        activeSounds.remove(key);
+        UUID id = activeSounds.remove(key);
+        Block block = getLoadedBlock(key);
+        if (id != null && block != null) {
+            sendToListeningPlayers(block.getLocation(), STOP_SOUND, PayloadCodec.stopSound(id));
+        }
     }
 
     private void sendToListeningPlayers(Location origin, String channel, byte[] payload) {
+        double radius = Math.max(1.0, getConfig().getDouble("audible-radius", 64.0));
+        double radiusSq = radius * radius;
         for (Player player : origin.getWorld().getPlayers()) {
+            if (player.getLocation().distanceSquared(origin) > radiusSq) continue;
             if (!player.getListeningPluginChannels().contains(channel)) continue;
             player.sendPluginMessage(this, channel, payload);
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Wireless redstone + dedicated projection routing
+    // -------------------------------------------------------------------------
+
+    private void tickBridgeLogic() {
+        Map<UUID, Boolean> poweredByWorld = new HashMap<>();
+        Set<UUID> knownWorlds = new HashSet<>(globalPower.keySet());
+
+        for (String transmitterKey : List.copyOf(transmitterKeys)) {
+            BlockRef ref = parseKey(transmitterKey);
+            if (ref == null) continue;
+            knownWorlds.add(ref.worldId());
+
+            Block transmitter = getLoadedBlock(transmitterKey);
+            boolean powered = transmitterPower.getOrDefault(transmitterKey, false);
+            String projectionTarget = transmitterProjectionTarget.get(transmitterKey);
+
+            if (transmitter != null) {
+                if (transmitter.getType() != Material.RED_CONCRETE) {
+                    powered = false;
+                } else {
+                    powered = transmitter.getBlockPower() > 0;
+                }
+                projectionTarget = findAdjacentProjectionKey(transmitter);
+                transmitterPower.put(transmitterKey, powered);
+                if (projectionTarget == null) transmitterProjectionTarget.remove(transmitterKey);
+                else transmitterProjectionTarget.put(transmitterKey, projectionTarget);
+            }
+
+            boolean previous = transmitterPower.getOrDefault(transmitterKey, false);
+            if (projectionTarget != null) {
+                ProjectionSession session = projectionSessions.get(projectionTarget);
+                boolean currentlyRunning = session != null;
+                if (powered && !currentlyRunning && transmitter != null) {
+                    startProjection(projectionTarget, transmitter);
+                } else if (!powered && currentlyRunning) {
+                    stopProjection(projectionTarget);
+                }
+            } else if (powered) {
+                poweredByWorld.put(ref.worldId(), true);
+            }
+
+            transmitterPower.put(transmitterKey, powered);
+            if (previous && !powered && projectionTarget != null) {
+                stopProjection(projectionTarget);
+            }
+        }
+
+        for (UUID worldId : knownWorlds) {
+            boolean newPower = poweredByWorld.getOrDefault(worldId, false);
+            boolean oldPower = globalPower.getOrDefault(worldId, false);
+            if (newPower != oldPower) {
+                globalPower.put(worldId, newPower);
+                updateReceivers(worldId, newPower);
+            }
+        }
+
+        tickProjectionSessions();
+    }
+
+    private void updateReceivers(UUID worldId, boolean powered) {
+        for (String receiverKey : List.copyOf(receiverKeys)) {
+            BlockRef ref = parseKey(receiverKey);
+            if (ref == null || !ref.worldId().equals(worldId)) continue;
+            Block block = getLoadedBlock(receiverKey);
+            if (block != null) setReceiverPowered(block, powered);
+        }
+    }
+
+    private void setReceiverPowered(Block block, boolean powered) {
+        Material desired = powered ? Material.REDSTONE_BLOCK : Material.GREEN_CONCRETE;
+        if (block.getType() != desired) {
+            block.setType(desired, true);
+        }
+    }
+
+    private String findAdjacentProjectionKey(Block transmitter) {
+        int[][] offsets = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+        for (int[] offset : offsets) {
+            Block candidate = transmitter.getRelative(offset[0], offset[1], offset[2]);
+            String candidateKey = key(candidate);
+            if (projectionReceiverKeys.contains(candidateKey)
+                    && objects.get(candidateKey) == BridgeItemType.NBS_PROJECTION_RECEIVER) {
+                return candidateKey;
+            }
+        }
+        return null;
+    }
+
+    // -------------------------------------------------------------------------
+    // NBS projection playback core
+    // -------------------------------------------------------------------------
+
+    private void startProjection(String receiverKey, Block playbackBlock) {
+        stopProjection(receiverKey);
+        List<ProjectionNote> timeline = projectionNotes.getOrDefault(receiverKey, List.of());
+        if (timeline.isEmpty()) return;
+        List<ProjectionNote> sorted = new ArrayList<>(timeline);
+        sorted.sort(java.util.Comparator.comparingLong(ProjectionNote::delayMs));
+        projectionSessions.put(receiverKey,
+                new ProjectionSession(receiverKey, key(playbackBlock), List.copyOf(sorted), System.nanoTime(), 0));
+    }
+
+    private void stopProjection(String receiverKey) {
+        projectionSessions.remove(receiverKey);
+        Set<UUID> ids = projectionActiveSounds.remove(receiverKey);
+        if (ids == null || ids.isEmpty()) return;
+        Block receiver = getLoadedBlock(receiverKey);
+        Location origin = receiver == null ? null : receiver.getLocation();
+        for (UUID id : List.copyOf(ids)) {
+            BukkitTask stopTask = projectionStopTasks.remove(id);
+            if (stopTask != null) stopTask.cancel();
+            if (origin != null) sendToListeningPlayers(origin, STOP_SOUND, PayloadCodec.stopSound(id));
+        }
+    }
+
+    private void tickProjectionSessions() {
+        long now = System.nanoTime();
+        for (Map.Entry<String, ProjectionSession> entry : List.copyOf(projectionSessions.entrySet())) {
+            String receiverKey = entry.getKey();
+            ProjectionSession session = entry.getValue();
+            if (!projectionReceiverKeys.contains(receiverKey)) {
+                stopProjection(receiverKey);
+                continue;
+            }
+            Block playback = getLoadedBlock(session.playbackKey());
+            if (playback == null) continue;
+
+            long elapsedMs = Math.max(0L, (now - session.startedNanos()) / 1_000_000L);
+            int next = session.nextNote();
+            while (next < session.notes().size() && session.notes().get(next).delayMs() <= elapsedMs) {
+                playProjectionNote(receiverKey, playback, session.notes().get(next));
+                next++;
+            }
+            if (next >= session.notes().size()) {
+                projectionSessions.remove(receiverKey);
+            } else if (next != session.nextNote()) {
+                projectionSessions.put(receiverKey,
+                        new ProjectionSession(receiverKey, session.playbackKey(), session.notes(), session.startedNanos(), next));
+            }
+        }
+    }
+
+    private void playProjectionNote(String receiverKey, Block playback, ProjectionNote note) {
+        Location origin = playback.getLocation().add(0.5, 0.5, 0.5);
+        UUID soundId = UUID.randomUUID();
+        float volume = Math.max(0.0001f, note.velocity() / 127.0f);
+
+        if (note.pitchCents() == 0) {
+            sendToListeningPlayers(origin, START_SOUND,
+                    PayloadCodec.startSound(playback.getX(), playback.getY(), playback.getZ(), soundId,
+                            note.instrumentId(), note.midiNote(), note.velocity(), volume));
+        } else {
+            float pitchMul = (float) Math.pow(2.0, note.pitchCents() / 1200.0);
+            sendToListeningPlayers(origin, START_ADV_SOUND,
+                    PayloadCodec.startAdvancedSound(playback.getX(), playback.getY(), playback.getZ(), soundId,
+                            note.instrumentId(), note.midiNote(), volume, pitchMul,
+                            origin.getX(), origin.getY(), origin.getZ()));
+        }
+
+        playVanillaProjectionFallback(origin, note);
+        projectionActiveSounds.computeIfAbsent(receiverKey, ignored -> new HashSet<>()).add(soundId);
+        long sustain = Math.max(1L, note.sustainTicks());
+        BukkitTask task = Bukkit.getScheduler().runTaskLater(this, () -> {
+            sendToListeningPlayers(origin, STOP_SOUND, PayloadCodec.stopSound(soundId));
+            projectionStopTasks.remove(soundId);
+            Set<UUID> ids = projectionActiveSounds.get(receiverKey);
+            if (ids != null) {
+                ids.remove(soundId);
+                if (ids.isEmpty()) projectionActiveSounds.remove(receiverKey);
+            }
+        }, sustain);
+        projectionStopTasks.put(soundId, task);
+    }
+
+    private void playVanillaProjectionFallback(Location origin, ProjectionNote note) {
+        Sound sound = vanillaSoundForInstrument(note.instrumentId());
+        float volume = Math.max(0.0f, Math.min(1.0f, note.velocity() / 127.0f));
+        float pitch = vanillaPitchForMidi(note.midiNote()) * (float) Math.pow(2.0, note.pitchCents() / 1200.0);
+        pitch = Math.max(0.5f, Math.min(2.0f, pitch));
+        for (Player player : origin.getWorld().getPlayers()) {
+            if (supportsExtendedNoteBlock(player)) continue;
+            player.playSound(origin, sound, SoundCategory.RECORDS, volume, pitch);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Commands
+    // -------------------------------------------------------------------------
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -246,127 +522,280 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
             case "reload" -> {
                 loadNotes();
                 loadObjects();
+                loadProjections();
                 for (String key : notes.keySet()) objects.putIfAbsent(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
+                rebuildObjectIndexes();
                 sender.sendMessage("ExtendedNoteBlockBridge reloaded.");
             }
-            case "give" -> {
-                Player player = (Player) sender;
-                if (args.length < 2) {
-                    sender.sendMessage("Usage: /enb give <note|transmitter|receiver|projection|wand|all> [amount]");
-                    return true;
-                }
-                int amount = 1;
-                if (args.length >= 3) {
-                    try {
-                        amount = clamp(Integer.parseInt(args[2]), 1, 64);
-                    } catch (NumberFormatException e) {
-                        sender.sendMessage("Amount must be an integer.");
-                        return true;
-                    }
-                }
-                if (args[1].equalsIgnoreCase("all")) {
-                    for (BridgeItemType type : BridgeItemType.values()) {
-                        player.getInventory().addItem(createBridgeItem(type, amount));
-                    }
-                    sender.sendMessage("Given all ExtendedNoteBlock vanilla carriers.");
-                    return true;
-                }
-                BridgeItemType type = BridgeItemType.fromToken(args[1]);
-                if (type == null) {
-                    sender.sendMessage("Unknown type. Use note, transmitter, receiver, projection, wand, or all.");
-                    return true;
-                }
-                player.getInventory().addItem(createBridgeItem(type, amount));
-                sender.sendMessage("Given " + amount + "x " + type.displayName + ".");
-            }
-            case "set" -> {
-                if (args.length < 3) {
-                    sender.sendMessage("Usage: /enb set <note> <instrument> [velocity] [sustainTicks] [delayMs] [fadeIn] [fadeOut]");
-                    return true;
-                }
-                Player player = (Player) sender;
-                Block block = targetNoteBlock(player, true);
-                if (block == null) return true;
-                try {
-                    int note = clamp(Integer.parseInt(args[1]), 0, 127);
-                    int instrument = clamp(Integer.parseInt(args[2]), 0, 128);
-                    int velocity = args.length > 3 ? clamp(Integer.parseInt(args[3]), 0, 127) : 100;
-                    int sustain = args.length > 4 ? clamp(Integer.parseInt(args[4]), 1, 400) : 20;
-                    int delay = args.length > 5 ? clamp(Integer.parseInt(args[5]), 0, 600000) : 0;
-                    int fadeIn = args.length > 6 ? clamp(Integer.parseInt(args[6]), 0, 400) : 0;
-                    int fadeOut = args.length > 7 ? clamp(Integer.parseInt(args[7]), 0, 400) : 3;
-                    String key = key(block);
-                    objects.put(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
-                    notes.put(key, new NoteConfig(note, instrument, velocity, sustain, delay, fadeIn, fadeOut));
-                    saveObjects();
-                    saveNotes();
-                    sender.sendMessage("Configured ENB note block: MIDI " + note + ", instrument " + instrument);
-                } catch (NumberFormatException e) {
-                    sender.sendMessage("All values must be integers.");
-                }
-            }
-            case "info" -> {
-                Player player = (Player) sender;
-                Block block = player.getTargetBlockExact(6);
-                if (block == null) {
-                    sender.sendMessage("Look at an ENB bridge block within 6 blocks.");
-                    return true;
-                }
-                String key = key(block);
-                BridgeItemType type = objects.get(key);
-                if (type == null) {
-                    sender.sendMessage("This is not an ExtendedNoteBlock bridge object.");
-                    return true;
-                }
-                sender.sendMessage(type.displayName + " -> vanilla carrier " + type.carrier.name());
-                if (type == BridgeItemType.EXTENDED_NOTE_BLOCK) {
-                    NoteConfig cfg = notes.get(key);
-                    if (cfg != null) sender.sendMessage(cfg.toString());
-                }
-            }
-            case "remove" -> {
-                Player player = (Player) sender;
-                Block block = player.getTargetBlockExact(6);
-                if (block == null) {
-                    sender.sendMessage("Look at an ENB bridge block within 6 blocks.");
-                    return true;
-                }
-                String key = key(block);
-                BridgeItemType removed = objects.remove(key);
-                notes.remove(key);
-                stopActive(key);
-                saveObjects();
-                saveNotes();
-                sender.sendMessage(removed == null ? "This block was not managed by ENB." : "Removed ENB identity from this vanilla block.");
-            }
-            case "play" -> {
-                Player player = (Player) sender;
-                Block block = targetNoteBlock(player, false);
-                if (block == null) return true;
-                NoteConfig cfg = notes.get(key(block));
-                if (cfg == null) sender.sendMessage("This note block is not configured.");
-                else startConfiguredSound(block, cfg);
-            }
+            case "give" -> handleGive((Player) sender, args);
+            case "set" -> handleSet((Player) sender, args);
+            case "info" -> handleInfo((Player) sender);
+            case "remove" -> handleRemove((Player) sender);
+            case "play" -> handlePlay((Player) sender);
             case "list" -> {
                 for (BridgeItemType type : BridgeItemType.values()) {
                     sender.sendMessage(type.id + " -> " + type.carrier.name() + " (" + type.displayName + ")");
                 }
+                sender.sendMessage("Receiver active state -> REDSTONE_BLOCK (real vanilla redstone output)");
             }
+            case "wand" -> handleWand((Player) sender, args);
+            case "projection" -> handleProjection((Player) sender, args);
             default -> sendHelp(sender);
         }
         return true;
     }
 
+    private void handleGive(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage("Usage: /enb give <note|transmitter|receiver|projection|wand|all> [amount]");
+            return;
+        }
+        int amount = 1;
+        if (args.length >= 3) {
+            try {
+                amount = clamp(Integer.parseInt(args[2]), 1, 64);
+            } catch (NumberFormatException e) {
+                player.sendMessage("Amount must be an integer.");
+                return;
+            }
+        }
+        if (args[1].equalsIgnoreCase("all")) {
+            for (BridgeItemType type : BridgeItemType.values()) {
+                player.getInventory().addItem(createBridgeItem(type, amount));
+            }
+            player.sendMessage("Given all ExtendedNoteBlock vanilla carriers.");
+            return;
+        }
+        BridgeItemType type = BridgeItemType.fromToken(args[1]);
+        if (type == null) {
+            player.sendMessage("Unknown type. Use note, transmitter, receiver, projection, wand, or all.");
+            return;
+        }
+        player.getInventory().addItem(createBridgeItem(type, amount));
+        player.sendMessage("Given " + amount + "x " + type.displayName + ".");
+    }
+
+    private void handleSet(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage("Usage: /enb set <note> <instrument> [velocity] [sustainTicks] [delayMs] [fadeIn] [fadeOut]");
+            return;
+        }
+        Block block = targetNoteBlock(player, true);
+        if (block == null) return;
+        try {
+            int note = clamp(Integer.parseInt(args[1]), 0, 127);
+            int instrument = clamp(Integer.parseInt(args[2]), 0, 128);
+            int velocity = args.length > 3 ? clamp(Integer.parseInt(args[3]), 0, 127) : 100;
+            int sustain = args.length > 4 ? clamp(Integer.parseInt(args[4]), 1, 400) : 20;
+            int delay = args.length > 5 ? clamp(Integer.parseInt(args[5]), 0, 600000) : 0;
+            int fadeIn = args.length > 6 ? clamp(Integer.parseInt(args[6]), 0, 400) : 0;
+            int fadeOut = args.length > 7 ? clamp(Integer.parseInt(args[7]), 0, 400) : 3;
+            String key = key(block);
+            objects.put(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
+            indexObject(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
+            notes.put(key, new NoteConfig(note, instrument, velocity, sustain, delay, fadeIn, fadeOut));
+            saveObjects();
+            saveNotes();
+            player.sendMessage("Configured ENB note block: MIDI " + note + ", instrument " + instrument);
+        } catch (NumberFormatException e) {
+            player.sendMessage("All values must be integers.");
+        }
+    }
+
+    private void handleInfo(Player player) {
+        Block block = player.getTargetBlockExact(interactionRange());
+        if (block == null) {
+            player.sendMessage("Look at an ENB bridge block within range.");
+            return;
+        }
+        String key = key(block);
+        BridgeItemType type = objects.get(key);
+        if (type == null) {
+            player.sendMessage("This is not an ExtendedNoteBlock bridge object.");
+            return;
+        }
+        player.sendMessage(type.displayName + " -> vanilla carrier " + type.carrier.name());
+        if (type == BridgeItemType.EXTENDED_NOTE_BLOCK) {
+            NoteConfig cfg = notes.get(key);
+            if (cfg != null) player.sendMessage(cfg.toString());
+        } else if (type == BridgeItemType.NBS_PROJECTION_RECEIVER) {
+            player.sendMessage("Projection notes: " + projectionNotes.getOrDefault(key, List.of()).size());
+        }
+    }
+
+    private void handleRemove(Player player) {
+        Block block = player.getTargetBlockExact(interactionRange());
+        if (block == null) {
+            player.sendMessage("Look at an ENB bridge block within range.");
+            return;
+        }
+        String key = key(block);
+        BridgeItemType removed = objects.remove(key);
+        if (removed != null) unindexObject(key, removed);
+        notes.remove(key);
+        projectionNotes.remove(key);
+        stopActive(key);
+        stopProjection(key);
+        saveObjects();
+        saveNotes();
+        saveProjections();
+        player.sendMessage(removed == null ? "This block was not managed by ENB." : "Removed ENB identity from this vanilla block.");
+    }
+
+    private void handlePlay(Player player) {
+        Block block = targetNoteBlock(player, false);
+        if (block == null) return;
+        NoteConfig cfg = notes.get(key(block));
+        if (cfg == null) player.sendMessage("This note block is not configured.");
+        else startConfiguredSound(block, cfg);
+    }
+
+    private void handleWand(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage("/enb wand info | clear | set <note|instrument|velocity|sustain|delay|fadein|fadeout> <value>");
+            return;
+        }
+        String action = args[1].toLowerCase(Locale.ROOT);
+        if (action.equals("clear")) {
+            wandSelections.remove(player.getUniqueId());
+            player.sendMessage("Conductor selection cleared.");
+            return;
+        }
+        WandSelection selection = wandSelections.get(player.getUniqueId());
+        if (action.equals("info")) {
+            if (selection == null || !selection.complete()) {
+                player.sendMessage("Selection incomplete. Left-click sets Pos1, right-click sets Pos2.");
+            } else {
+                player.sendMessage("Pos1 " + selection.pos1().shortText() + " / Pos2 " + selection.pos2().shortText()
+                        + " / volume " + selection.volume());
+            }
+            return;
+        }
+        if (!action.equals("set") || args.length < 4) {
+            player.sendMessage("Usage: /enb wand set <note|instrument|velocity|sustain|delay|fadein|fadeout> <value>");
+            return;
+        }
+        if (selection == null || !selection.complete()) {
+            player.sendMessage("Selection incomplete. Left-click sets Pos1, right-click sets Pos2.");
+            return;
+        }
+        if (!selection.sameWorld()) {
+            player.sendMessage("Both selection points must be in the same world.");
+            return;
+        }
+        long maxVolume = Math.max(1L, getConfig().getLong("wand.max-selection-volume", 262144L));
+        if (selection.volume() > maxVolume) {
+            player.sendMessage("Selection is too large: " + selection.volume() + " > " + maxVolume);
+            return;
+        }
+        try {
+            int value = Integer.parseInt(args[3]);
+            int changed = bulkSet(selection, args[2].toLowerCase(Locale.ROOT), value);
+            saveNotes();
+            player.sendMessage("Updated " + changed + " Extended Note Block(s).");
+        } catch (IllegalArgumentException e) {
+            player.sendMessage(e.getMessage());
+        }
+    }
+
+    private int bulkSet(WandSelection selection, String property, int rawValue) {
+        int value = switch (property) {
+            case "note" -> clamp(rawValue, 0, 127);
+            case "instrument" -> clamp(rawValue, 0, 128);
+            case "velocity" -> clamp(rawValue, 0, 127);
+            case "sustain" -> clamp(rawValue, 1, 400);
+            case "delay" -> clamp(rawValue, 0, 600000);
+            case "fadein", "fadeout" -> clamp(rawValue, 0, 400);
+            default -> throw new IllegalArgumentException("Unknown property: " + property);
+        };
+
+        int changed = 0;
+        for (Map.Entry<String, NoteConfig> entry : new ArrayList<>(notes.entrySet())) {
+            BlockRef ref = parseKey(entry.getKey());
+            if (ref == null || !selection.contains(ref)) continue;
+            NoteConfig old = entry.getValue();
+            NoteConfig updated = switch (property) {
+                case "note" -> new NoteConfig(value, old.instrumentId, old.velocity, old.sustainTicks, old.delayMs, old.fadeInTicks, old.fadeOutTicks);
+                case "instrument" -> new NoteConfig(old.note, value, old.velocity, old.sustainTicks, old.delayMs, old.fadeInTicks, old.fadeOutTicks);
+                case "velocity" -> new NoteConfig(old.note, old.instrumentId, value, old.sustainTicks, old.delayMs, old.fadeInTicks, old.fadeOutTicks);
+                case "sustain" -> new NoteConfig(old.note, old.instrumentId, old.velocity, value, old.delayMs, old.fadeInTicks, old.fadeOutTicks);
+                case "delay" -> new NoteConfig(old.note, old.instrumentId, old.velocity, old.sustainTicks, value, old.fadeInTicks, old.fadeOutTicks);
+                case "fadein" -> new NoteConfig(old.note, old.instrumentId, old.velocity, old.sustainTicks, old.delayMs, value, old.fadeOutTicks);
+                case "fadeout" -> new NoteConfig(old.note, old.instrumentId, old.velocity, old.sustainTicks, old.delayMs, old.fadeInTicks, value);
+                default -> old;
+            };
+            notes.put(entry.getKey(), updated);
+            changed++;
+        }
+        return changed;
+    }
+
+    private void handleProjection(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage("/enb projection info | clear | test | add <delayMs> <note> <instrument> [velocity] [sustainTicks] [pitchCents]");
+            return;
+        }
+        Block receiver = targetBridgeBlock(player, BridgeItemType.NBS_PROJECTION_RECEIVER);
+        if (receiver == null) return;
+        String receiverKey = key(receiver);
+        String action = args[1].toLowerCase(Locale.ROOT);
+
+        switch (action) {
+            case "info" -> player.sendMessage("Projection notes: " + projectionNotes.getOrDefault(receiverKey, List.of()).size());
+            case "clear" -> {
+                stopProjection(receiverKey);
+                projectionNotes.put(receiverKey, new ArrayList<>());
+                saveProjections();
+                player.sendMessage("Projection timeline cleared.");
+            }
+            case "test" -> {
+                startProjection(receiverKey, receiver);
+                player.sendMessage("Projection test started.");
+            }
+            case "add" -> {
+                if (args.length < 5) {
+                    player.sendMessage("Usage: /enb projection add <delayMs> <note> <instrument> [velocity] [sustainTicks] [pitchCents]");
+                    return;
+                }
+                try {
+                    long delayMs = Math.max(0L, Long.parseLong(args[2]));
+                    int note = clamp(Integer.parseInt(args[3]), 0, 127);
+                    int instrument = clamp(Integer.parseInt(args[4]), 0, 128);
+                    int velocity = args.length > 5 ? clamp(Integer.parseInt(args[5]), 0, 127) : 100;
+                    int sustain = args.length > 6 ? clamp(Integer.parseInt(args[6]), 1, 400) : 20;
+                    int pitchCents = args.length > 7 ? clamp(Integer.parseInt(args[7]), -2400, 2400) : 0;
+                    projectionNotes.computeIfAbsent(receiverKey, ignored -> new ArrayList<>())
+                            .add(new ProjectionNote(instrument, note, velocity, sustain, pitchCents, delayMs));
+                    saveProjections();
+                    player.sendMessage("Added projection note at " + delayMs + "ms.");
+                } catch (NumberFormatException e) {
+                    player.sendMessage("Projection values must be integers.");
+                }
+            }
+            default -> player.sendMessage("Unknown projection action.");
+        }
+    }
+
     private void sendHelp(CommandSender sender) {
         sender.sendMessage("/enb give <note|transmitter|receiver|projection|wand|all> [amount]");
         sender.sendMessage("/enb set <note 0-127> <instrument 0-128> [velocity] [sustainTicks] [delayMs] [fadeIn] [fadeOut]");
+        sender.sendMessage("/enb wand info|clear|set ...");
+        sender.sendMessage("/enb projection info|clear|test|add ...");
         sender.sendMessage("/enb info | /enb remove | /enb play | /enb list | /enb reload");
     }
 
+    // -------------------------------------------------------------------------
+    // Object / persistence helpers
+    // -------------------------------------------------------------------------
+
+    private int interactionRange() {
+        return Math.max(1, getConfig().getInt("interaction-range", 6));
+    }
+
     private Block targetNoteBlock(Player player, boolean autoConvert) {
-        Block block = player.getTargetBlockExact(6);
+        Block block = player.getTargetBlockExact(interactionRange());
         if (block == null || block.getType() != Material.NOTE_BLOCK) {
-            player.sendMessage("Look at a note block within 6 blocks.");
+            player.sendMessage("Look at a note block within range.");
             return null;
         }
         String key = key(block);
@@ -376,9 +805,19 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
                 return null;
             }
             objects.put(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
+            indexObject(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
             notes.putIfAbsent(key, defaultNoteConfig());
             saveObjects();
             saveNotes();
+        }
+        return block;
+    }
+
+    private Block targetBridgeBlock(Player player, BridgeItemType expected) {
+        Block block = player.getTargetBlockExact(interactionRange());
+        if (block == null || objects.get(key(block)) != expected) {
+            player.sendMessage("Look at a " + expected.displayName + " within range.");
+            return null;
         }
         return block;
     }
@@ -410,6 +849,54 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         return block.getWorld().getUID() + ":" + block.getX() + ":" + block.getY() + ":" + block.getZ();
     }
 
+    private BlockRef parseKey(String key) {
+        try {
+            String[] parts = key.split(":");
+            if (parts.length != 4) return null;
+            return new BlockRef(UUID.fromString(parts[0]), Integer.parseInt(parts[1]),
+                    Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    private Block getLoadedBlock(String key) {
+        BlockRef ref = parseKey(key);
+        if (ref == null) return null;
+        World world = Bukkit.getWorld(ref.worldId());
+        if (world == null || !world.isChunkLoaded(ref.x() >> 4, ref.z() >> 4)) return null;
+        return world.getBlockAt(ref.x(), ref.y(), ref.z());
+    }
+
+    private void rebuildObjectIndexes() {
+        transmitterKeys.clear();
+        receiverKeys.clear();
+        projectionReceiverKeys.clear();
+        for (Map.Entry<String, BridgeItemType> entry : objects.entrySet()) {
+            indexObject(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void indexObject(String key, BridgeItemType type) {
+        switch (type) {
+            case GLOBAL_REDSTONE_TRANSMITTER -> transmitterKeys.add(key);
+            case GLOBAL_REDSTONE_RECEIVER -> receiverKeys.add(key);
+            case NBS_PROJECTION_RECEIVER -> projectionReceiverKeys.add(key);
+            default -> {
+            }
+        }
+    }
+
+    private void unindexObject(String key, BridgeItemType type) {
+        switch (type) {
+            case GLOBAL_REDSTONE_TRANSMITTER -> transmitterKeys.remove(key);
+            case GLOBAL_REDSTONE_RECEIVER -> receiverKeys.remove(key);
+            case NBS_PROJECTION_RECEIVER -> projectionReceiverKeys.remove(key);
+            default -> {
+            }
+        }
+    }
+
     private void loadObjects() {
         objects.clear();
         File file = new File(getDataFolder(), "objects.yml");
@@ -426,12 +913,7 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         for (Map.Entry<String, BridgeItemType> entry : objects.entrySet()) {
             yml.set(entry.getKey(), entry.getValue().id);
         }
-        try {
-            if (!getDataFolder().exists()) getDataFolder().mkdirs();
-            yml.save(new File(getDataFolder(), "objects.yml"));
-        } catch (IOException e) {
-            getLogger().severe("Failed to save objects.yml: " + e.getMessage());
-        }
+        saveYaml(yml, "objects.yml");
     }
 
     private void loadNotes() {
@@ -464,11 +946,57 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
             yml.set(p + ".fadeIn", c.fadeInTicks);
             yml.set(p + ".fadeOut", c.fadeOutTicks);
         }
+        saveYaml(yml, "notes.yml");
+    }
+
+    private void loadProjections() {
+        projectionNotes.clear();
+        File file = new File(getDataFolder(), "projections.yml");
+        if (!file.exists()) return;
+        org.bukkit.configuration.file.YamlConfiguration yml = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(file);
+        for (String key : yml.getKeys(false)) {
+            int count = Math.max(0, yml.getInt(key + ".count", 0));
+            List<ProjectionNote> timeline = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                String p = key + ".notes." + i;
+                timeline.add(new ProjectionNote(
+                        yml.getInt(p + ".instrument", 0),
+                        yml.getInt(p + ".note", 60),
+                        yml.getInt(p + ".velocity", 100),
+                        yml.getInt(p + ".sustain", 20),
+                        yml.getInt(p + ".pitchCents", 0),
+                        Math.max(0L, yml.getLong(p + ".delayMs", 0L))));
+            }
+            projectionNotes.put(key, timeline);
+        }
+    }
+
+    private void saveProjections() {
+        org.bukkit.configuration.file.YamlConfiguration yml = new org.bukkit.configuration.file.YamlConfiguration();
+        for (Map.Entry<String, List<ProjectionNote>> entry : projectionNotes.entrySet()) {
+            String key = entry.getKey();
+            List<ProjectionNote> timeline = entry.getValue();
+            yml.set(key + ".count", timeline.size());
+            for (int i = 0; i < timeline.size(); i++) {
+                ProjectionNote note = timeline.get(i);
+                String p = key + ".notes." + i;
+                yml.set(p + ".instrument", note.instrumentId());
+                yml.set(p + ".note", note.midiNote());
+                yml.set(p + ".velocity", note.velocity());
+                yml.set(p + ".sustain", note.sustainTicks());
+                yml.set(p + ".pitchCents", note.pitchCents());
+                yml.set(p + ".delayMs", note.delayMs());
+            }
+        }
+        saveYaml(yml, "projections.yml");
+    }
+
+    private void saveYaml(org.bukkit.configuration.file.YamlConfiguration yml, String filename) {
         try {
             if (!getDataFolder().exists()) getDataFolder().mkdirs();
-            yml.save(new File(getDataFolder(), "notes.yml"));
+            yml.save(new File(getDataFolder(), filename));
         } catch (IOException e) {
-            getLogger().severe("Failed to save notes.yml: " + e.getMessage());
+            getLogger().severe("Failed to save " + filename + ": " + e.getMessage());
         }
     }
 
@@ -526,6 +1054,54 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         }
     }
 
+    private record ProjectionNote(int instrumentId, int midiNote, int velocity, int sustainTicks,
+                                  int pitchCents, long delayMs) {
+    }
+
+    private record ProjectionSession(String receiverKey, String playbackKey, List<ProjectionNote> notes,
+                                     long startedNanos, int nextNote) {
+    }
+
+    private record BlockRef(UUID worldId, int x, int y, int z) {
+        static BlockRef of(Block block) {
+            return new BlockRef(block.getWorld().getUID(), block.getX(), block.getY(), block.getZ());
+        }
+
+        String shortText() {
+            return x + ", " + y + ", " + z;
+        }
+    }
+
+    private record WandSelection(BlockRef pos1, BlockRef pos2) {
+        boolean complete() {
+            return pos1 != null && pos2 != null;
+        }
+
+        boolean sameWorld() {
+            return complete() && pos1.worldId().equals(pos2.worldId());
+        }
+
+        long volume() {
+            if (!sameWorld()) return Long.MAX_VALUE;
+            return (long) (Math.abs(pos1.x() - pos2.x()) + 1)
+                    * (Math.abs(pos1.y() - pos2.y()) + 1)
+                    * (Math.abs(pos1.z() - pos2.z()) + 1);
+        }
+
+        boolean contains(BlockRef ref) {
+            if (!sameWorld() || !pos1.worldId().equals(ref.worldId())) return false;
+            int minX = Math.min(pos1.x(), pos2.x());
+            int maxX = Math.max(pos1.x(), pos2.x());
+            int minY = Math.min(pos1.y(), pos2.y());
+            int maxY = Math.max(pos1.y(), pos2.y());
+            int minZ = Math.min(pos1.z(), pos2.z());
+            int maxZ = Math.max(pos1.z(), pos2.z());
+            return ref.x() >= minX && ref.x() <= maxX
+                    && ref.y() >= minY && ref.y() <= maxY
+                    && ref.z() >= minZ && ref.z() <= maxZ;
+        }
+    }
+
     private static final class PayloadCodec {
         private static byte[] startSound(int x, int y, int z, UUID id, int instrument, int note, int velocity, float volume) {
             return write(out -> {
@@ -536,6 +1112,23 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
                 out.writeInt(note);
                 out.writeInt(velocity);
                 out.writeFloat(volume);
+            });
+        }
+
+        private static byte[] startAdvancedSound(int x, int y, int z, UUID id, int instrument, int note,
+                                                 float volume, float pitchMultiplier,
+                                                 double soundX, double soundY, double soundZ) {
+            return write(out -> {
+                out.writeLong(packBlockPos(x, y, z));
+                out.writeLong(id.getMostSignificantBits());
+                out.writeLong(id.getLeastSignificantBits());
+                out.writeInt(instrument);
+                out.writeInt(note);
+                out.writeFloat(volume);
+                out.writeFloat(pitchMultiplier);
+                out.writeDouble(soundX);
+                out.writeDouble(soundY);
+                out.writeDouble(soundZ);
             });
         }
 
