@@ -73,13 +73,13 @@ jobs:
       - build-bridge
     runs-on: ubuntu-latest
     steps:
-      - name: Download Fabric artifact
+      - name: Download Paper-safe Fabric bridge client
         uses: actions/download-artifact@v4
         with:
-          name: extendednoteblock-26.2
-          path: artifacts/mod
+          name: extendednoteblock-paper-bridge-client-26.2
+          path: artifacts/client
 
-      - name: Download Paper Bridge artifact
+      - name: Download Paper Bridge plugin
         uses: actions/download-artifact@v4
         with:
           name: extendednoteblock-bridge-26.2
@@ -90,11 +90,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
-          MOD_JAR="$(find artifacts/mod -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          CLIENT_JAR="$(find artifacts/client -maxdepth 1 -type f -name '*.jar' | head -n 1)"
           BRIDGE_JAR="$(find artifacts/bridge -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
-          test -n "$MOD_JAR"
+          test -n "$CLIENT_JAR"
           test -n "$BRIDGE_JAR"
-          cp "$MOD_JAR" release/ExtendedNoteBlock-Fabric-2.1.1-mc26.2.jar
+          cp "$CLIENT_JAR" release/ExtendedNoteBlockBridgeClient-Fabric-2.1.2-mc26.2.jar
           cp "$BRIDGE_JAR" release/ExtendedNoteBlockBridge-Paper-0.2.0-mc26.2.jar
           sha256sum release/*.jar > release/SHA256SUMS.txt
 
@@ -104,28 +104,29 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="v2.1.1-mc26.2"
+          TAG="v2.1.2-mc26.2"
           cat > release-notes.md <<'EOF'
-          # ExtendedNoteBlock for Minecraft 26.2
+          # ExtendedNoteBlock Paper/Purpur Bridge for Minecraft 26.2
 
-          This release contains the Fabric client mod and the Paper/Purpur bridge plugin.
+          This release fixes the creative-inventory disconnect seen when the full ExtendedNoteBlock content mod was used against a Paper/Purpur server.
 
-          - **ExtendedNoteBlock-Fabric-2.1.1-mc26.2.jar** — install on Fabric 26.2 clients in `mods/`.
-          - **ExtendedNoteBlockBridge-Paper-0.2.0-mc26.2.jar** — install on Paper/Purpur 26.2 servers in `plugins/`.
+          ## Install these two files
+          - **ExtendedNoteBlockBridgeClient-Fabric-2.1.2-mc26.2.jar** — Fabric 26.2 client `mods/` folder.
+          - **ExtendedNoteBlockBridge-Paper-0.2.0-mc26.2.jar** — Paper/Purpur 26.2 server `plugins/` folder.
 
-          ## Bridge 0.2.0
-          - Clients with ExtendedNoteBlock receive full extended MIDI pitch and instrument playback.
-          - Clients without the mod can still join normally and now hear an automatic vanilla note-block fallback.
-          - MIDI notes outside vanilla's F#3..F#5 range are clamped to the nearest vanilla-reproducible note.
-          - General MIDI instrument families are mapped to the closest vanilla note-block instrument.
-          - Modded clients are excluded from fallback playback to prevent doubled audio.
+          ## Important
+          Paper/Purpur players must remove **ExtendedNoteBlock-Fabric-2.1.1-mc26.2.jar** (and other full ExtendedNoteBlock content-mod jars) from the client before installing the Bridge Client. Do not install both client jars together.
 
-          Built and verified with Java 25 on GitHub Actions.
+          The new Bridge Client is client-only and contains no ExtendedNoteBlock custom block, item, block-entity, menu, command, server networking, or full content-mod initializer classes. This prevents custom ItemStacks from entering `minecraft:set_creative_mode_slot` packets on a vanilla-registry Paper/Purpur server.
+
+          Clients with the Bridge Client receive ExtendedNoteBlock sound payloads. Clients without the mod can still join normally and hear the vanilla note-block fallback provided by Bridge 0.2.0.
+
+          Built with Java 25. The Bridge Client JAR is structurally checked in CI to reject registry/content classes before publishing.
           EOF
 
           gh release create "$TAG" \
             release/*.jar release/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "ExtendedNoteBlock 2.1.1 - Minecraft 26.2" \
+            --title "ExtendedNoteBlock Paper Bridge 2.1.2 - Minecraft 26.2" \
             --notes-file release-notes.md
