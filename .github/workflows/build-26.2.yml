@@ -102,8 +102,8 @@ jobs:
           BRIDGE_JAR="$(find artifacts/bridge -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           test -n "$CLIENT_JAR"
           test -n "$BRIDGE_JAR"
-          cp "$CLIENT_JAR" release/ExtendedNoteBlockBridgeClient-Fabric-2.2.0-mc26.2.jar
-          cp "$BRIDGE_JAR" release/ExtendedNoteBlockBridge-Paper-0.4.0-mc26.2.jar
+          cp "$CLIENT_JAR" release/ExtendedNoteBlockBridgeClient-Fabric-2.3.0-mc26.2.jar
+          cp "$BRIDGE_JAR" release/ExtendedNoteBlockBridge-Paper-0.4.1-mc26.2.jar
           sha256sum release/*.jar > release/SHA256SUMS.txt
 
       - name: Create GitHub Release
@@ -112,47 +112,44 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="v2.2.0-mc26.2"
+          TAG="v2.3.0-mc26.2"
           cat > release-notes.md <<'EOF'
-          # ExtendedNoteBlock Paper/Purpur Bridge 2.2.0 for Minecraft 26.2
+          # ExtendedNoteBlock Paper/Purpur Bridge 2.3.0 for Minecraft 26.2
 
-          This release begins the full Paper/Purpur feature port instead of only providing sound playback.
+          ## NBS Music Workshop in the Paper-safe client
+          - Press **N** to open the NBS Music Workshop.
+          - Reads `.nbs` files.
+          - Imports `.mid` / `.midi` with tempo, velocity, pan and GM instrument information.
+          - Imports WAV, MP3, OGG, AIFF/AIF and AU audio and converts detected pitches to NBS.
+          - Includes local preview and projection preview tools.
+          - Includes vanilla-only export tools for redstone lines, rail layouts, Litematica `.litematic`, vanilla structure `.nbt`, and datapack ZIP output.
+          - JLayer is bundled for MP3 decoding.
 
-          ## New: Conductor Wand core
-          - The vanilla carrier is still `minecraft:blaze_rod`.
-          - Left-click a block with the marked Conductor Wand to set Pos1.
-          - Right-click a block to set Pos2.
-          - `/enb wand info` shows the current cuboid.
-          - `/enb wand clear` clears it.
-          - `/enb wand set <note|instrument|velocity|sustain|delay|fadein|fadeout> <value>` bulk-edits all bridge Extended Note Blocks inside the selection.
-          - A configurable selection-volume safety cap is included.
+          ## Paper safety
+          - NBS/workshop classes are bytecode-scanned during CI.
+          - Publishing fails if retained client classes reference ExtendedNoteBlock custom block/item/server registry code.
+          - The unnecessary NBS planner dependency on `ExtendedNoteBlockEntity` was removed while keeping the same one-hour delay limit.
 
-          ## New: Global wireless redstone core
-          - Global Redstone Transmitter remains `minecraft:red_concrete` and reads real neighboring redstone power.
-          - Global Redstone Receiver remains `minecraft:green_concrete` while OFF.
-          - While ON, the receiver temporarily becomes `minecraft:redstone_block`, giving vanilla circuits a real strength-15 output.
-          - Transmitters adjacent to an NBS Projection Receiver are routed only to that receiver rather than the global bus.
+          ## Wireless/projection fixes
+          - Dedicated NBS projection receivers now start on the transmitter's redstone rising edge only, so a completed song does not restart while power remains ON.
+          - Receiver ON/OFF state is synchronized after server startup to avoid a stale redstone-block state.
 
-          ## New: NBS Projection playback core
-          - Projection Receiver remains `minecraft:purple_concrete`.
-          - Per-receiver projection timelines are persisted in `projections.yml`.
-          - Dedicated adjacent transmitters can start/stop the projection.
-          - `/enb projection add <delayMs> <note> <instrument> [velocity] [sustainTicks] [pitchCents]` adds timeline notes.
-          - `/enb projection info`, `/enb projection clear`, and `/enb projection test` are available for testing.
-          - The Bridge Client now supports `start_adv_sound` and `adv_update`, preserving projection pitch-cents playback for modded clients.
-          - Clients without the Bridge Client still receive the closest vanilla Note Block fallback.
+          ## Existing 2.2 features retained
+          - Conductor Wand Pos1/Pos2 selection and bulk note edits.
+          - Global wireless redstone transmitter/receiver.
+          - Per-receiver NBS projection timeline playback with pitch-cents support.
+          - Vanilla fallback audio for clients without the Bridge Client.
 
           ## Install
-          - **ExtendedNoteBlockBridgeClient-Fabric-2.2.0-mc26.2.jar** -> Fabric 26.2 client `mods/`.
-          - **ExtendedNoteBlockBridge-Paper-0.4.0-mc26.2.jar** -> Paper/Purpur 26.2 server `plugins/`.
+          - **ExtendedNoteBlockBridgeClient-Fabric-2.3.0-mc26.2.jar** -> Fabric 26.2 client `mods/`.
+          - **ExtendedNoteBlockBridge-Paper-0.4.1-mc26.2.jar** -> Paper/Purpur 26.2 server `plugins/`.
 
-          The client remains registry-safe: it does not register ExtendedNoteBlock custom items or blocks.
-          Built and verified with Java 25 on GitHub Actions.
+          Built and verified with Java 25 on GitHub Actions. In-game behavior still needs normal server/client testing.
           EOF
 
           gh release create "$TAG" \
             release/*.jar release/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "ExtendedNoteBlock Paper Bridge 2.2.0 - Minecraft 26.2" \
+            --title "ExtendedNoteBlock Paper Bridge 2.3.0 - Minecraft 26.2" \
             --notes-file release-notes.md
