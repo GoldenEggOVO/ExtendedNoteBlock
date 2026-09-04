@@ -10,8 +10,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
 /**
- * Registry-safe clientbound payload set used by the Paper/Purpur bridge.
- * Channel IDs and byte layouts intentionally match the full mod.
+ * Registry-safe bridge payloads used by the Paper/Purpur companion.
+ * Existing audio channel IDs intentionally match the full mod. Bridge-only
+ * editor channels use dedicated IDs so Paper can own the authoritative state.
  */
 public final class BridgeClientPayloads {
     private BridgeClientPayloads() {
@@ -23,6 +24,8 @@ public final class BridgeClientPayloads {
         PayloadTypeRegistry.clientboundPlay().register(StopSoundPayload.ID, StopSoundPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(StartAdvancedSoundPayload.ID, StartAdvancedSoundPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(AdvancedUpdatePayload.ID, AdvancedUpdatePayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(NoteEditPayload.ID, NoteEditPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(NoteSavePayload.ID, NoteSavePayload.CODEC);
     }
 
     public record StartSoundPayload(
@@ -150,5 +153,72 @@ public final class BridgeClientPayloads {
         public Type<? extends CustomPacketPayload> type() {
             return ID;
         }
+    }
+
+    /** Paper -> Fabric: authoritative settings for one bridge-managed note block. */
+    public record NoteEditPayload(
+            BlockPos pos,
+            int note,
+            int instrumentId,
+            int velocity,
+            int sustainTicks,
+            int delayMs,
+            int fadeInTicks,
+            int fadeOutTicks) implements CustomPacketPayload {
+
+        public static final Type<NoteEditPayload> ID = new Type<>(
+                Identifier.fromNamespaceAndPath("extendednoteblock", "bridge_note_edit"));
+
+        public static final StreamCodec<FriendlyByteBuf, NoteEditPayload> CODEC = StreamCodec.ofMember(
+                (payload, buf) -> writeNoteSettings(buf, payload.pos, payload.note, payload.instrumentId,
+                        payload.velocity, payload.sustainTicks, payload.delayMs,
+                        payload.fadeInTicks, payload.fadeOutTicks),
+                buf -> new NoteEditPayload(buf.readBlockPos(), buf.readInt(), buf.readInt(), buf.readInt(),
+                        buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt()));
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return ID;
+        }
+    }
+
+    /** Fabric -> Paper: save edited settings for one bridge-managed note block. */
+    public record NoteSavePayload(
+            BlockPos pos,
+            int note,
+            int instrumentId,
+            int velocity,
+            int sustainTicks,
+            int delayMs,
+            int fadeInTicks,
+            int fadeOutTicks) implements CustomPacketPayload {
+
+        public static final Type<NoteSavePayload> ID = new Type<>(
+                Identifier.fromNamespaceAndPath("extendednoteblock", "bridge_note_save"));
+
+        public static final StreamCodec<FriendlyByteBuf, NoteSavePayload> CODEC = StreamCodec.ofMember(
+                (payload, buf) -> writeNoteSettings(buf, payload.pos, payload.note, payload.instrumentId,
+                        payload.velocity, payload.sustainTicks, payload.delayMs,
+                        payload.fadeInTicks, payload.fadeOutTicks),
+                buf -> new NoteSavePayload(buf.readBlockPos(), buf.readInt(), buf.readInt(), buf.readInt(),
+                        buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt()));
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return ID;
+        }
+    }
+
+    private static void writeNoteSettings(FriendlyByteBuf buf, BlockPos pos, int note, int instrumentId,
+                                          int velocity, int sustainTicks, int delayMs,
+                                          int fadeInTicks, int fadeOutTicks) {
+        buf.writeBlockPos(pos);
+        buf.writeInt(note);
+        buf.writeInt(instrumentId);
+        buf.writeInt(velocity);
+        buf.writeInt(sustainTicks);
+        buf.writeInt(delayMs);
+        buf.writeInt(fadeInTicks);
+        buf.writeInt(fadeOutTicks);
     }
 }
