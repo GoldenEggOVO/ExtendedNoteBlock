@@ -17,6 +17,8 @@ import json
 import zipfile
 from pathlib import Path
 
+from make_visual_resource_pack import CARRIER_ITEMS, carrier_selector
+
 ROOT = Path(__file__).resolve().parents[1]
 LIBS = ROOT / "build" / "libs"
 OUT_DIR = ROOT / "build" / "paper-bridge-client"
@@ -154,9 +156,6 @@ metadata = {
 if jlayer_jars:
     metadata["jars"] = [{"file": name} for name in jlayer_jars]
 
-# Read the icon from the source tree instead of re-reading the already-streamed
-# Loom JAR entry. Some remapped JARs contain duplicate asset entries and Python's
-# name lookup can then land on a stale local-header offset.
 pack_icon = (ASSET_ROOT / "icon.png").read_bytes() if (ASSET_ROOT / "icon.png").exists() else None
 
 with zipfile.ZipFile(source_jar, "r") as zin, zipfile.ZipFile(
@@ -172,6 +171,14 @@ with zipfile.ZipFile(source_jar, "r") as zin, zipfile.ZipFile(
 
         if is_visual_asset(info.filename):
             zout.writestr("resourcepacks/bridge_visuals/" + info.filename, data)
+
+    # Same PDC-selective carrier selectors as the standalone Visuals ZIP.
+    # Each selector has a vanilla fallback, so ordinary items never change.
+    for carrier, (logical_id, vanilla_model) in CARRIER_ITEMS.items():
+        zout.writestr(
+            f"resourcepacks/bridge_visuals/assets/minecraft/items/{carrier}.json",
+            carrier_selector(logical_id, vanilla_model),
+        )
 
     if pack_icon is not None:
         zout.writestr("resourcepacks/bridge_visuals/pack.png", pack_icon)
@@ -194,7 +201,7 @@ with zipfile.ZipFile(out_jar, "r") as check:
     if leaked:
         raise SystemExit(f"Registry-unsafe classes leaked into Paper Client: {leaked[:20]}")
 
-    for required in (
+    required = [
         CLASS_PREFIX + "bridgeclient/PaperBridgeClient.class",
         CLASS_PREFIX + "bridgeclient/BridgeClientPayloads.class",
         CLASS_PREFIX + "sound/ClientSoundManager.class",
@@ -207,9 +214,14 @@ with zipfile.ZipFile(out_jar, "r") as check:
         "resourcepacks/bridge_visuals/pack.mcmeta",
         "resourcepacks/bridge_visuals/assets/extendednoteblock/items/conductor_wand.json",
         "fabric.mod.json",
-    ):
-        if required not in names:
-            raise SystemExit(f"Missing required Paper Client entry: {required}")
+    ]
+    required.extend(
+        f"resourcepacks/bridge_visuals/assets/minecraft/items/{carrier}.json"
+        for carrier in CARRIER_ITEMS
+    )
+    for entry in required:
+        if entry not in names:
+            raise SystemExit(f"Missing required Paper Client entry: {entry}")
 
     if CLASS_PREFIX + "ExtendedNoteBlock.class" in names:
         raise SystemExit("Full content-mod initializer must not exist in the Paper Client JAR")
@@ -230,6 +242,12 @@ with zipfile.ZipFile(out_jar, "r") as check:
                 bad_refs.append((name, marker.decode("ascii")))
     if bad_refs:
         raise SystemExit(f"Registry/server bytecode references leaked into Paper Client: {bad_refs[:20]}")
+
+    for carrier, (logical_id, vanilla_model) in CARRIER_ITEMS.items():
+        entry = f"resourcepacks/bridge_visuals/assets/minecraft/items/{carrier}.json"
+        raw = check.read(entry).decode("utf-8")
+        if "extendednoteblockbridge:enb_type" not in raw or logical_id not in raw or vanilla_model not in raw:
+            raise SystemExit(f"Paper Client carrier selector {carrier} lacks ENB condition or vanilla fallback")
 
     if not jlayer_jars:
         raise SystemExit("NBS audio import requires the bundled JLayer dependency, but no jlayer jar was found")
