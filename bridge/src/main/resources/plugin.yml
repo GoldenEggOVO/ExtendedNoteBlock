@@ -6,8 +6,8 @@ author: GoldenEggOVO
 description: Paper/Purpur bridge for ExtendedNoteBlock Fabric clients using vanilla item and block carriers.
 commands:
   enb:
-    description: Manage ExtendedNoteBlock bridge items and note blocks
-    usage: /enb <give|set|info|remove|play|list|reload>
+    description: Manage ExtendedNoteBlock bridge objects, conductor selections and NBS projections
+    usage: /enb <give|set|info|remove|play|wand|projection|list|reload>
     permission: extendednoteblockbridge.use
 permissions:
   extendednoteblockbridge.use:
