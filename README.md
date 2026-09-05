@@ -9,9 +9,9 @@
 
 Extended Note Block 为 Minecraft 提供扩展音符盒、指挥棒、无线红石和 NBS 音乐工坊，支持 MIDI、NBS 与常见音频导入、试听和音乐结构导出。
 
-**当前正式版：Full Fabric / Paper Client 2.10.0，Paper Server 0.10.0，目标 Minecraft 26.2。**
+**当前正式版：Full Fabric / Paper Client 2.10.1，Paper Server 0.10.1，目标 Minecraft 26.2。**
 
-[下载正式版](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.10.0-mc26.2) · [2.10.0 更新说明](docs/releases/2.10.0.md) · [安装指南](docs/INSTALLATION.md) · [日本語](docs/README_ja-jp.md)
+[下载正式版](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.10.1-mc26.2) · [2.10.1 更新说明](docs/releases/2.10.1.md) · [安装指南](docs/INSTALLATION.md) · [日本語](docs/README_ja-jp.md)
 
 ## 选择安装版本
 
@@ -25,20 +25,20 @@ Extended Note Block 为 Minecraft 提供扩展音符盒、指挥棒、无线红�
 | **Visuals** | 可选独立资源包，提供 ENB 标记物品的外观 | 客户端 `resourcepacks/` |
 | **Server Resources** | 方块 / 物品资源与原版客户端聆听音色；由插件自动下发 | 玩家进服时接受服务器资源包 |
 
-Paper Client 已经内置同源 Visuals 资源，通常不需要再装独立 ZIP。2.10.0 起，没有客户端 Mod 的玩家接受服务器自动下发的约 18 MiB 组合资源包后，也能听到覆盖 MIDI 0–127 的 ENB 音乐；拒绝或加载失败时仍使用原版音符盒回退。
+Paper Client 已经内置同源 Visuals 资源，通常不需要再装独立 ZIP。2.10.1 起，Paper Server 会可靠下发并明确显示组合资源包状态；成功加载后，没有客户端 Mod 的玩家也能听到覆盖 MIDI 0–127 的 ENB 音乐。拒绝或加载失败时仍使用原版音符盒回退。
 
 ## 快速安装
 
 ### 单人模式 / Fabric 服务器
 
 1. 准备 Minecraft **26.2**、Java **25**、Fabric Loader **0.19.5** 和 Fabric API **0.159.0+26.2**。
-2. 将 `ExtendedNoteBlock-Full-Fabric-2.10.0-mc26.2.jar` 放入客户端 `mods/`。
+2. 将 `ExtendedNoteBlock-Full-Fabric-2.10.1-mc26.2.jar` 放入客户端 `mods/`。
 3. Fabric 多人服务器还需安装同版 Full Fabric 和 Fabric API。
 
 ### Paper / Purpur 服务器
 
-1. 将 `ExtendedNoteBlock-Paper-Server-0.10.0-mc26.2.jar` 放入服务器 `plugins/`，重启服务器；正式 JAR 已内置匹配资源包的下载地址与校验值。
-2. 普通玩家直接进服并接受资源包即可聆听。需要全部 128 种独立音色、编辑界面和世界方块精确外观的玩家，在 Fabric 26.2 客户端安装 Fabric API 与 `ExtendedNoteBlock-Paper-Client-Fabric-2.10.0-mc26.2.jar`。
+1. 将 `ExtendedNoteBlock-Paper-Server-0.10.1-mc26.2.jar` 放入服务器 `plugins/`，重启服务器；正式 JAR 已内置匹配资源包的下载地址与校验值。
+2. 普通玩家直接进服并接受资源包即可聆听。需要全部 128 种独立音色、编辑界面和世界方块精确外观的玩家，在 Fabric 26.2 客户端安装 Fabric API 与 `ExtendedNoteBlock-Paper-Client-Fabric-2.10.1-mc26.2.jar`。
 3. OP 在游戏内运行 `/enb give all` 获取测试物品。
 
 默认按 **N** 打开 NBS 音乐工坊；右键已登记的 ENB 音符盒打开编辑界面。升级、目录和常见问题见[安装指南](docs/INSTALLATION.md)。
@@ -47,7 +47,7 @@ Paper Client 已经内置同源 Visuals 资源，通常不需要再装独立 ZIP
 
 | 功能 | Full Fabric | Paper Client + Paper Server |
 | --- | --- | --- |
-| MIDI 0–127、乐器、力度、延音、延迟、淡入淡出 | 支持 | 支持；已有用户确认音高、GUI 与资源加载正常 |
+| MIDI 0–127、乐器、力度、延音、延迟、淡入淡出 | 支持 | 支持；原版客户端须先成功加载 Server Resources |
 | GM 乐器下拉与 128 键钢琴编辑 | 支持 | 已移植基础界面 |
 | 音量曲线、弯音曲线、表达式声源移动编辑 | 支持 | 完整编辑界面待移植 |
 | 指挥棒区域批量编辑 | GUI 与区域可视化 | 已有选区和命令；GUI 与可视化待移植 |
@@ -59,7 +59,7 @@ Paper Client 已经内置同源 Visuals 资源，通常不需要再装独立 ZIP
 
 音乐工坊支持 `.nbs`、`.mid`、`.midi`、WAV、MP3、OGG、AIFF / AIF 和 AU。音频分析属于音高检测转换，不保证完整还原原曲的全部声部。
 
-**2.10.0 新增原版客户端聆听资源包并自动下发，需更新 Paper Server 0.10.0。** 2.9.0 的 Litematic 参数恢复流程保持兼容：粘贴后打开 N 键工坊 →「恢复 ENB」，读取原始投影文件即可恢复身份、参数和曲目。[完整步骤与限制](docs/INSTALLATION.md#paper-litematic-恢复-enb)。
+**2.10.1 修复自动下发、旧配置迁移和极端音区过轻的问题，需更新 Paper Server 0.10.1。** 2.9.0 的 Litematic 参数恢复流程保持兼容：粘贴后打开 N 键工坊 →「恢复 ENB」，读取原始投影文件即可恢复身份、参数和曲目。[完整步骤与限制](docs/INSTALLATION.md#paper-litematic-恢复-enb)。
 
 CI 包含实际客户端启动和模拟 Paper 插件导入测试；实际 Purpur 多人游戏中的新恢复流程仍需验证。
 

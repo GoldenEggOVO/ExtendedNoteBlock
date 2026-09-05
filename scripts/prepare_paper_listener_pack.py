@@ -36,18 +36,12 @@ if "PlayerResourcePackStatusEvent" not in text:
         1,
     )
 
-if "import java.net.URI;" not in text:
-    text = text.replace(
-        "import java.io.IOException;\n",
-        "import java.io.IOException;\nimport java.net.URI;\nimport java.nio.charset.StandardCharsets;\n",
-        1,
-    )
-
 # ---------------------------------------------------------------------------
 # Fields and startup/shutdown
 # ---------------------------------------------------------------------------
 field_anchor = "    private final Map<String, RenderObjectState> lastRenderStates = new HashMap<>();\n"
 field_block = field_anchor + r'''    private final Set<UUID> listenerPackReady = new HashSet<>();
+    private final Map<UUID, String> listenerPackStates = new HashMap<>();
     private final Map<UUID, ListenerPlayback> listenerSounds = new HashMap<>();
     private int listenerVoiceSequence;
 
@@ -56,6 +50,8 @@ field_block = field_anchor + r'''    private final Set<UUID> listenerPackReady =
     private UUID listenerPackId;
     private String listenerPackUrl;
     private byte[] listenerPackSha1;
+    private String listenerPackSha1Hex;
+    private String listenerPackSource;
     private Component listenerPackPrompt;
 '''
 if "listenerPackReady" not in text:
@@ -71,7 +67,7 @@ if "        loadListenerResourcePackSettings();" not in text:
     text = text.replace(enable_anchor, enable_replacement, 1)
 
 disable_anchor = "        activeTasks.values().forEach(BukkitTask::cancel);\n        projectionStopTasks.values().forEach(BukkitTask::cancel);\n"
-disable_replacement = disable_anchor + "        for (UUID soundId : List.copyOf(listenerSounds.keySet())) stopListenerSound(soundId);\n        listenerPackReady.clear();\n"
+disable_replacement = disable_anchor + "        for (UUID soundId : List.copyOf(listenerSounds.keySet())) stopListenerSound(soundId);\n        listenerPackReady.clear();\n        listenerPackStates.clear();\n"
 if "List.copyOf(listenerSounds.keySet())" not in text:
     if disable_anchor not in text:
         raise SystemExit("Could not find onDisable sound cleanup anchor")
@@ -88,7 +84,9 @@ join_anchor = r'''    @EventHandler
 join_replacement = r'''    @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         listenerPackReady.remove(event.getPlayer().getUniqueId());
-        Bukkit.getScheduler().runTaskLater(this, () -> sendListenerResourcePack(event.getPlayer()), 1L);
+        listenerPackStates.remove(event.getPlayer().getUniqueId());
+        // Give login, configuration and other server-provided packs time to settle.
+        Bukkit.getScheduler().runTaskLater(this, () -> sendListenerResourcePack(event.getPlayer(), true), 40L);
         Bukkit.getScheduler().runTaskLater(this, () -> sendRenderSnapshot(event.getPlayer()), 20L);
     }
 
@@ -96,19 +94,24 @@ join_replacement = r'''    @EventHandler
     public void onPlayerResourcePackStatus(PlayerResourcePackStatusEvent event) {
         if (listenerPackId == null || !listenerPackId.equals(event.getID())) return;
         String status = event.getStatus().name();
+        listenerPackStates.put(event.getPlayer().getUniqueId(), status);
         if ("SUCCESSFULLY_LOADED".equals(status)) {
             listenerPackReady.add(event.getPlayer().getUniqueId());
-            getLogger().fine("ENB listener resource pack loaded by " + event.getPlayer().getName());
-        } else if (status.equals("DECLINED") || status.startsWith("FAILED") || status.equals("DISCARDED")) {
+            getLogger().info("ENB listener resource pack loaded by " + event.getPlayer().getName());
+            event.getPlayer().sendMessage("ENB 资源包已加载：原版客户端 MIDI 0-127 聆听模式已启用。");
+        } else if (status.equals("DECLINED") || status.startsWith("FAILED")
+                || status.equals("INVALID_URL") || status.equals("DISCARDED")) {
             listenerPackReady.remove(event.getPlayer().getUniqueId());
             getLogger().warning("ENB listener resource pack " + status.toLowerCase(Locale.ROOT)
                     + " for " + event.getPlayer().getName());
+            event.getPlayer().sendMessage("ENB 资源包未加载（" + status + "），当前只能使用受限的原版音符盒回退。");
         }
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         listenerPackReady.remove(event.getPlayer().getUniqueId());
+        listenerPackStates.remove(event.getPlayer().getUniqueId());
     }
 '''
 if "public void onPlayerResourcePackStatus" not in text:
@@ -230,53 +233,115 @@ helper_block = r'''    // ------------------------------------------------------
 
     private void loadListenerResourcePackSettings() {
         listenerPackReady.clear();
+        listenerPackStates.clear();
         listenerPackEnabled = getConfig().getBoolean("resource-pack.enabled", true);
         listenerPackRequired = getConfig().getBoolean("resource-pack.required", true);
-        listenerPackUrl = getConfig().getString("resource-pack.url", "").trim();
-        String id = getConfig().getString("resource-pack.id", "").trim();
-        String sha1 = getConfig().getString("resource-pack.sha1", "").trim();
+        boolean useOfficialRelease = getConfig().getBoolean("resource-pack.use-official-release", true);
+        String configuredUrl = getConfig().getString("resource-pack.url", "");
+        String configuredId = getConfig().getString("resource-pack.id", "");
+        String configuredSha1 = getConfig().getString("resource-pack.sha1", "");
         String prompt = getConfig().getString("resource-pack.prompt",
                 "ExtendedNoteBlock requires its visual and listener sound pack.");
         listenerPackPrompt = Component.text(prompt);
         listenerPackId = null;
+        listenerPackUrl = "";
         listenerPackSha1 = null;
+        listenerPackSha1Hex = "";
+        listenerPackSource = useOfficialRelease ? "official release" : "custom config";
 
         if (!listenerPackEnabled) return;
-        if (listenerPackUrl.isBlank() || listenerPackUrl.startsWith("__ENB_")
-                || sha1.isBlank() || sha1.startsWith("__ENB_")) {
-            listenerPackEnabled = false;
-            getLogger().warning("Automatic ENB resource pack is not configured in this development build.");
-            return;
-        }
-        try {
-            listenerPackId = UUID.fromString(id);
-            URI parsed = URI.create(listenerPackUrl);
-            if (!"https".equalsIgnoreCase(parsed.getScheme()) || parsed.getHost() == null
-                    || !StandardCharsets.US_ASCII.newEncoder().canEncode(listenerPackUrl)) {
-                throw new IllegalArgumentException("resource-pack.url must be an ASCII HTTPS URL");
-            }
-            listenerPackSha1 = decodeSha1(sha1);
-        } catch (IllegalArgumentException invalid) {
+        try (var officialMetadata = getResource("enb-release-pack.properties")) {
+            ListenerResourcePackConfig.Resolved resolved = ListenerResourcePackConfig.resolve(
+                    useOfficialRelease, officialMetadata, configuredId, configuredUrl, configuredSha1);
+            listenerPackId = resolved.id();
+            listenerPackUrl = resolved.url();
+            listenerPackSha1 = resolved.sha1Bytes();
+            listenerPackSha1Hex = resolved.sha1();
+            listenerPackSource = resolved.source();
+            getLogger().info("Automatic ENB resource pack enabled from " + listenerPackSource
+                    + " (required=" + listenerPackRequired + ", sha1=" + listenerPackSha1Hex + ").");
+        } catch (IOException | IllegalArgumentException invalid) {
             listenerPackEnabled = false;
             getLogger().severe("Automatic ENB resource pack disabled: " + invalid.getMessage());
         }
     }
 
     private void sendListenerResourcePack(Player player) {
-        if (!listenerPackEnabled || !player.isOnline()) return;
-        player.setResourcePack(listenerPackId, listenerPackUrl, listenerPackSha1,
-                listenerPackPrompt, listenerPackRequired);
+        sendListenerResourcePack(player, true);
     }
 
-    private static byte[] decodeSha1(String hex) {
-        if (!hex.matches("(?i)[0-9a-f]{40}")) {
-            throw new IllegalArgumentException("resource-pack.sha1 must contain exactly 40 hexadecimal characters");
+    private void sendListenerResourcePack(Player player, boolean announce) {
+        if (!listenerPackEnabled || !player.isOnline()) return;
+        listenerPackReady.remove(player.getUniqueId());
+        listenerPackStates.put(player.getUniqueId(), "REQUESTED");
+        if (announce) {
+            player.sendMessage("ENB 正在下发材质与音乐资源包；若服务器资源包设为‘启用’，客户端会静默下载。");
         }
-        byte[] decoded = new byte[20];
-        for (int i = 0; i < decoded.length; i++) {
-            decoded[i] = (byte) Integer.parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+        player.setResourcePack(listenerPackId, listenerPackUrl, listenerPackSha1,
+                listenerPackPrompt, listenerPackRequired);
+        getLogger().info("Sent ENB listener resource-pack request to " + player.getName());
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (!player.isOnline() || listenerPackReady.contains(player.getUniqueId())) return;
+            String state = listenerPackStates.getOrDefault(player.getUniqueId(), "NO_RESPONSE");
+            if (!state.equals("DECLINED") && !state.startsWith("FAILED")
+                    && !state.equals("INVALID_URL") && !state.equals("DISCARDED")) {
+                listenerPackStates.put(player.getUniqueId(), "NO_SUCCESS_AFTER_15S");
+                player.sendMessage("ENB 尚未收到资源包加载成功状态。请检查：多人游戏 → 编辑服务器 → 服务器资源包设为‘提示’或‘启用’，然后执行 /enb pack resend。");
+                getLogger().warning("No successful ENB resource-pack status from " + player.getName()
+                        + " after 15 seconds (last=" + state + ").");
+            }
+        }, 300L);
+    }
+
+    private void handlePackCommand(CommandSender sender, String[] args) {
+        String action = args.length >= 2 ? args[1].toLowerCase(Locale.ROOT) : "status";
+        if (action.equals("resend")) {
+            if (sender instanceof Player player) {
+                sendListenerResourcePack(player, true);
+                sender.sendMessage("ENB 资源包请求已重新发送。");
+            } else {
+                for (Player player : Bukkit.getOnlinePlayers()) sendListenerResourcePack(player, true);
+                sender.sendMessage("ENB resource-pack request resent to all online players.");
+            }
+            return;
         }
-        return decoded;
+        if (action.equals("test")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("This resource-pack sound test requires a player.");
+                return;
+            }
+            if (!listenerPackReady.contains(player.getUniqueId())) {
+                sender.sendMessage("ENB 资源包尚未成功加载；先执行 /enb pack status 或 /enb pack resend。");
+                return;
+            }
+            try {
+                int midiNote = args.length >= 3 ? clamp(Integer.parseInt(args[2]), 0, 127) : 60;
+                int instrument = args.length >= 4 ? clamp(Integer.parseInt(args[3]), 0, 127) : 0;
+                ListenerSoundResolver.Resolved listener = ListenerSoundResolver.resolve(
+                        instrument, midiNote, 0, listenerVoiceSequence++);
+                player.playSound(player.getLocation(), listener.event(), SoundCategory.RECORDS, 1.0f, listener.pitch());
+                sender.sendMessage("ENB pack test: MIDI " + midiNote + ", instrument " + instrument
+                        + ", anchor " + listener.anchor() + ", pitch " + listener.pitch());
+            } catch (NumberFormatException invalid) {
+                sender.sendMessage("Usage: /enb pack test <MIDI 0-127> [instrument 0-127]");
+            }
+            return;
+        }
+        if (!action.equals("status")) {
+            sender.sendMessage("Usage: /enb pack <status|resend|test> [MIDI] [instrument]");
+            return;
+        }
+        sender.sendMessage("ENB resource pack: enabled=" + listenerPackEnabled
+                + ", required=" + listenerPackRequired + ", source=" + listenerPackSource);
+        if (listenerPackEnabled) {
+            sender.sendMessage("URL: " + listenerPackUrl);
+            sender.sendMessage("SHA-1: " + listenerPackSha1Hex);
+        }
+        if (sender instanceof Player player) {
+            String state = listenerPackStates.getOrDefault(player.getUniqueId(), "NOT_REQUESTED");
+            sender.sendMessage("Your pack state: " + state
+                    + (listenerPackReady.contains(player.getUniqueId()) ? " (MIDI 0-127 listener enabled)" : ""));
+        }
     }
 
 '''
@@ -284,6 +349,87 @@ if "private void loadListenerResourcePackSettings" not in text:
     if helper_anchor not in text:
         raise SystemExit("Could not find render-sync helper insertion anchor")
     text = text.replace(helper_anchor, helper_block + helper_anchor, 1)
+
+# ---------------------------------------------------------------------------
+# Resource-pack diagnostics command
+# ---------------------------------------------------------------------------
+console_guard = '''        if (!(sender instanceof Player) && (args.length == 0 || !args[0].equalsIgnoreCase("reload"))) {
+'''
+console_guard_replacement = '''        if (!(sender instanceof Player) && (args.length == 0
+                || (!args[0].equalsIgnoreCase("reload") && !args[0].equalsIgnoreCase("pack")))) {
+'''
+if "!args[0].equalsIgnoreCase(\"pack\")" not in text:
+    if console_guard not in text:
+        raise SystemExit("Could not find console command guard")
+    text = text.replace(console_guard, console_guard_replacement, 1)
+
+pack_case_anchor = '''            case "give" -> handleGive((Player) sender, args);
+'''
+if 'case "pack" -> handlePackCommand(sender, args);' not in text:
+    if pack_case_anchor not in text:
+        raise SystemExit("Could not find command switch insertion point")
+    text = text.replace(
+        pack_case_anchor,
+        '            case "pack" -> handlePackCommand(sender, args);\n' + pack_case_anchor,
+        1,
+    )
+
+text = text.replace(
+    '"help", "give", "set", "info", "remove", "play", "wand", "projection", "list", "reload"',
+    '"help", "give", "set", "info", "remove", "play", "wand", "projection", "pack", "list", "reload"',
+)
+text = text.replace(
+    '"give", "set", "info", "remove", "play", "wand", "projection", "list", "reload"',
+    '"give", "set", "info", "remove", "play", "wand", "projection", "pack", "list", "reload"',
+)
+pack_completion_anchor = '''            case "wand" -> completeWand(args);
+'''
+if 'case "pack" -> switch (args.length)' not in text:
+    if pack_completion_anchor not in text:
+        raise SystemExit("Could not find tab-completion insertion point")
+    text = text.replace(
+        pack_completion_anchor,
+        '''            case "pack" -> switch (args.length) {
+                case 2 -> complete(args[1], "status", "resend", "test");
+                case 3 -> args[1].equalsIgnoreCase("test")
+                        ? complete(args[2], "0", "12", "24", "60", "96", "120", "127") : List.of();
+                case 4 -> args[1].equalsIgnoreCase("test")
+                        ? complete(args[3], "0", "4", "24", "40", "80", "124") : List.of();
+                default -> List.of();
+            };
+'''
+        + pack_completion_anchor,
+        1,
+    )
+
+help_pack_anchor = '''                case "reload" -> {
+                    sender.sendMessage("/enb reload");
+'''
+if 'sender.sendMessage("/enb pack status | resend | test <MIDI 0-127> [instrument 0-127]");' not in text:
+    if help_pack_anchor not in text:
+        raise SystemExit("Could not find command help insertion point")
+    text = text.replace(
+        help_pack_anchor,
+        '''                case "pack" -> {
+                    sender.sendMessage("/enb pack status | resend | test <MIDI 0-127> [instrument 0-127]");
+                    sender.sendMessage("Shows/resends the current pack or directly test-plays one listener-pack note.");
+                    return;
+                }
+''' + help_pack_anchor,
+        1,
+    )
+
+help_list_anchor = '''        sender.sendMessage("/enb list - List logical objects and vanilla carriers");
+'''
+if 'sender.sendMessage("/enb pack <status|resend|test> - Diagnose or test the listener pack");' not in text:
+    if help_list_anchor not in text:
+        raise SystemExit("Could not find command-list help insertion point")
+    text = text.replace(
+        help_list_anchor,
+        '        sender.sendMessage("/enb pack <status|resend|test> - Diagnose or test the listener pack");\n'
+        + help_list_anchor,
+        1,
+    )
 
 reload_anchor = r'''            case "reload" -> {
                 loadNotes();
@@ -299,8 +445,8 @@ if "                reloadConfig();\n                loadListenerResourcePackSet
     text = text.replace(reload_anchor, reload_replacement, 1)
 
 reload_tail_anchor = "                rebuildObjectIndexes();\n                sender.sendMessage(\"ExtendedNoteBlockBridge reloaded.\");\n"
-reload_tail_replacement = "                rebuildObjectIndexes();\n                for (Player player : Bukkit.getOnlinePlayers()) sendListenerResourcePack(player);\n                sender.sendMessage(\"ExtendedNoteBlockBridge reloaded.\");\n"
-if "Bukkit.getOnlinePlayers()) sendListenerResourcePack" not in text:
+reload_tail_replacement = "                rebuildObjectIndexes();\n                for (Player player : Bukkit.getOnlinePlayers()) sendListenerResourcePack(player, true);\n                sender.sendMessage(\"ExtendedNoteBlockBridge reloaded.\");\n"
+if "rebuildObjectIndexes();\n                for (Player player : Bukkit.getOnlinePlayers()) sendListenerResourcePack" not in text:
     if reload_tail_anchor not in text:
         raise SystemExit("Could not find /enb reload completion anchor")
     text = text.replace(reload_tail_anchor, reload_tail_replacement, 1)

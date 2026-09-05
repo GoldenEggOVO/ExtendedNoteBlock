@@ -4,15 +4,15 @@
 
 ## 下载与依赖
 
-从 [v2.10.0-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.10.0-mc26.2) 下载所需文件。Release 同时提供 `SHA256SUMS.txt`。
+从 [v2.10.1-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.10.1-mc26.2) 下载所需文件。Release 同时提供 `SHA256SUMS.txt`。
 
 | 文件 | 安装对象 |
 | --- | --- |
-| `ExtendedNoteBlock-Full-Fabric-2.10.0-mc26.2.jar` | 单人 / Fabric 服务端模式 |
-| `ExtendedNoteBlock-Paper-Client-Fabric-2.10.0-mc26.2.jar` | Paper / Purpur 专用 Fabric 客户端 |
-| `ExtendedNoteBlock-Paper-Server-0.10.0-mc26.2.jar` | Paper / Purpur 服务端，内置自动资源包配置 |
-| `ExtendedNoteBlock-Server-Resources-2.10.0-mc26.2.zip` | 插件自动下发的组合材质与聆听音色包 |
-| `ExtendedNoteBlock-Visuals-2.10.0-mc26.2.zip` | 不含声音的可选独立物品资源包 |
+| `ExtendedNoteBlock-Full-Fabric-2.10.1-mc26.2.jar` | 单人 / Fabric 服务端模式 |
+| `ExtendedNoteBlock-Paper-Client-Fabric-2.10.1-mc26.2.jar` | Paper / Purpur 专用 Fabric 客户端 |
+| `ExtendedNoteBlock-Paper-Server-0.10.1-mc26.2.jar` | Paper / Purpur 服务端，内置自动资源包配置 |
+| `ExtendedNoteBlock-Server-Resources-2.10.1-mc26.2.zip` | 插件自动下发的组合材质与聆听音色包 |
+| `ExtendedNoteBlock-Visuals-2.10.1-mc26.2.zip` | 不含声音的可选独立物品资源包 |
 
 | 环境 | 本版本构建基线 |
 | --- | --- |
@@ -40,7 +40,9 @@ Full Fabric 注册真正的 ENB 方块和物品。连接纯 Paper / Purpur 服�
 4. 需要编辑、精确世界方块模型与完整表现力时，再安装 Fabric Loader、Fabric API 和 Paper Client JAR；Full Fabric 与 Paper Client 二选一。
 5. OP 在游戏内运行 `/enb give all`，放置 ENB 物品后右键测试编辑界面。
 
-官方 Paper Server JAR 已写入同版本 `Server-Resources` 的 HTTPS 地址与 SHA-1。默认 `resource-pack.enabled: true`、`required: true`：玩家会收到确认提示，拒绝或下载失败时服务器可按原版的 required-pack 行为断开连接。服主可在 `plugins/ExtendedNoteBlockBridge/config.yml` 改为非强制，执行 `/enb reload` 后会重新下发；修改 URL 时必须同时填写目标 ZIP 的 40 位 SHA-1。
+官方 Paper Server JAR 已写入同版本 `Server-Resources` 的 HTTPS 地址与 SHA-1。默认 `resource-pack.enabled: true`、`required: true`、`use-official-release: true`；即使保留了旧版 `config.yml`，插件也会采用当前 JAR 内嵌的正式资源包地址。若客户端对该服务器设置为“启用”，资源包会静默下载而不弹确认框；设为“提示”才会显示确认框。插件会在聊天与控制台显示请求及最终状态，可用 `/enb pack status` 检查、`/enb pack resend` 重发。
+
+自定义托管时，将 `resource-pack.use-official-release` 改为 `false`，并同时填写自定义 UUID、HTTPS URL 与 ZIP 的 40 位 SHA-1。`/enb reload` 会重新读取配置并向在线玩家下发。
 
 组合包包含与 Visuals 同源的方块 / 物品模型和材质，以及原版客户端聆听音色。资源包无法根据服务端坐标区分同一种原版方块，因此背包中的 ENB 标记物品有专用外观，但已放置世界方块的精确 ENB 模型仍需要 Paper Client。Paper Client 用户继续走 Mod 声音协议，不会重复发声。
 
@@ -63,6 +65,9 @@ Full Fabric 注册真正的 ENB 方块和物品。连接纯 Paper / Purpur 服�
 | `/enb wand info` | 查看选区 |
 | `/enb wand clear` | 清除选区 |
 | `/enb wand set <属性> <值>` | 批量修改选区内的 ENB 音符盒 |
+| `/enb pack status` | 查看资源包启用状态、来源、校验值及自己的加载状态 |
+| `/enb pack resend` | 向自己重新发送资源包请求；控制台执行时向所有在线玩家发送 |
+| `/enb pack test <MIDI 0-127> [instrument 0-127]` | 不经过音符盒，直接试听资源包中的指定音高和音色 |
 
 可批量编辑属性：`note`、`instrument`、`velocity`、`sustain`、`delay`、`fadein`、`fadeout`。默认最大选区体积为 **262144**，由服务器配置控制；具体参数可用 TAB 补全和 `/enb help wand` 查看。
 
@@ -106,7 +111,7 @@ Litematica 只放置原版载体。2.9.0 新增「恢复 ENB」入口，可将�
 
 ### MIDI 低音区听起来仍然相同
 
-Paper Client 请确认版本为 2.10.0 或更新；原版客户端请确认服务器资源包显示为已成功加载。可用同一乐器依次试听 **0 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120**。若拒绝或未成功加载组合包，插件只会播放原版音符盒回退，低音区仍受原版限制。
+Paper Client 请确认版本为 2.10.1 或更新；原版客户端先执行 `/enb pack status`，必须看到 `SUCCESSFULLY_LOADED (MIDI 0-127 listener enabled)`。可用同一乐器依次试听 **0 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120**。若拒绝或未成功加载组合包，插件只会播放原版音符盒回退，低音区仍受原版限制。MIDI 0–15 的物理频率低于或接近人耳与普通扬声器下限，即使技术映射正确，也可能几乎听不到。
 
 ### 启动出现 IllegalClassLoadError
 

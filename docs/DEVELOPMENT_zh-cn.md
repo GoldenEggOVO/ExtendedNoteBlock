@@ -80,7 +80,7 @@ Windows 下可将 `python3` 换成指向 Python 3 的 `python`，将 `./gradlew`
 | `build/server-resource-pack/` | 自动下发的视觉 + 聆听音色组合 ZIP |
 | `bridge/build/libs/` | Paper Server JAR |
 
-组合资源包需要 JDK 25 与 FFmpeg。脚本会核对 GeneralUser GS SoundFont 的固定 SHA-256，渲染 399 个实际采样，且不会把源 `.sf2` 放入 ZIP。CI 发布时将最终资源包 URL 与 SHA-1 写入 Paper Server JAR，再统一生成 `SHA256SUMS.txt`。
+组合资源包需要 JDK 25 与 FFmpeg。脚本会核对 GeneralUser GS SoundFont 的固定 SHA-256，渲染并归一化 399 个实际采样，再逐个解码排除过轻输出；源 `.sf2` 不会进入 ZIP。CI 发布时将最终资源包 URL 与 SHA-1 同时写入 `config.yml` 和仅随 JAR 分发的 `enb-release-pack.properties`，防止旧服务器配置覆盖正式升级，最后统一生成 `SHA256SUMS.txt`。
 
 ## 分支与发布
 

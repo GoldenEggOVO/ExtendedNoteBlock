@@ -50,9 +50,13 @@ MELODIC_ANCHORS = tuple(range(0, 121, 12))
 DRUM_NOTES = tuple(range(35, 82))
 VOICE_ALIASES = 8
 ATTENUATION_DISTANCE = 64
-ENCODE_CACHE_VERSION = 4
+ENCODE_CACHE_VERSION = 6
 HOLD_SECONDS = 10.0
 TAIL_SECONDS = 2.0
+MIN_PREFERRED_SOURCE_PEAK = 512
+TARGET_SOURCE_PEAK = 16_384
+MAX_NORMALIZATION_GAIN = 128.0
+MIN_ENCODED_PEAK = 256
 
 
 @dataclass(frozen=True)
@@ -201,10 +205,17 @@ def peak_pcm16(path: Path) -> int:
     return peak
 
 
+def normalization_gain(source_peak: int) -> float:
+    if source_peak <= 0:
+        raise ValueError("Cannot normalize a silent sample")
+    return min(MAX_NORMALIZATION_GAIN, TARGET_SOURCE_PEAK / source_peak)
+
+
 def convert_one(
     task: RenderTask,
     source_task: RenderTask,
     pitch_factor: float,
+    source_peak: int,
     wav_dir: Path,
     ogg_dir: Path,
     ffmpeg: str,
@@ -221,6 +232,7 @@ def convert_one(
     if abs(pitch_factor - 1.0) > 0.000_001:
         pitch_filter = f"asetrate=44100*{pitch_factor:.9f},aresample=44100,"
     try:
+        gain = normalization_gain(source_peak)
         subprocess.run(
             [
                 ffmpeg,
@@ -228,6 +240,7 @@ def convert_one(
                 "-i", str(source),
                 "-af",
                 pitch_filter + "pan=mono|c0=0.5*c0+0.5*c1,"
+                f"volume={gain:.9f},"
                 "areverse,silenceremove=start_periods=1:start_duration=0:start_threshold=-65dB,"
                 "areverse,apad=pad_dur=0.08",
                 "-c:a", "libvorbis", "-q:a", "3", "-y", str(temporary),
@@ -255,35 +268,64 @@ def probe_duration(path: Path, ffprobe: str) -> float:
     return float(checked.stdout.strip())
 
 
+def probe_encoded_peak(path: Path, ffmpeg: str) -> int:
+    decoded = subprocess.run(
+        [
+            ffmpeg, "-v", "error", "-i", str(path), "-map", "0:a:0",
+            "-ac", "1", "-c:a", "pcm_s16le", "-f", "s16le", "pipe:1",
+        ],
+        check=True,
+        capture_output=True,
+    ).stdout
+    samples = array.array("h")
+    samples.frombytes(decoded)
+    if sys.byteorder != "little":
+        samples.byteswap()
+    return max((abs(sample) for sample in samples), default=0)
+
+
+def choose_source(task: RenderTask, tasks: list[RenderTask], peaks: dict[RenderTask, int]) -> tuple[RenderTask, float]:
+    if task.bank == 128:
+        if peaks[task] < 8:
+            raise RuntimeError(f"SoundFont rendered an inaudible percussion sample: {task.stem}")
+        return task, 1.0
+    if peaks[task] >= MIN_PREFERRED_SOURCE_PEAK:
+        return task, 1.0
+
+    candidates = [
+        candidate for candidate in tasks
+        if candidate.bank == task.bank and candidate.program == task.program
+        and peaks[candidate] >= MIN_PREFERRED_SOURCE_PEAK
+    ]
+    if not candidates:
+        candidates = [
+            candidate for candidate in tasks
+            if candidate.bank == task.bank and candidate.program == task.program and peaks[candidate] >= 8
+        ]
+    if not candidates:
+        raise RuntimeError(f"SoundFont rendered no audible samples for GM program {task.program}")
+    source = min(candidates, key=lambda candidate: abs(candidate.note - task.note))
+    # A few SoundFont instruments contain only a transient/noise at their MIDI
+    # edges. Re-pitch a nearby healthy octave offline instead of shipping an
+    # event that technically exists but is effectively silent.
+    return source, 2.0 ** ((task.note - source.note) / 12.0)
+
+
 def convert_oggs(tasks: list[RenderTask], wav_dir: Path, ogg_dir: Path) -> None:
     ffmpeg = shutil.which("ffmpeg")
     ffprobe = shutil.which("ffprobe")
     if not ffmpeg or not ffprobe:
         raise SystemExit("ffmpeg and ffprobe with libvorbis are required to build the listener pack")
     peaks = {task: peak_pcm16(wav_dir / task.wav_name) for task in tasks}
-    sources: dict[RenderTask, tuple[RenderTask, float]] = {}
-    for task in tasks:
-        if peaks[task] >= 8:
-            sources[task] = (task, 1.0)
-            continue
-        if task.bank == 128:
-            raise RuntimeError(f"SoundFont rendered an inaudible percussion sample: {task.stem}")
-        candidates = [
-            candidate for candidate in tasks
-            if candidate.bank == task.bank and candidate.program == task.program and peaks[candidate] >= 8
-        ]
-        if not candidates:
-            raise RuntimeError(f"SoundFont rendered no audible samples for GM program {task.program}")
-        source = min(candidates, key=lambda candidate: abs(candidate.note - task.note))
-        # GeneralUser GS intentionally limits a few acoustic instruments at the
-        # edge of MIDI 0-127. Shift only the nearest rendered octave offline;
-        # runtime playback still remains inside vanilla's 0.5x-2.0x limit.
-        sources[task] = (source, 2.0 ** ((task.note - source.note) / 12.0))
+    sources = {task: choose_source(task, tasks, peaks) for task in tasks}
 
     workers = min(8, max(1, os.cpu_count() or 1))
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [
-            executor.submit(convert_one, task, sources[task][0], sources[task][1], wav_dir, ogg_dir, ffmpeg)
+            executor.submit(
+                convert_one, task, sources[task][0], sources[task][1], peaks[sources[task][0]],
+                wav_dir, ogg_dir, ffmpeg,
+            )
             for task in tasks
         ]
         for future in concurrent.futures.as_completed(futures):
@@ -299,6 +341,18 @@ def convert_oggs(tasks: list[RenderTask], wav_dir: Path, ogg_dir: Path) -> None:
                 raise RuntimeError(
                     f"Encoded OGG contains no audible content beyond the safety pad: "
                     f"{probes[future].ogg_name} ({duration:.3f}s)"
+                )
+
+        encoded_peaks = {
+            executor.submit(probe_encoded_peak, ogg_dir / task.ogg_name, ffmpeg): task
+            for task in tasks
+        }
+        for future in concurrent.futures.as_completed(encoded_peaks):
+            peak = future.result()
+            if peak < MIN_ENCODED_PEAK:
+                raise RuntimeError(
+                    f"Encoded OGG is effectively inaudible: {encoded_peaks[future].ogg_name} "
+                    f"(PCM peak {peak})"
                 )
 
 
@@ -325,6 +379,11 @@ def metadata(smoke: bool) -> dict:
         "voice_aliases": VOICE_ALIASES,
         "attenuation_distance": ATTENUATION_DISTANCE,
         "maximum_rendered_hold_seconds": HOLD_SECONDS,
+        "sample_peak_normalization": {
+            "minimum_preferred_source_pcm16": MIN_PREFERRED_SOURCE_PEAK,
+            "target_pcm16": TARGET_SOURCE_PEAK,
+            "minimum_encoded_pcm16": MIN_ENCODED_PEAK,
+        },
         "soundfont": "GeneralUser GS 2.0.2",
         "soundfont_sha256": SOUNDFONT_SHA256,
     }

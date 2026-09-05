@@ -60,6 +60,28 @@ class ServerResourcePackTest(unittest.TestCase):
         self.assertEqual(module.RESOURCE_PACK_FORMAT, meta["pack"]["max_format"])
         self.assertEqual("26.2", module.metadata(False)["minecraft"])
 
+    def test_quiet_edge_samples_receive_bounded_normalization(self):
+        self.assertEqual(module.MAX_NORMALIZATION_GAIN, module.normalization_gain(1))
+        self.assertEqual(1.0, module.normalization_gain(module.TARGET_SOURCE_PEAK))
+        self.assertEqual(0.5, module.normalization_gain(module.TARGET_SOURCE_PEAK * 2))
+        with self.assertRaises(ValueError):
+            module.normalization_gain(0)
+
+    def test_transient_only_edge_anchor_uses_nearest_healthy_octave(self):
+        low = module.RenderTask(0, 0, 0, "low")
+        low_healthy = module.RenderTask(0, 0, 12, "low-healthy")
+        high_healthy = module.RenderTask(0, 0, 108, "high-healthy")
+        high = module.RenderTask(0, 0, 120, "high")
+        tasks = [low, low_healthy, high_healthy, high]
+        peaks = {low: 135, low_healthy: 4_000, high_healthy: 4_000, high: 204}
+
+        source, factor = module.choose_source(low, tasks, peaks)
+        self.assertEqual(low_healthy, source)
+        self.assertEqual(0.5, factor)
+        source, factor = module.choose_source(high, tasks, peaks)
+        self.assertEqual(high_healthy, source)
+        self.assertEqual(2.0, factor)
+
 
 if __name__ == "__main__":
     unittest.main()

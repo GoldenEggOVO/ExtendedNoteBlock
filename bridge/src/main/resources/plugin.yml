@@ -7,7 +7,7 @@ description: Paper/Purpur bridge for ExtendedNoteBlock Fabric clients using vani
 commands:
   enb:
     description: Manage ExtendedNoteBlock bridge objects, conductor selections and NBS projections
-    usage: /enb <help|give|set|info|remove|play|wand|projection|list|reload>
+    usage: /enb <help|give|set|info|remove|play|wand|projection|pack|list|reload>
     permission: extendednoteblockbridge.use
 permissions:
   extendednoteblockbridge.import:

@@ -136,7 +136,11 @@ jobs:
       - name: Prepare Paper placed render synchronization
         run: python3 ../scripts/prepare_paper_render_sync.py
       - name: Prepare automatic resource pack and vanilla listener audio
-        run: python3 ../scripts/prepare_paper_listener_pack.py
+        run: |
+          python3 ../scripts/prepare_paper_listener_pack.py
+          GENERATED_SHA256="$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
+          python3 ../scripts/prepare_paper_listener_pack.py
+          test "$GENERATED_SHA256" = "$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
       - name: Verify vanilla-safe identity, interaction, render and listener bridge
         run: |
           grep -q 'PersistentDataType.STRING' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
@@ -156,6 +160,10 @@ jobs:
           grep -q 'sendHelp(sender, args.length >= 2 ? args\[1\] : null)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'PlayerResourcePackStatusEvent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'setResourcePack(listenerPackId, listenerPackUrl, listenerPackSha1' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'ListenerResourcePackConfig.resolve' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'sendListenerResourcePack(event.getPlayer(), true), 40L' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'case "pack" -> handlePackCommand' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'action.equals("test")' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'ListenerSoundResolver.resolve' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'stopListenerSound(soundId)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           if grep -q 'DataComponentTypes.ITEM_MODEL' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
@@ -179,11 +187,15 @@ jobs:
           test -n "$JAR"
           jar tf "$JAR" | grep -qx 'plugin.yml'
           jar tf "$JAR" | grep -qx 'config.yml'
+          jar tf "$JAR" | grep -qx 'enb-release-pack.properties'
           jar tf "$JAR" | grep -qx 'com/atemukesu/extendednoteblock/bridgeprotocol/ProjectionImport.class'
           jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/BridgeProjectionImporter.class'
           jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/ListenerSoundResolver.class'
+          jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/ListenerResourcePackConfig.class'
           unzip -p "$JAR" config.yml | grep -q '__ENB_RESOURCE_PACK_URL__'
           unzip -p "$JAR" config.yml | grep -q '__ENB_RESOURCE_PACK_SHA1__'
+          unzip -p "$JAR" enb-release-pack.properties | grep -q '__ENB_RESOURCE_PACK_URL__'
+          unzip -p "$JAR" enb-release-pack.properties | grep -q '__ENB_RESOURCE_PACK_SHA1__'
       - name: Upload Paper server plugin artifact
         uses: actions/upload-artifact@v4
         with:
@@ -265,6 +277,8 @@ jobs:
 
           unzip -p "$SERVER_FILE" config.yml | grep -Fq "$PACK_URL"
           unzip -p "$SERVER_FILE" config.yml | grep -Fq "$PACK_SHA1"
+          unzip -p "$SERVER_FILE" enb-release-pack.properties | grep -Fq "$PACK_URL"
+          unzip -p "$SERVER_FILE" enb-release-pack.properties | grep -Fq "$PACK_SHA1"
           sha256sum release/* > release/SHA256SUMS.txt
 
           echo "MOD_VERSION=$MOD_VERSION" >> "$GITHUB_ENV"

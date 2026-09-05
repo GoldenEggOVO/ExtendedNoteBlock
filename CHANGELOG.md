@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.10.1 — Minecraft 26.2
+
+- Fixed automatic listener-pack delivery after upgrades by reading release-managed URL, UUID and SHA-1 metadata directly from the installed Paper Server JAR instead of allowing an old on-disk config to shadow it.
+- Delayed the join request until login settles, added visible player/server status messages, a 15-second missing-status warning, and `/enb pack status|resend` diagnostics.
+- Normalized physical listener samples and rejected effectively inaudible encodes so quiet extreme-register SoundFont notes no longer appear to leave gaps in MIDI 0–127 coverage.
+- Added release-metadata migration tests, all-note resolver checks and release-JAR validation for both default config and embedded metadata.
+
+See the [release notes](docs/releases/2.10.1.md).
+
 ## 2.10.0 — Minecraft 26.2
 
 - Added an automatically delivered combined visual and listener resource pack for unmodified Paper/Purpur clients.

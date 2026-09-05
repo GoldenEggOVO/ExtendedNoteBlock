@@ -11,6 +11,8 @@ from pathlib import Path
 
 URL_TOKEN = "__ENB_RESOURCE_PACK_URL__"
 SHA1_TOKEN = "__ENB_RESOURCE_PACK_SHA1__"
+RELEASE_METADATA = "enb-release-pack.properties"
+CONFIG_RESOURCES = ("config.yml", RELEASE_METADATA)
 
 
 def parse_args() -> argparse.Namespace:
@@ -30,10 +32,14 @@ def configure_jar(jar: Path, url: str, sha1: str) -> None:
         raise ValueError("Resource-pack SHA-1 must contain 40 hexadecimal characters")
 
     with zipfile.ZipFile(jar, "r") as source:
-        config = source.read("config.yml").decode("utf-8")
-        if URL_TOKEN not in config or SHA1_TOKEN not in config:
-            raise ValueError("Paper plugin config.yml does not contain release placeholders")
-        config = config.replace(URL_TOKEN, url).replace(SHA1_TOKEN, sha1.lower())
+        configured_resources: dict[str, bytes] = {}
+        for resource in CONFIG_RESOURCES:
+            original = source.read(resource).decode("utf-8")
+            if URL_TOKEN not in original or SHA1_TOKEN not in original:
+                raise ValueError(f"Paper plugin {resource} does not contain release placeholders")
+            configured_resources[resource] = (
+                original.replace(URL_TOKEN, url).replace(SHA1_TOKEN, sha1.lower()).encode("utf-8")
+            )
 
         with tempfile.NamedTemporaryFile(
             prefix=jar.stem + "-", suffix=".jar", dir=jar.parent, delete=False
@@ -42,7 +48,8 @@ def configure_jar(jar: Path, url: str, sha1: str) -> None:
         try:
             with zipfile.ZipFile(temporary, "w", allowZip64=True) as target:
                 for info in source.infolist():
-                    data = config.encode("utf-8") if info.filename == "config.yml" else source.read(info.filename)
+                    data = (configured_resources[info.filename]
+                            if info.filename in configured_resources else source.read(info.filename))
                     target.writestr(info, data)
             temporary.replace(jar)
         finally:
@@ -50,11 +57,12 @@ def configure_jar(jar: Path, url: str, sha1: str) -> None:
                 temporary.unlink()
 
     with zipfile.ZipFile(jar, "r") as check:
-        configured = check.read("config.yml").decode("utf-8")
-        if URL_TOKEN in configured or SHA1_TOKEN in configured:
-            raise ValueError("Resource-pack placeholders remain after JAR configuration")
-        if url not in configured or sha1.lower() not in configured:
-            raise ValueError("Configured resource-pack URL/hash could not be verified")
+        for resource in CONFIG_RESOURCES:
+            configured = check.read(resource).decode("utf-8")
+            if URL_TOKEN in configured or SHA1_TOKEN in configured:
+                raise ValueError(f"Resource-pack placeholders remain in {resource}")
+            if url not in configured or sha1.lower() not in configured:
+                raise ValueError(f"Configured resource-pack URL/hash could not be verified in {resource}")
 
 
 def main() -> None:

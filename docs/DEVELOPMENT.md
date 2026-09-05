@@ -76,7 +76,7 @@ On Windows, use `python` if Python 3 is installed under that name, replace `./gr
 | `build/server-resource-pack/` | Combined auto-download visual + listener ZIP |
 | `bridge/build/libs/` | Paper Server JAR |
 
-The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed GeneralUser GS SoundFont checksum, renders 399 physical samples, and does not include the source `.sf2` in the ZIP. Release automation injects the final pack asset URL and SHA-1 into the Paper Server JAR before generating `SHA256SUMS.txt`.
+The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed GeneralUser GS SoundFont checksum, renders and peak-normalizes 399 physical samples, decodes each OGG to reject inaudible output, and does not include the source `.sf2` in the ZIP. Release automation injects the final pack asset URL and SHA-1 into both `config.yml` and the JAR-only `enb-release-pack.properties` before generating `SHA256SUMS.txt`; the latter prevents stale server configs from shadowing an official upgrade.
 
 ## Branches and releases
 

@@ -12,6 +12,9 @@ audible-radius: 64
 resource-pack:
   enabled: true
   required: true
+  # Keep this true for automatic upgrades to the pack embedded in each official
+  # Paper Server release. Set false only when using your own URL / SHA-1 below.
+  use-official-release: true
   id: "4ac1cf2c-ea6d-52a8-9605-8ecff682bd8d"
   url: "__ENB_RESOURCE_PACK_URL__"
   sha1: "__ENB_RESOURCE_PACK_SHA1__"

@@ -41,6 +41,8 @@ python3 scripts/prepare_paper_listener_pack.py
 | `build/server-resource-pack/` | 自動配信用の表示・試聴リソースパック |
 | `bridge/build/libs/` | Paper Server |
 
+Server Resources のビルドは 399 個のサンプルをピーク正規化し、各 OGG を再デコードして実質的に無音の出力を拒否します。Release は URL と SHA-1 を `config.yml` と JAR 内の `enb-release-pack.properties` の両方へ書き込み、古いサーバー設定が公式アップデートを上書きしないようにします。
+
 開発ブランチは `port/26.2` です。`main` と `release/26.2` は確認済みのチェックポイントで同期し、公開済みのタグは成果物を作成したコミットに固定します。現在の CI は `port/26.2` への push で最新コミットメッセージが `release:` から始まる場合に、ビルド成功後のリリース処理を実行します。
 
 詳細は [English の開発ガイド](DEVELOPMENT.md) と [CI 定義](../.github/workflows/build-26.2.yml) を参照してください。CI の成功は実際のゲーム内検証を意味しません。
