@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-TARGET = Path("bridge/src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java")
+ROOT = Path(__file__).resolve().parents[1]
+TARGET = ROOT / "bridge" / "src" / "main" / "java" / "com" / "goldenegggovo" / "extendednoteblock" / "bridge" / "ExtendedNoteBlockBridge.java"
 text = TARGET.read_text(encoding="utf-8")
 
 on_command = '''    @Override
@@ -190,9 +191,10 @@ new_help = '''    private void sendHelp(CommandSender sender) {
     }
 '''
 
-if old_help not in text:
-    raise SystemExit("Could not find existing sendHelp() block")
-text = text.replace(old_help, new_help, 1)
+if 'private void sendHelp(CommandSender sender, String topic)' not in text:
+    if old_help not in text:
+        raise SystemExit("Could not find existing sendHelp() block")
+    text = text.replace(old_help, new_help, 1)
 
 TARGET.write_text(text, encoding="utf-8")
-print(f"patched {TARGET}")
+print(f"patched {TARGET.relative_to(ROOT)}")
