@@ -41,3 +41,5 @@ python3 scripts/prepare_paper_render_sync.py
 開発ブランチは `port/26.2` です。`main` と `release/26.2` は確認済みのチェックポイントで同期し、公開済みのタグは成果物を作成したコミットに固定します。現在の CI は `port/26.2` への push で最新コミットメッセージが `release:` から始まる場合に、ビルド成功後のリリース処理を実行します。
 
 詳細は [English の開発ガイド](DEVELOPMENT.md) と [CI 定義](../.github/workflows/build-26.2.yml) を参照してください。CI の成功は実際のゲーム内検証を意味しません。
+
+Paper Client のパッケージ作成後、`./gradlew runPaperClientSmoke` で実際の Fabric クライアント起動、リソース読み込み、GUI、音程を検証できます。Linux では Xvfb が必要です。テスト用 Mod はリリース JAR に含まれません。Purpur マルチプレイと実際の音は別途確認が必要です。

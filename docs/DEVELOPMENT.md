@@ -93,3 +93,9 @@ Use `docs:` / `chore:` commits for repository maintenance. Branches may advance 
 CI checks the configured tests, Full runtime content, Paper Client registry safety and packaged resources, plugin source injection, and plugin runtime resources. A passing run does not establish in-game behavior on Purpur.
 
 The outstanding gameplay checks and planned Paper features are tracked in [ROADMAP.md](ROADMAP.md). Keep the MIT license and upstream credits when moving or reusing source files.
+
+## Paper Client startup regression test
+
+After building and packaging the Paper Client, run `./gradlew runPaperClientSmoke`. On Linux this requires Xvfb and an OpenGL-capable driver (CI uses software rendering). The separate `src/paperClientSmoke/` test mod is never packaged in release JARs. The task starts the actual Paper Client JAR with Fabric, waits for resource loading, checks built-in visuals, opens the note editor, verifies vanilla Block/Item registries and checks MIDI 0–127 pitch factors plus vanilla attenuation/pitch behavior. It does not connect to a Paper server or verify audible output.
+
+`python3 -m unittest discover -s scripts -p 'test_*.py' -v` tests the Mixin package guard. `./gradlew -p bridge test` runs the server payload validation tests. The release workflow requires these checks and the startup success marker, and publishes the matching `docs/releases/<mod_version>.md` file as release notes.

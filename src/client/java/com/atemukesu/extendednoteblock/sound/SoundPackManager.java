@@ -397,10 +397,10 @@ public class SoundPackManager {
         if (!Files.exists(mcMetaPath)) {
             JsonObject packMeta = new JsonObject();
             JsonObject packSection = new JsonObject();
-            // Resource pack format used by Minecraft 26.1.1.
-            packSection.addProperty("pack_format", 84);
-            packSection.addProperty("min_format", 84);
-            packSection.addProperty("max_format", 84);
+            // Resource pack format used by Minecraft 26.2.
+            packSection.addProperty("pack_format", 88);
+            packSection.addProperty("min_format", 88);
+            packSection.addProperty("max_format", 88);
             packSection.addProperty("description", "Generated sounds for Extended Note Block Mod");
             packMeta.add("pack", packSection);
 

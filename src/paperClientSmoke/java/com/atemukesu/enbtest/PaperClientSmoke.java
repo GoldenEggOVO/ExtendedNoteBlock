@@ -5,6 +5,7 @@ import com.atemukesu.extendednoteblock.bridgeclient.BridgeNoteBlockScreen;
 import com.atemukesu.extendednoteblock.sound.StoppablePositionalSoundInstance;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundEngine;
@@ -20,9 +21,17 @@ import java.util.Arrays;
 
 /** Runs only in CI's separate test mod; never included in a release artifact. */
 public final class PaperClientSmoke implements ClientModInitializer {
+    private boolean started;
+    private boolean checked;
+
     @Override
     public void onInitializeClient() {
-        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> started = true);
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            // CLIENT_STARTED precedes the initial resource reload. Wait until the
+            // loading overlay closes, so broken/disabled packs cannot pass.
+            if (!started || checked || client.gui.overlay() != null) return;
+            checked = true;
             try {
                 if (FabricLoader.getInstance().isModLoaded("extendednoteblock")) {
                     throw new AssertionError("Full mod leaked into the Paper test environment");
@@ -30,6 +39,20 @@ public final class PaperClientSmoke implements ClientModInitializer {
                 if (BuiltInRegistries.BLOCK.keySet().stream().anyMatch(id -> id.getNamespace().equals("extendednoteblock"))
                         || BuiltInRegistries.ITEM.keySet().stream().anyMatch(id -> id.getNamespace().equals("extendednoteblock"))) {
                     throw new AssertionError("Custom ENB registry IDs exist in Paper Client");
+                }
+
+                String visuals = "extendednoteblock_bridge_client:bridge_visuals";
+                var repository = client.getResourcePackRepository();
+                if (!repository.getSelectedIds().contains(visuals)
+                        || !repository.getPack(visuals).getCompatibility().isCompatible()) {
+                    throw new AssertionError("Built-in Paper visuals are disabled or incompatible");
+                }
+                var selector = Identifier.fromNamespaceAndPath("minecraft", "items/blaze_rod.json");
+                try (var reader = client.getResourceManager().getResourceOrThrow(selector).openAsReader()) {
+                    var model = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject("model");
+                    if (!model.get("property").getAsString().equals("minecraft:custom_model_data")) {
+                        throw new AssertionError("Built-in item selectors were not loaded");
+                    }
                 }
 
                 Object manager = client.getSoundManager();
@@ -57,7 +80,7 @@ public final class PaperClientSmoke implements ClientModInitializer {
                 if (!(client.gui.screen() instanceof BridgeNoteBlockScreen)) {
                     throw new AssertionError("Paper note editor did not open");
                 }
-                System.out.println("ENB_PAPER_CLIENT_SMOKE_OK: startup, GUI, vanilla registries, MIDI 0-127 pitch and attenuation");
+                System.out.println("ENB_PAPER_CLIENT_SMOKE_OK: startup, resources, GUI, vanilla registries, MIDI 0-127 pitch and attenuation");
                 System.exit(0);
             } catch (Throwable failure) {
                 failure.printStackTrace();

@@ -38,7 +38,9 @@ jobs:
         env:
           LIBGL_ALWAYS_SOFTWARE: 'true'
           ALSOFT_DRIVERS: 'null'
-        run: ./gradlew runPaperClientSmoke --stacktrace
+        run: |
+          ./gradlew runPaperClientSmoke --stacktrace
+          grep -q 'ENB_PAPER_CLIENT_SMOKE_OK' build/run/paperClientSmoke/logs/latest.log
       - name: Preserve Paper Client startup logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -226,45 +228,12 @@ jobs:
         run: |
           set -euo pipefail
           TAG="v${MOD_VERSION}-mc${MC_VERSION}"
-          cat > release-notes.md <<EOF
-          # ExtendedNoteBlock ${MOD_VERSION} - Minecraft ${MC_VERSION}
-
-          This release is split into **three program editions** plus one shared visual resource pack.
-
-          ## Full Fabric
-          **ExtendedNoteBlock-Full-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
-          - For singleplayer, or Fabric servers where the server also installs the Full mod.
-          - Contains the real ExtendedNoteBlock custom blocks/items and complete Fabric content.
-
-          ## Paper/Purpur Server
-          **ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar**
-          - Install in Paper/Purpur plugins/.
-          - Server world/block IDs remain vanilla-only.
-          - Synchronizes managed ENB positions, object type, powered state and note pitch class to Paper Client.
-          - Existing right-click editor/status interactions remain available.
-          - Adds /enb help [command] and context-aware TAB completion for ENB commands.
-          - Players without Paper Client still join normally and see vanilla carrier blocks.
-
-          ## Paper Client
-          **ExtendedNoteBlock-Paper-Client-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
-          - Registry-safe Paper companion; no Full Fabric custom Block/Item registration is sent to Paper.
-          - Replaces the baked model only at server-synchronized ENB coordinates.
-          - Extended Note Block uses the Full Fabric C/C#/D/.../B model selected from MIDI pitch class, including powered variants.
-          - Global Redstone Transmitter, Receiver and NBS Projection Receiver use their Full Fabric ON/OFF models.
-          - Ordinary vanilla note blocks, concrete and redstone blocks remain unchanged.
-          - Receiver remains a real vanilla redstone block while powered server-side, but Paper Client renders the ENB Receiver ON model at that coordinate.
-
-          ## Standalone Visual Pack
-          **ExtendedNoteBlock-Visuals-${MOD_VERSION}-mc${MC_VERSION}.zip**
-          - Continues to provide CustomModelData-based ENB **item** visuals without a client mod.
-          - Position-aware placed-block replacement requires Paper Client because a resource pack alone cannot know server-managed coordinates.
-
-          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety/model assets/render classes, Paper render-sync channels, ENB command completion/help injection and Paper plugin runtime resources before publishing.
-          EOF
+          NOTES="docs/releases/${MOD_VERSION}.md"
+          test -s "$NOTES"
 
           gh release create "$TAG" \
             release/* \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "ExtendedNoteBlock ${MOD_VERSION} - Minecraft ${MC_VERSION}" \
-            --notes-file release-notes.md
+            --notes-file "$NOTES"

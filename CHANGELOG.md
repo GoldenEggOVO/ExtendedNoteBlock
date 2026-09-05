@@ -1,11 +1,22 @@
 # Changelog
 
-## Unreleased — repository maintenance
+## 2.8.1 — Minecraft 26.2
+
+- Fixed Paper Client startup `IllegalClassLoadError` by isolating `BridgeSoundEngineMixin` in a dedicated Mixin package.
+- Kept the full MIDI pitch range and limited the 48-block attenuation override to ENB sounds.
+- Added JAR package-ownership regression checks and a production Fabric client startup test covering the note editor, vanilla registries, all 128 MIDI pitch factors and vanilla sound behavior.
+- Fixed missing Visuals pack metadata that caused Minecraft to disable the built-in pack; updated bundled/generated sound-pack metadata to format 88. The startup test now waits for resource loading and checks the active item selector.
+- Updated Paper Server to 0.8.2: GUI saves require `extendednoteblockbridge.use`, validate the exact payload length and reject distant/unloaded/out-of-height targets before accessing blocks. Existing saved data and channels remain compatible.
+- Added server-side payload tests for signed positions, MIDI range, settings bounds and reach validation.
+
+See the [release notes](docs/releases/2.8.1.md).
+
+### Repository maintenance included in 2.8.1
 
 - Restored installation and usage documentation, and separated the Paper architecture, development guide and roadmap from the project overview.
 - Updated the Chinese, English and Japanese documentation to the Minecraft 26.2 build pipeline and three-edition packaging.
 - Archived inactive upstream 1.20.1 / 1.21.1 files and the obsolete publishing script under `legacy/`, preserving their contents.
-- Corrected the Gradle project name to `ExtendedNoteBlock-26.2`. Runtime source code and the 2.8.0 release artifacts are unchanged.
+- Corrected the Gradle project name to `ExtendedNoteBlock-26.2`. The earlier documentation/archive cleanup did not change the 2.8.0 binaries.
 
 ## 2.8.0 — Minecraft 26.2
 
@@ -14,7 +25,7 @@
 - Switched Paper Projection Litematic output to vanilla carriers and retained ENB metadata. Automatic restoration after pasting is not yet implemented.
 - Paper Server remains at 0.8.1.
 
-See the [release notes](docs/releases/2.8.0.md) and [published artifacts](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.8.0-mc26.2).
+See the [release notes](docs/releases/2.8.0.md).
 
 ## Earlier 26.2 release notes
 

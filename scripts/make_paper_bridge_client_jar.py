@@ -16,14 +16,13 @@ import json
 import zipfile
 from pathlib import Path
 
-from make_visual_resource_pack import CARRIER_ITEMS, carrier_selector, custom_model_key
+from make_visual_resource_pack import CARRIER_ITEMS, carrier_selector, custom_model_key, pack_metadata
 from verify_mixin_packages import verify_mixin_packages
 
 ROOT = Path(__file__).resolve().parents[1]
 LIBS = ROOT / "build" / "libs"
 OUT_DIR = ROOT / "build" / "paper-bridge-client"
 ASSET_ROOT = ROOT / "src" / "main" / "resources" / "assets" / "extendednoteblock"
-RESOURCE_PACK_FORMAT = 88
 VISUAL_DIRS = ("blockstates/", "items/", "lang/", "models/", "textures/")
 BRIDGE_MIXIN_CONFIG = "extendednoteblock.bridgeclient.mixins.json"
 
@@ -55,12 +54,7 @@ def find_runtime_jar() -> Path:
 
 def built_in_pack_metadata() -> bytes:
     return json.dumps(
-        {
-            "pack": {
-                "pack_format": RESOURCE_PACK_FORMAT,
-                "description": "ExtendedNoteBlock Paper Client built-in visuals",
-            }
-        },
+        pack_metadata("ExtendedNoteBlock Paper Client built-in visuals"),
         ensure_ascii=False,
         indent=2,
     ).encode("utf-8")

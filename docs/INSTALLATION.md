@@ -4,14 +4,14 @@
 
 ## 下载与依赖
 
-从 [v2.8.0-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.8.0-mc26.2) 下载所需文件。Release 同时提供 `SHA256SUMS.txt`。
+从 [v2.8.1-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.8.1-mc26.2) 下载所需文件。Release 同时提供 `SHA256SUMS.txt`。
 
 | 文件 | 安装对象 |
 | --- | --- |
-| `ExtendedNoteBlock-Full-Fabric-2.8.0-mc26.2.jar` | 单人 / Fabric 服务端模式 |
-| `ExtendedNoteBlock-Paper-Client-Fabric-2.8.0-mc26.2.jar` | Paper / Purpur 专用 Fabric 客户端 |
-| `ExtendedNoteBlock-Paper-Server-0.8.1-mc26.2.jar` | Paper / Purpur 服务端 |
-| `ExtendedNoteBlock-Visuals-2.8.0-mc26.2.zip` | 可选独立物品资源包 |
+| `ExtendedNoteBlock-Full-Fabric-2.8.1-mc26.2.jar` | 单人 / Fabric 服务端模式 |
+| `ExtendedNoteBlock-Paper-Client-Fabric-2.8.1-mc26.2.jar` | Paper / Purpur 专用 Fabric 客户端 |
+| `ExtendedNoteBlock-Paper-Server-0.8.2-mc26.2.jar` | Paper / Purpur 服务端 |
+| `ExtendedNoteBlock-Visuals-2.8.1-mc26.2.zip` | 可选独立物品资源包 |
 
 | 环境 | 本版本构建基线 |
 | --- | --- |
@@ -80,8 +80,16 @@ Paper Client 内置 Visuals，不必额外启用独立 ZIP。未装 Mod 的玩�
 
 ### 粘贴结构后是普通音符盒，没有原来的音乐参数
 
-2.8.0 的 Paper Projection Litematic 已改用原版载体，并保存 `ExtendedNoteBlockBridge` 元数据。Litematica 粘贴普通载体后，服务器仍需要未来的 Bridge Import 协议恢复逻辑身份与参数；当前版本尚未实现自动恢复。
+2.8.1 的 Paper Projection Litematic 已改用原版载体，并保存 `ExtendedNoteBlockBridge` 元数据。Litematica 粘贴普通载体后，服务器仍需要未来的 Bridge Import 协议恢复逻辑身份与参数；当前版本尚未实现自动恢复。
 
 ### MIDI 低音区听起来仍然相同
 
-先确认客户端实际加载的是 2.8.0 Paper Client，再用同一乐器依次试听 **0 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120**。低音区修复已经通过 CI，实际听感仍需游戏内验证；反馈时附上客户端模组版本、乐器及测试音符。
+先确认客户端实际加载的是 2.8.1 或更新的 Paper Client，再用同一乐器依次试听 **0 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120**。CI 会逐一检查 MIDI 0–127 对应的 SoundEngine pitch，实际采样与听感仍需游戏内验证；反馈时附上客户端模组版本、乐器及测试音符。
+
+### 启动出现 IllegalClassLoadError
+
+Paper Client 2.8.0 的 Mixin 配置错误地覆盖了普通入口类所在的包。移除旧 JAR，改用 2.8.1；这不需要更换存档或 Java 版本。不要同时保留两个 Paper Client JAR，也不要同时安装 Full Fabric。
+
+### 编辑界面提示没有权限
+
+Paper Server 0.8.2 开始，GUI 保存与 `/enb` 命令统一检查 `extendednoteblockbridge.use`，默认仅 OP。服主可以通过权限插件将此权限授予需要编辑的玩家。原有 `objects.yml`、`notes.yml`、`projections.yml` 格式保持兼容。

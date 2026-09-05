@@ -44,7 +44,7 @@ Paper Server 向 Paper Client 同步维度内已登记对象的坐标、类型�
 
 Paper Server 保存 MIDI Note、Instrument、Velocity、Sustain、Delay、Fade In 与 Fade Out。高级 Bridge 声音协议还提供 pitch multiplier、pitch cents、音量 / 空间位置更新和 start / update / stop。
 
-客户端从最近的采样音符计算 `2^(半音差 / 12)`。Paper Client 2.8.0 添加专用、Registry-safe 的 SoundEngine Mixin，对 `extendednoteblock` 声音绕过 Minecraft 的最终 pitch clamp，并保留 Full 版约 48 格的声音衰减行为。
+客户端从最近的采样音符计算 `2^(半音差 / 12)`。Paper Client 2.8.0 添加专用、Registry-safe 的 SoundEngine Mixin，对 `extendednoteblock` 声音绕过 Minecraft 的最终 pitch clamp，并保留 Full 版约 48 格的声音衰减行为。2.8.1 将这个 Mixin 移到独立的 `bridgeclient.mixin` 包以修复启动错误，并将 48 格衰减限定到 ENB 声音；原版声音继续使用原版规则。
 
 该修复用于解决低音区被夹到同一音高的问题。编译与静态打包检查已通过；完整 MIDI 音域的实际声音仍需游戏内试听验证。没有 Paper Client 的玩家听最接近的原版 Note Block fallback。
 

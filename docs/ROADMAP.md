@@ -1,8 +1,12 @@
-# 待办与验证 · 2.8.0 基线
+# 待办与验证 · 2.8.1 基线
 
-[返回首页](../README.md) · [2.8.0 更新说明](releases/2.8.0.md)
+[返回首页](../README.md) · [2.8.1 更新说明](releases/2.8.1.md)
 
-当前基线为 Full Fabric / Paper Client **2.8.0** 与 Paper Server **0.8.1**。本页区分已实现但待游戏验证的修复，以及尚未实现的功能。
+当前基线为 Full Fabric / Paper Client **2.8.1** 与 Paper Server **0.8.2**。本页区分已实现但待游戏验证的修复，以及尚未实现的功能。
+
+## 自动化验证
+
+CI 会启动实际 Paper Client JAR，在资源加载后检查内置 Visuals、GUI 初始化、原版 Registry，以及全部 128 个 MIDI pitch 倍率和原版声音行为。Paper 保存载荷的长度、坐标、参数范围及距离判断有独立测试。
 
 ## 已实现，待游戏内验证
 

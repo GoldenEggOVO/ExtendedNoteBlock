@@ -1,9 +1,32 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import re
+import json
+import zipfile
+
+from make_visual_resource_pack import RESOURCE_PACK_FORMAT
 
 ROOT = Path(__file__).resolve().parents[1]
 CLIENT = ROOT / "src" / "client" / "java"
+
+# Keep the bundled sound archive's samples untouched while updating the metadata
+# from the old 26.1 format. Both program editions consume this prepared archive.
+default_pack = ROOT / "src/main/resources/assets/extendednoteblock/extendednoteblock_default.zip"
+with zipfile.ZipFile(default_pack) as archive:
+    metadata = json.loads(archive.read("pack.mcmeta"))
+    pack = metadata["pack"]
+    if any(pack.get(key) != RESOURCE_PACK_FORMAT for key in ("pack_format", "min_format", "max_format")):
+        for key in ("pack_format", "min_format", "max_format"):
+            pack[key] = RESOURCE_PACK_FORMAT
+        temporary = default_pack.with_suffix(".tmp")
+        with zipfile.ZipFile(temporary, "w") as output:
+            for entry in archive.infolist():
+                output.writestr(entry, json.dumps(metadata).encode() if entry.filename == "pack.mcmeta" else archive.read(entry))
+    else:
+        temporary = None
+if temporary is not None:
+    temporary.replace(default_pack)
+    print(f"patched {default_pack.relative_to(ROOT)} metadata")
 
 for path in CLIENT.rglob("*.java"):
     text = path.read_text(encoding="utf-8")

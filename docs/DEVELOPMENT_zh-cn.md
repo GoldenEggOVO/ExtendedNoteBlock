@@ -94,6 +94,12 @@ CI 在发布时统一命名四项运行产物并生成 `SHA256SUMS.txt`；不要
 
 ## 验证范围
 
-CI 验证现有测试、Full 运行内容、Paper Client 的 Registry 安全与资源、插件源码注入和运行资源。CI 成功不等于真实游戏运行测试。
+CI 验证现有测试、Full 运行内容、Paper Client 的 Registry 安全与资源、插件源码注入和运行资源。2.8.1 起，CI 还会实际启动打包后的 Paper Client；该结果不等于 Purpur 多人游戏测试或真人试听。
 
 游戏验证与功能待办见 [ROADMAP.md](ROADMAP.md)。整理或复用源码时保留 MIT 许可证与原作者署名。
+
+### Paper Client 启动回归测试
+
+构建并运行 Paper Client 打包脚本后，执行 `./gradlew runPaperClientSmoke`。Linux 需要 Xvfb 和可用的 OpenGL 驱动，CI 使用软件渲染。测试使用独立的 `src/paperClientSmoke/` 模块，等待资源加载后检查内置 Visuals 是否启用、原版载体物品选择器、音符盒 GUI、原版 Block/Item Registry、MIDI 0–127 的 SoundEngine pitch，以及原版声音行为。测试模块不会进入正式 JAR。
+
+Mixin 包范围回归检查：`python3 -m unittest discover -s scripts -p 'test_*.py' -v`。Paper 保存数据测试：`./gradlew -p bridge test`。Release 工作流检查启动成功标记，并从 `docs/releases/<mod_version>.md` 读取当前版本说明。

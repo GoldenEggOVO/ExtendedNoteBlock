@@ -66,6 +66,16 @@ def custom_model_key(logical_id: str) -> str:
     return f"{CMD_NAMESPACE}:{logical_id}"
 
 
+def pack_metadata(description: str) -> dict:
+    # Minecraft 26.2 requires the supported range even when pack_format exists.
+    return {"pack": {
+        "pack_format": RESOURCE_PACK_FORMAT,
+        "min_format": RESOURCE_PACK_FORMAT,
+        "max_format": RESOURCE_PACK_FORMAT,
+        "description": description,
+    }}
+
+
 def carrier_selector(logical_id: str, vanilla_model: str) -> bytes:
     """Create a 26.2 item model selector keyed by CustomModelData strings[0]."""
     model = {
@@ -99,12 +109,7 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     output = OUT_DIR / f"ExtendedNoteBlock-Visuals-{mod_version}-mc{mc_version}.zip"
 
-    metadata = {
-        "pack": {
-            "pack_format": RESOURCE_PACK_FORMAT,
-            "description": "ExtendedNoteBlock shared visuals for Minecraft 26.2",
-        }
-    }
+    metadata = pack_metadata("ExtendedNoteBlock shared visuals for Minecraft 26.2")
 
     readme = """ExtendedNoteBlock Visual Pack - Minecraft 26.2
 
@@ -128,8 +133,8 @@ Paper Client embeds this same pack automatically.
 Placed blocks
 -------------
 A plain resource pack cannot distinguish plugin metadata by world coordinate, so
-placed bridge blocks intentionally remain vanilla-looking for now. Paper Client can
-later add position-aware rendering without changing ordinary vanilla blocks.
+placed bridge blocks require Paper Client's position-aware rendering. Ordinary
+vanilla blocks keep their original appearance.
 """
 
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
