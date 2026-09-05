@@ -19,19 +19,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Normalize release branch trigger
-        shell: bash
-        run: |
-          set -euo pipefail
-          sed -i 's#release/three-editions#release/26.2#g' .github/workflows/build-26.2.yml
-          if ! git diff --quiet -- .github/workflows/build-26.2.yml; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add .github/workflows/build-26.2.yml
-            git commit -m 'chore: normalize long-lived branch names'
-            git push origin HEAD:port/26.2
-          fi
-
       - name: Delete old temporary branch
         shell: bash
         run: |
