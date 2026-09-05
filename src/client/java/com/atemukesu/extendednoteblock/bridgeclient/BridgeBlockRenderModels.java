@@ -16,6 +16,7 @@ import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
@@ -35,6 +36,10 @@ public final class BridgeBlockRenderModels {
     private static final String[] NOTE_PITCHES = {
             "c", "cs", "d", "ds", "e", "f", "fs", "g", "gs", "a", "as", "b"
     };
+
+    private static final String RED_CONCRETE = "minecraft:red_concrete";
+    private static final String GREEN_CONCRETE = "minecraft:green_concrete";
+    private static final String PURPLE_CONCRETE = "minecraft:purple_concrete";
 
     private static final Map<String, ExtraModelKey<BlockStateModel>> EXTRA_MODELS = new LinkedHashMap<>();
     private static boolean registered;
@@ -71,10 +76,11 @@ public final class BridgeBlockRenderModels {
 
             context.modifyBlockModelAfterBake().register((model, modifierContext) -> {
                 Block block = modifierContext.state().getBlock();
+                String id = blockId(block);
                 if (block == Blocks.NOTE_BLOCK
-                        || block == Blocks.RED_CONCRETE
-                        || block == Blocks.GREEN_CONCRETE
-                        || block == Blocks.PURPLE_CONCRETE
+                        || RED_CONCRETE.equals(id)
+                        || GREEN_CONCRETE.equals(id)
+                        || PURPLE_CONCRETE.equals(id)
                         || block == Blocks.REDSTONE_BLOCK) {
                     return new CarrierModel(model);
                 }
@@ -108,13 +114,19 @@ public final class BridgeBlockRenderModels {
     }
 
     private static boolean carrierMatches(int typeId, BlockState state) {
+        String id = blockId(state.getBlock());
         return switch (typeId) {
             case BridgeWorldObjects.TYPE_EXTENDED_NOTE_BLOCK -> state.is(Blocks.NOTE_BLOCK);
-            case BridgeWorldObjects.TYPE_TRANSMITTER -> state.is(Blocks.RED_CONCRETE);
-            case BridgeWorldObjects.TYPE_RECEIVER -> state.is(Blocks.GREEN_CONCRETE) || state.is(Blocks.REDSTONE_BLOCK);
-            case BridgeWorldObjects.TYPE_PROJECTION_RECEIVER -> state.is(Blocks.PURPLE_CONCRETE);
+            case BridgeWorldObjects.TYPE_TRANSMITTER -> RED_CONCRETE.equals(id);
+            case BridgeWorldObjects.TYPE_RECEIVER -> GREEN_CONCRETE.equals(id) || state.is(Blocks.REDSTONE_BLOCK);
+            case BridgeWorldObjects.TYPE_PROJECTION_RECEIVER -> PURPLE_CONCRETE.equals(id);
             default -> false;
         };
+    }
+
+    private static String blockId(Block block) {
+        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+        return id == null ? "" : id.toString();
     }
 
     private static final class CarrierModel extends WrapperBlockStateModel {
