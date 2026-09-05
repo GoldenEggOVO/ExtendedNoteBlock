@@ -223,11 +223,11 @@ jobs:
 
           ## Paper/Purpur Server
           **ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar**
-          - Install in Paper/Purpur `plugins/`.
+          - Install in Paper/Purpur plugins/.
           - Server world/block IDs remain vanilla-only.
           - Synchronizes managed ENB positions, object type, powered state and note pitch class to Paper Client.
           - Existing right-click editor/status interactions remain available.
-          - Adds `/enb help [command]` and context-aware TAB completion for ENB commands.
+          - Adds /enb help [command] and context-aware TAB completion for ENB commands.
           - Players without Paper Client still join normally and see vanilla carrier blocks.
 
           ## Paper Client
