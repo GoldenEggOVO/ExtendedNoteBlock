@@ -2,7 +2,7 @@
 
 本仓库的[主 README](../README.md)已使用简体中文，并作为 Minecraft **26.2** 的统一说明入口。
 
-当前正式版为 Full Fabric / Paper Client **2.8.1**，Paper Server **0.8.2**。**Full Fabric 与 Paper Client 不可同时安装。**
+当前正式版为 Full Fabric / Paper Client **2.9.0**，Paper Server **0.9.0**。**Full Fabric 与 Paper Client 不可同时安装。**
 
 | 文档 | 内容 |
 | --- | --- |

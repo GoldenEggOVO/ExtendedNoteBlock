@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.9.0 — Minecraft 26.2
+
+- Added NBS Workshop → Restore ENB for already-pasted Paper projection Litematics, including 2.8.x metadata.
+- Added transmitter-anchored translation, clockwise rotation and source-axis mirroring.
+- Added a shared bounded upload protocol and Paper Server 0.9.0 carrier preflight, permission/world/chunk validation, result feedback and YAML persistence.
+- Restored note settings, pitch cents, object identities and projection timelines; retained pitch cents during later GUI and wand edits.
+- Added protocol/transform tests, real packaged-client export/import and GUI checks, and MockBukkit integration tests driving the real plugin and persisted data.
+- Full Fabric exports and Paper vanilla Registry safety remain intact. Recovery is an explicit action after pasting; automatic Easy Place hooks and direct Workshop → Receiver uploads remain future work.
+
+See the [release notes](docs/releases/2.9.0.md).
+
 ## 2.8.1 — Minecraft 26.2
 
 - Fixed Paper Client startup `IllegalClassLoadError` by isolating `BridgeSoundEngineMixin` in a dedicated Mixin package.

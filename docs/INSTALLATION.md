@@ -4,14 +4,14 @@
 
 ## 下载与依赖
 
-从 [v2.8.1-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.8.1-mc26.2) 下载所需文件。Release 同时提供 `SHA256SUMS.txt`。
+从 [v2.9.0-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.9.0-mc26.2) 下载所需文件。Release 同时提供 `SHA256SUMS.txt`。
 
 | 文件 | 安装对象 |
 | --- | --- |
-| `ExtendedNoteBlock-Full-Fabric-2.8.1-mc26.2.jar` | 单人 / Fabric 服务端模式 |
-| `ExtendedNoteBlock-Paper-Client-Fabric-2.8.1-mc26.2.jar` | Paper / Purpur 专用 Fabric 客户端 |
-| `ExtendedNoteBlock-Paper-Server-0.8.2-mc26.2.jar` | Paper / Purpur 服务端 |
-| `ExtendedNoteBlock-Visuals-2.8.1-mc26.2.zip` | 可选独立物品资源包 |
+| `ExtendedNoteBlock-Full-Fabric-2.9.0-mc26.2.jar` | 单人 / Fabric 服务端模式 |
+| `ExtendedNoteBlock-Paper-Client-Fabric-2.9.0-mc26.2.jar` | Paper / Purpur 专用 Fabric 客户端 |
+| `ExtendedNoteBlock-Paper-Server-0.9.0-mc26.2.jar` | Paper / Purpur 服务端 |
+| `ExtendedNoteBlock-Visuals-2.9.0-mc26.2.zip` | 可选独立物品资源包 |
 
 | 环境 | 本版本构建基线 |
 | --- | --- |
@@ -72,6 +72,22 @@ Paper Client 内置 Visuals，不必额外启用独立 ZIP。未装 Mod 的玩�
 
 默认 `SIX_OCTAVES` 是 Projection Planner 的音域适配策略，范围 **24–95**；`TWO_OCTAVES` 为 **54–78**。它们不改变 ENB 音符盒本身 **MIDI 0–127** 的输入范围。
 
+## Paper Litematic 恢复 ENB
+
+需要 **Paper Client 2.9.0+** 与 **Paper Server 0.9.0+**。此功能读取 Paper 音乐工坊导出的原始 ENB Projection `.litematic`；兼容 2.8.0 / 2.8.1 保留的元数据。
+
+1. 用 Litematica 的 paste / Easy Place 完整放好投影结构，包含底部的红色混凝土发射器和相邻的紫色混凝土接收器。
+2. 看向该红色混凝土（或它上面的拉杆），按 **N → 恢复 ENB**。界面会预填所指方块的坐标；核对它是结构底部发射器的坐标，也可手动修改 X / Y / Z。
+3. 点击「浏览」，选择**原始 ENB 工坊导出的文件**。默认列出游戏目录 `schematics/` 下的 `.litematic`；其他位置可直接输入完整文件路径后点「读取」。
+4. 没有改变方向时保持旋转 0°、镜像无。旋转 / 镜像过的结构，选择对应变换：先沿源结构 X / Z 轴镜像，再绕 Y 轴顺时针旋转。定位点始终是已粘贴的红色发射器，与 Litematica 原点设置无关。
+5. 点「恢复 ENB」，等待服务器显示已保存。ENB 音符盒、发射器、投影接收器会恢复逻辑身份和客户端模型；右键音符盒可查看恢复的 MIDI / 乐器 / 力度 / 延音 / 延迟等参数，拉杆可触发投影曲目。
+
+恢复权限为 `extendednoteblockbridge.import`，默认 OP。服务器默认要求玩家距发射器不超过 64 格，最多 75000 个音符，同时只处理一个导入；配置项为 `litematic-import`。只处理当前世界的已加载区块，不强制加载或生成区块；大型结构需保持整个目标区域已加载，必要时由服主调整服务器模拟距离或加载区域后重试。
+
+服务器先核对每个目标位置及载体，再登记 ENB 数据，分别保存至 `objects.yml`、`notes.yml`、`projections.yml`。缺块、方向错误、目标未加载会显示坐标并停止，修正后重试即可。重复恢复会用文件中的参数覆盖该投影对应的 ENB 数据。文件仍使用原版载体，Paper Client 继续保持 Registry 安全。
+
+普通原版 Litematic、Full Fabric 自定义方块导出，以及被其他工具重新保存后丢失 `ExtendedNoteBlockBridge` 根元数据的文件，不能从普通音符盒推算出原来的音乐参数。此时请重新从 Paper 工坊导出，并选择与已粘贴结构一致的文件。新功能需要手动点击恢复，尚未自动监听 Litematica 每次 Easy Place，也尚未实现不放置物理音符盒的 Workshop → Receiver 直接上传。
+
 ## 常见问题
 
 ### 连接 Paper 时因未知 ENB Registry ID 断线
@@ -80,15 +96,15 @@ Paper Client 内置 Visuals，不必额外启用独立 ZIP。未装 Mod 的玩�
 
 ### 粘贴结构后是普通音符盒，没有原来的音乐参数
 
-2.8.1 的 Paper Projection Litematic 已改用原版载体，并保存 `ExtendedNoteBlockBridge` 元数据。Litematica 粘贴普通载体后，服务器仍需要未来的 Bridge Import 协议恢复逻辑身份与参数；当前版本尚未实现自动恢复。
+Litematica 只放置原版载体。2.9.0 新增「恢复 ENB」入口，可将原始投影文件中的参数登记回 Paper Server 0.9.0。请按上方恢复步骤操作；仅更新客户端而未更新插件时，恢复按钮不可用。
 
 ### MIDI 低音区听起来仍然相同
 
-先确认客户端实际加载的是 2.8.1 或更新的 Paper Client，再用同一乐器依次试听 **0 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120**。CI 会逐一检查 MIDI 0–127 对应的 SoundEngine pitch，实际采样与听感仍需游戏内验证；反馈时附上客户端模组版本、乐器及测试音符。
+先确认客户端实际加载的是 2.9.0 或更新的 Paper Client，再用同一乐器依次试听 **0 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120**。CI 会逐一检查 MIDI 0–127 对应的 SoundEngine pitch，实际采样与听感仍需游戏内验证；反馈时附上客户端模组版本、乐器及测试音符。
 
 ### 启动出现 IllegalClassLoadError
 
-Paper Client 2.8.0 的 Mixin 配置错误地覆盖了普通入口类所在的包。移除旧 JAR，改用 2.8.1；这不需要更换存档或 Java 版本。不要同时保留两个 Paper Client JAR，也不要同时安装 Full Fabric。
+Paper Client 2.8.0 的 Mixin 配置错误地覆盖了普通入口类所在的包。移除旧 JAR，改用 2.8.1 或更新版本；这不需要更换存档或 Java 版本。不要同时保留两个 Paper Client JAR，也不要同时安装 Full Fabric。
 
 ### 编辑界面提示没有权限
 

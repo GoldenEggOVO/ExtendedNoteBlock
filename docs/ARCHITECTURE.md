@@ -42,7 +42,7 @@ Paper Server 向 Paper Client 同步维度内已登记对象的坐标、类型�
 
 ## 声音
 
-Paper Server 保存 MIDI Note、Instrument、Velocity、Sustain、Delay、Fade In 与 Fade Out。高级 Bridge 声音协议还提供 pitch multiplier、pitch cents、音量 / 空间位置更新和 start / update / stop。
+Paper Server 保存 MIDI Note、Instrument、Velocity、Sustain、Delay、Fade In、Fade Out 与导入的 Pitch Cents。高级 Bridge 声音协议还提供 pitch multiplier、pitch cents、音量 / 空间位置更新和 start / update / stop。
 
 客户端从最近的采样音符计算 `2^(半音差 / 12)`。Paper Client 2.8.0 添加专用、Registry-safe 的 SoundEngine Mixin，对 `extendednoteblock` 声音绕过 Minecraft 的最终 pitch clamp，并保留 Full 版约 48 格的声音衰减行为。2.8.1 将这个 Mixin 移到独立的 `bridgeclient.mixin` 包以修复启动错误，并将 48 格衰减限定到 ENB 声音；原版声音继续使用原版规则。
 
@@ -57,7 +57,16 @@ Paper Server 保存 MIDI Note、Instrument、Velocity、Sustain、Delay、Fade I
 
 Paper Projection `.litematic` 根 NBT 额外保存 `ExtendedNoteBlockBridge`：相对坐标、MIDI、GM 乐器、力度、延音、延迟、pitch cents 与 Projection Timeline。
 
-Litematica 放置原版载体不会让 Paper 自动知道这些 ENB 参数。未来导入需要读取元数据、应用结构的实际位置变换，并由服务端验证后登记到 `objects.yml`、`notes.yml` 和 `projections.yml`。**当前尚未实现自动导入，也尚未实现 Workshop → Receiver 直接上传。**
+Litematica 放置原版载体不会让 Paper 自动知道这些 ENB 参数。2.9.0 的 Paper Client 提供「恢复 ENB」界面，以已粘贴的红色发射器为定位点，读取元数据并应用平移、先镜像后旋转的坐标变换。
+
+客户端通过 `extendednoteblock:bridge_import` 上传 Begin / Batch / Finish / Cancel；服务端通过 `extendednoteblock:bridge_import_status` 回报接收、校验和持久化结果。协议仅含数字、坐标、UUID 与字符串，不引用自定义 Registry。每批最多 128 个音符，收到确认后再上传下一批；总数受客户端和服务端上限约束。
+
+Paper Server 0.9.0 校验 OP / 导入权限、世界、玩家与定位点距离、世界边界、已加载区块、全部载体和坐标唯一性，在最终提交前重新核对目标。提交恢复发射器、接收器、音符配置和投影曲目，并分别写入 `objects.yml`、`notes.yml`、`projections.yml`；正常坐标同步随后刷新模型。每个 YAML 文件先写临时文件再替换，保存失败时明确报告数据已应用但未成功落盘。
+
+2.8.x 元数据没有淡入 / 淡出字段时沿用导出器原值 0 / 0。新导出文件显式保留这两个字段。导入的 Pitch Cents 会保存到普通 ENB 音符配置，后续 GUI / 指挥棒编辑其他参数时继续保留。
+
+**恢复需要手动点击；尚未自动监听 Litematica 放置事件，也尚未实现 Workshop → Receiver 直接上传。** 仅支持包含 ENB 根元数据的原始 Paper Projection 文件。
+
 
 ## 无线红石
 

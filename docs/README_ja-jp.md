@@ -6,7 +6,7 @@
 
 Extended Note Block は、拡張音符ブロック、指揮棒、ワイヤレスレッドストーン、NBS / MIDI / 音声ファイルの読み込みと音楽構造の書き出しを提供します。
 
-現在のリリースは Full Fabric / Paper Client **2.8.1**、Paper Server **0.8.2** です。[ダウンロード](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.8.1-mc26.2)
+現在のリリースは Full Fabric / Paper Client **2.9.0**、Paper Server **0.9.0** です。[ダウンロード](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.9.0-mc26.2)
 
 ## エディションの選択
 
@@ -29,7 +29,7 @@ Paper Client は Visuals と同じリソースを内蔵しています。Mod を
 - Paper では OP が `/enb give all` で ENB アイテムを取得できます。
 - 2.8.1 は Paper Client 起動時の `IllegalClassLoadError` を修正します。Paper Server 0.8.2 は GUI 保存時の権限・距離・パケット長を検証します。
 - 2.8.x には GM 楽器選択と 128 鍵ピアノを備えた Paper 編集画面、低音域の pitch clamp 修正、バニラキャリアを使う Paper Litematic 出力が含まれます。
-- Paper Litematic のメタデータは保存されますが、貼り付け後の ENB パラメーター自動復元は未実装です。
+- 2.9.0 では貼り付け後に N → Restore ENB から元の ENB Litematic を読み込み、赤い送信機の座標と回転・反転を指定してパラメーターを復元できます。Paper Server 0.9.0 と OP / import 権限が必要です。
 - CI は成功していますが、低音域などの実際の Purpur ゲーム内検証は引き続き必要です。
 
 詳細は[インストールガイド（中文）](INSTALLATION.md)、[2.8.1 変更内容（English）](releases/2.8.1.md)、[開発ガイド](DEVELOPMENT_ja-jp.md)を参照してください。

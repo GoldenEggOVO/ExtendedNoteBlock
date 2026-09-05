@@ -144,6 +144,13 @@ jobs:
           fi
       - name: Build Paper/Purpur server plugin
         run: gradle clean build --stacktrace
+      - name: Preserve Paper import test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-import-test-reports
+          path: bridge/build/test-results/test/
+          if-no-files-found: ignore
       - name: Verify Paper plugin runtime resources
         shell: bash
         run: |
@@ -152,6 +159,8 @@ jobs:
           test -n "$JAR"
           jar tf "$JAR" | grep -qx 'plugin.yml'
           jar tf "$JAR" | grep -qx 'config.yml'
+          jar tf "$JAR" | grep -qx 'com/atemukesu/extendednoteblock/bridgeprotocol/ProjectionImport.class'
+          jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/BridgeProjectionImporter.class'
       - name: Upload Paper server plugin artifact
         uses: actions/upload-artifact@v4
         with:
