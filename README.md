@@ -47,48 +47,62 @@ Paper Client **内置与独立 `Visuals` ZIP 同源的 ENB 模型/纹理，并�
 
 ### Paper/Purpur Server
 
-Paper 服务端世界与背包始终只使用 `minecraft:*` 原版载体，逻辑身份由插件 PDC / `objects.yml` 保存。
+Paper 服务端世界与背包始终只使用 `minecraft:*` 原版载体。插件使用两层元数据：
 
-| ENB 逻辑对象 | Paper 实际载体 |
-| --- | --- |
-| Extended Note Block | `minecraft:note_block` |
-| Conductor Wand | `minecraft:blaze_rod` |
-| Global Redstone Transmitter | `minecraft:red_concrete` |
-| Global Redstone Receiver（OFF） | `minecraft:green_concrete` |
-| Global Redstone Receiver（ON） | `minecraft:redstone_block` |
-| NBS Projection Receiver | `minecraft:purple_concrete` |
+- Bukkit PDC `enb_type`：服务器逻辑身份；
+- `minecraft:custom_model_data` 字符串：仅用于客户端材质选择。
 
-没有安装任何 Mod 的玩家仍然可以正常进入服务器；扩展音符会自动回退到最接近的原版 Note Block 音高与音色。
+| ENB 逻辑对象 | Paper 实际载体 | CustomModelData string |
+| --- | --- | --- |
+| Extended Note Block | `minecraft:note_block` | `extendednoteblock:extended_note_block` |
+| Conductor Wand | `minecraft:blaze_rod` | `extendednoteblock:conductor_wand` |
+| Global Redstone Transmitter | `minecraft:red_concrete` | `extendednoteblock:global_redstone_transmitter` |
+| Global Redstone Receiver（OFF） | `minecraft:green_concrete` | `extendednoteblock:global_redstone_receiver` |
+| Global Redstone Receiver（ON） | `minecraft:redstone_block` | 世界方块状态，不是背包物品载体 |
+| NBS Projection Receiver | `minecraft:purple_concrete` | `extendednoteblock:nbs_projection_receiver` |
 
-## Shared Visuals：原 Mod 材质分离与内置
+没有安装任何 Mod / Resource Pack 的玩家仍然可以正常进入服务器；他们看到的就是普通原版载体，扩展音符会自动回退到最接近的原版 Note Block 音高与音色。
 
-Release 额外提供 `ExtendedNoteBlock-Visuals-*.zip`。它直接复用 Full Fabric 的原始 ENB 模型、纹理、物品模型与语言资源；Paper Client 内置包来自同一套资源源文件。
+## Shared Visuals：Hypixel 风格的原版载体 + CustomModelData
 
-### 如何只改变 ENB 标记物品，而不影响普通原版物品
+Release 额外提供 `ExtendedNoteBlock-Visuals-*.zip`。它直接复用 Full Fabric 的原始 ENB 模型、纹理、物品模型与语言资源；Paper Client 内置包来自完全相同的资源源文件。
 
-Paper 插件**不会**给物品强制写一个必须由资源包提供的自定义 `item_model`。插件只保存原本就需要的 Bukkit PDC：
+### 如何只改变 ENB 物品，而不影响普通原版物品
 
-`extendednoteblockbridge:enb_type`
+服务器仍然只发送原版 ItemStack，例如 Conductor Wand 的真实物品 ID 仍是：
 
-在物品序列化后，这个标记位于 `minecraft:custom_data / PublicBukkitValues`。Minecraft 26.2 的物品模型映射可以用 `minecraft:component` + `minecraft:custom_data` 条件判断它。
+```text
+minecraft:blaze_rod
+```
 
-因此 Visuals Pack / Paper Client 内置包的逻辑是：
+插件同时保留 PDC `enb_type=conductor_wand` 供服务器识别，并写入一条仅用于视觉选择的 CustomModelData 字符串：
 
-- PDC 匹配 ENB 类型 -> 使用对应的 `extendednoteblock:*` 原 Mod 模型；
-- PDC 不匹配或不存在 -> 明确 fallback 到该载体的原版模型。
+```text
+extendednoteblock:conductor_wand
+```
+
+Visuals Pack / Paper Client 内置包使用 Minecraft 26.2 的 `minecraft:select` + `minecraft:custom_model_data` 读取 `strings[0]`：
+
+- 精确匹配 ENB 字符串 -> 使用对应 `extendednoteblock:*` 原 Mod 模型；
+- 不匹配 / 没有 CustomModelData -> 明确 fallback 到该载体的原版模型。
 
 所以最终效果是：
 
-- 安装 Paper Client：ENB 标记物品自动使用原 Mod 外观；
-- 不装 Mod、但手动启用 Visuals ZIP：ENB 标记物品同样使用原 Mod 外观；
-- 什么都不装：看到普通原版音符盒 / 烈焰棒 / 混凝土，不会出现缺失模型；
-- 普通烈焰棒、普通音符盒、普通混凝土始终保持原版外观。
+- 安装 Paper Client：ENB 标记物品自动显示原 Mod 外观；
+- 不装 Mod、只启用 Visuals ZIP：ENB 标记物品同样显示原 Mod 外观；
+- 什么都不装：看到正常的原版音符盒 / 烈焰棒 / 混凝土；
+- 普通烈焰棒、普通音符盒、普通混凝土始终保持原版外观；
+- Paper 服务器永远不需要注册 `extendednoteblock:*` 自定义物品 ID。
+
+这就是 Paper 版采用的 Hypixel 风格思路：**原版载体 + 服务器元数据 + 客户端资源包模型选择**。
 
 ### 已放置方块的当前限制
 
-纯 Resource Pack 无法读取某个世界坐标对应的 Paper PDC，因此它无法区分“这个绿色混凝土是 ENB Receiver”和“旁边那个只是普通绿色混凝土”。为避免误伤原版方块，Visuals ZIP **故意不全局覆盖** Note Block / Concrete / Redstone Block 的 blockstate。
+CustomModelData 属于 ItemStack。物品放到世界里后，方块本身仍是普通 `minecraft:*` Block，纯 Resource Pack 无法知道某个坐标是否由 ENB Bridge 管理。
 
-目前 Paper 世界里已放置的 Bridge 方块仍使用原版方块外观。后续 Paper Client 会通过 ENB 对象位置同步 + 客户端定向渲染，只对真正的 Bridge 对象显示 Full Fabric 方块外观。
+为避免误伤原版方块，Visuals ZIP **故意不全局覆盖** Note Block / Concrete / Redstone Block 的 blockstate。目前 Paper 世界中已放置的 Bridge 方块仍使用原版方块外观。
+
+后续 Paper Client 会通过 ENB 对象位置同步 + 客户端定向渲染，只对真正的 Bridge 对象显示 Full Fabric 方块外观，而不影响普通原版方块。
 
 ## 运行环境
 
@@ -164,6 +178,8 @@ OP 可使用：
 /enb give all
 ```
 
+> 从旧版 Paper Server 升级后，背包里已经存在的旧 ENB 载体可能没有新的 CustomModelData 字符串。测试材质时建议重新执行 `/enb give all` 获取一套新物品；新掉落的 Bridge 物品也会自动带上新视觉标记。
+
 ## Full Fabric 快速安装
 
 单人模式：安装 Fabric Loader 26.2 + Fabric API，然后只把 `ExtendedNoteBlock-Full-Fabric-*.jar` 放进 `mods/`。不需要 Paper Server 插件。
@@ -184,10 +200,11 @@ GitHub Actions 发布前会验证：
 
 - Full Fabric 真实包含完整模组入口与自定义物品；
 - Paper Client 不泄漏自定义 Block / Item / Server Registry 类；
-- Paper Client JAR 内存在 built-in Visuals pack；
-- Paper Client 与独立 Visuals ZIP 都包含 PDC 条件选择器与明确的原版 fallback；
+- Paper Client JAR 内存在 always-enabled built-in Visuals pack；
+- Paper Client 与独立 Visuals ZIP 都包含 CustomModelData string 选择器与明确的原版 fallback；
 - 独立 Visuals ZIP 不全局覆盖原版方块 blockstate；
-- Paper Server 只依赖原版载体 + PDC，并包含 `plugin.yml` / `config.yml`。
+- Paper Server 同时保留 PDC 逻辑身份与 CustomModelData 视觉身份，同时不发送自定义注册表 ItemStack；
+- Paper Server JAR 包含 `plugin.yml` / `config.yml`。
 
 ## 项目来源与作者
 
