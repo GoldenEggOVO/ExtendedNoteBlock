@@ -143,8 +143,14 @@ public class NbsWorkshopScreen extends Screen {
         next.active = (filePage + 1) * filesPerPage < visibleFiles.size();
         addRenderableWidget(next);
 
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
-                .bounds(center - 100, height - 28, 200, 20).build());
+        if (paperClient()) {
+            addImportButton(center - rowWidth / 2, height - 28, rowWidth / 2 - 2);
+            addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
+                    .bounds(center + 2, height - 28, rowWidth / 2 - 2, 20).build());
+        } else {
+            addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
+                    .bounds(center - 100, height - 28, 200, 20).build());
+        }
     }
 
     private void initEditor() {
@@ -223,9 +229,10 @@ public class NbsWorkshopScreen extends Screen {
                 button -> {
                     stopPreview();
                     minecraft.setScreen(new VanillaExportScreen(this, song, outputName, transpose, speedPercent));
-                }).bounds(left, actionY + 24, panelWidth, 20).build();
+                }).bounds(left, actionY + 24, paperClient() ? (panelWidth - 6) / 2 : panelWidth, 20).build();
         vanillaExport.active = !busy;
         addRenderableWidget(vanillaExport);
+        if (paperClient()) addImportButton(left + (panelWidth + 6) / 2, actionY + 24, (panelWidth - 6) / 2);
 
         int bottomY = height - 28;
         int projectionTop = actionY + 51;
@@ -252,6 +259,17 @@ public class NbsWorkshopScreen extends Screen {
 
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
                 .bounds(right, bottomY, columnWidth, 20).build());
+    }
+
+    private static boolean paperClient() {
+        return net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("extendednoteblock_bridge_client");
+    }
+
+    private void addImportButton(int x, int y, int width) {
+        addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.import.title"), button -> {
+            stopPreview();
+            minecraft.setScreen(new com.atemukesu.extendednoteblock.bridgeclient.BridgeImportScreen(this));
+        }).bounds(x, y, width, 20).build());
     }
 
     private EditBox numberField(int x, int y, int width, String initial, int min, int max,

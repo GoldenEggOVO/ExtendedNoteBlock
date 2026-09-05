@@ -27,6 +27,8 @@ public final class BridgeClientPayloads {
         PayloadTypeRegistry.clientboundPlay().register(NoteEditPayload.ID, NoteEditPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ObjectSyncPayload.ID, ObjectSyncPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(NoteSavePayload.ID, NoteSavePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ImportPayload.ID, ImportPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ImportStatusPayload.ID, ImportStatusPayload.CODEC);
     }
 
     public record StartSoundPayload(
@@ -236,6 +238,28 @@ public final class BridgeClientPayloads {
         public Type<? extends CustomPacketPayload> type() {
             return ID;
         }
+    }
+
+    public record ImportPayload(byte[] bytes) implements CustomPacketPayload {
+        public static final Type<ImportPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("extendednoteblock", "bridge_import"));
+        public static final StreamCodec<FriendlyByteBuf, ImportPayload> CODEC = StreamCodec.ofMember(
+                (payload, buf) -> buf.writeBytes(payload.bytes), buf -> new ImportPayload(readImportBytes(buf)));
+        @Override public Type<? extends CustomPacketPayload> type() { return ID; }
+    }
+
+    public record ImportStatusPayload(byte[] bytes) implements CustomPacketPayload {
+        public static final Type<ImportStatusPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("extendednoteblock", "bridge_import_status"));
+        public static final StreamCodec<FriendlyByteBuf, ImportStatusPayload> CODEC = StreamCodec.ofMember(
+                (payload, buf) -> buf.writeBytes(payload.bytes), buf -> new ImportStatusPayload(readImportBytes(buf)));
+        @Override public Type<? extends CustomPacketPayload> type() { return ID; }
+    }
+
+    private static byte[] readImportBytes(FriendlyByteBuf buf) {
+        int size = buf.readableBytes();
+        if (size > com.atemukesu.extendednoteblock.bridgeprotocol.ProjectionImport.MAX_PACKET_BYTES) {
+            throw new IllegalArgumentException("Import payload too large");
+        }
+        byte[] bytes = new byte[size]; buf.readBytes(bytes); return bytes;
     }
 
     private static void writeNoteSettings(FriendlyByteBuf buf, BlockPos pos, int note, int instrumentId,

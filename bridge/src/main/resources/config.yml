@@ -15,6 +15,12 @@ wireless-redstone:
   # 1 tick matches normal redstone responsiveness.
   poll-period-ticks: 1
 
+litematic-import:
+  # Restores already placed vanilla carriers; does not place or generate blocks.
+  max-notes: 75000
+  anchor-range: 64
+  checks-per-tick: 512
+
 # Global Redstone Receiver implementation note:
 # its inventory/placement carrier is GREEN_CONCRETE. While the receiver is ON,
 # the plugin temporarily changes the world block to REDSTONE_BLOCK so vanilla

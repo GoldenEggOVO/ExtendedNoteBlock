@@ -89,9 +89,13 @@ public final class PaperBridgeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.ObjectSyncPayload.ID,
                 (payload, context) -> context.client().execute(() -> BridgeWorldObjects.apply(payload)));
 
+        ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.ImportStatusPayload.ID,
+                (payload, context) -> context.client().execute(() -> BridgeImportManager.receive(payload.bytes())));
+
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> BridgeWorldObjects.clear());
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            BridgeImportManager.tick(client);
             ClientSoundManager.tickPauseRecovery(client);
             while (openNbsWorkshopKey.consumeClick()) {
                 if (client.gui.screen() == null) {

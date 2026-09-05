@@ -88,6 +88,7 @@ out_jar = OUT_DIR / f"ExtendedNoteBlock-Paper-Client-Fabric-{mod_version}-mc{mc_
 CLASS_PREFIX = "com/atemukesu/extendednoteblock/"
 ALLOWED_CLASSES = (
     CLASS_PREFIX + "bridgeclient/",
+    CLASS_PREFIX + "bridgeprotocol/",
     CLASS_PREFIX + "config/ConfigManager",
     CLASS_PREFIX + "config/ModConfig",
     CLASS_PREFIX + "sound/ClientSoundManager",
@@ -218,6 +219,9 @@ with zipfile.ZipFile(out_jar, "r") as check:
         CLASS_PREFIX + "bridgeclient/BridgeClientPayloads.class",
         CLASS_PREFIX + "bridgeclient/mixin/BridgeSoundEngineMixin.class",
         CLASS_PREFIX + "bridgeclient/BridgeNoteBlockScreen.class",
+        CLASS_PREFIX + "bridgeclient/BridgeImportScreen.class",
+        CLASS_PREFIX + "bridgeclient/LitematicImportReader.class",
+        CLASS_PREFIX + "bridgeprotocol/ProjectionImport.class",
         CLASS_PREFIX + "sound/ClientSoundManager.class",
         CLASS_PREFIX + "sound/SoundPackManager.class",
         CLASS_PREFIX + "client/gui/screen/NbsWorkshopScreen.class",

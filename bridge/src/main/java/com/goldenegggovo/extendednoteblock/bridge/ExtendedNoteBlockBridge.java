@@ -1,5 +1,7 @@
 package com.goldenegggovo.extendednoteblock.bridge;
 
+import com.atemukesu.extendednoteblock.bridgeprotocol.ProjectionImport;
+
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -69,6 +71,7 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
 
     private NamespacedKey bridgeTypeKey;
     private BukkitTask logicTask;
+    private BridgeProjectionImporter projectionImporter;
 
     @Override
     public void onEnable() {
@@ -95,6 +98,15 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
 
         long pollPeriod = Math.max(1L, getConfig().getLong("wireless-redstone.poll-period-ticks", 1L));
         logicTask = Bukkit.getScheduler().runTaskTimer(this, this::tickBridgeLogic, 1L, pollPeriod);
+        projectionImporter = new BridgeProjectionImporter(this, new BridgeProjectionImporter.Target() {
+            @Override public boolean accepts(World world, ProjectionImport.Pos pos, int type) {
+                BridgeItemType existing = objects.get(importKey(world, pos));
+                return existing == null || existing == importType(type);
+            }
+            @Override public boolean commit(World world, ProjectionImport.Plan plan) {
+                return restoreProjection(world, plan);
+            }
+        });
 
         getLogger().info("ExtendedNoteBlockBridge enabled for Paper/Purpur 26.2");
         getLogger().info("Core bridge features: vanilla carriers, conductor selection, wireless redstone, projection playback.");
@@ -102,6 +114,7 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
 
     @Override
     public void onDisable() {
+        if (projectionImporter != null) projectionImporter.close();
         if (logicTask != null) logicTask.cancel();
         activeTasks.values().forEach(BukkitTask::cancel);
         projectionStopTasks.values().forEach(BukkitTask::cancel);
@@ -213,7 +226,12 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         float initialVolume = cfg.fadeInTicks <= 1 ? cfg.velocity / 127.0f : 0.0001f;
         Location origin = block.getLocation().add(0.5, 0.5, 0.5);
 
-        sendToListeningPlayers(origin, START_SOUND,
+        if (cfg.pitchCents != 0) {
+            sendToListeningPlayers(origin, START_ADV_SOUND,
+                    PayloadCodec.startAdvancedSound(block.getX(), block.getY(), block.getZ(), soundId,
+                            cfg.instrumentId, cfg.note, initialVolume, (float) Math.pow(2, cfg.pitchCents / 1200.0),
+                            origin.getX(), origin.getY(), origin.getZ()));
+        } else sendToListeningPlayers(origin, START_SOUND,
                 PayloadCodec.startSound(block.getX(), block.getY(), block.getZ(), soundId,
                         cfg.instrumentId, cfg.note, cfg.velocity, initialVolume));
         playVanillaFallback(origin, cfg);
@@ -244,7 +262,8 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
     private void playVanillaFallback(Location origin, NoteConfig cfg) {
         Sound sound = vanillaSoundForInstrument(cfg.instrumentId);
         float volume = Math.max(0.0f, Math.min(1.0f, cfg.velocity / 127.0f));
-        float pitch = vanillaPitchForMidi(cfg.note);
+        float pitch = Math.max(.5f, Math.min(2f, vanillaPitchForMidi(cfg.note)
+                * (float) Math.pow(2, cfg.pitchCents / 1200.0)));
         for (Player player : origin.getWorld().getPlayers()) {
             if (supportsExtendedNoteBlock(player)) continue;
             player.playSound(origin, sound, SoundCategory.RECORDS, volume, pitch);
@@ -604,7 +623,8 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
             String key = key(block);
             objects.put(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
             indexObject(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
-            notes.put(key, new NoteConfig(note, instrument, velocity, sustain, delay, fadeIn, fadeOut));
+            notes.put(key, new NoteConfig(note, instrument, velocity, sustain, delay, fadeIn, fadeOut,
+                    notes.getOrDefault(key, defaultNoteConfig()).pitchCents));
             saveObjects();
             saveNotes();
             player.sendMessage("Configured ENB note block: MIDI " + note + ", instrument " + instrument);
@@ -726,13 +746,13 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
             if (ref == null || !selection.contains(ref)) continue;
             NoteConfig old = entry.getValue();
             NoteConfig updated = switch (property) {
-                case "note" -> new NoteConfig(value, old.instrumentId, old.velocity, old.sustainTicks, old.delayMs, old.fadeInTicks, old.fadeOutTicks);
-                case "instrument" -> new NoteConfig(old.note, value, old.velocity, old.sustainTicks, old.delayMs, old.fadeInTicks, old.fadeOutTicks);
-                case "velocity" -> new NoteConfig(old.note, old.instrumentId, value, old.sustainTicks, old.delayMs, old.fadeInTicks, old.fadeOutTicks);
-                case "sustain" -> new NoteConfig(old.note, old.instrumentId, old.velocity, value, old.delayMs, old.fadeInTicks, old.fadeOutTicks);
-                case "delay" -> new NoteConfig(old.note, old.instrumentId, old.velocity, old.sustainTicks, value, old.fadeInTicks, old.fadeOutTicks);
-                case "fadein" -> new NoteConfig(old.note, old.instrumentId, old.velocity, old.sustainTicks, old.delayMs, value, old.fadeOutTicks);
-                case "fadeout" -> new NoteConfig(old.note, old.instrumentId, old.velocity, old.sustainTicks, old.delayMs, old.fadeInTicks, value);
+                case "note" -> new NoteConfig(value, old.instrumentId, old.velocity, old.sustainTicks, old.delayMs, old.fadeInTicks, old.fadeOutTicks, old.pitchCents);
+                case "instrument" -> new NoteConfig(old.note, value, old.velocity, old.sustainTicks, old.delayMs, old.fadeInTicks, old.fadeOutTicks, old.pitchCents);
+                case "velocity" -> new NoteConfig(old.note, old.instrumentId, value, old.sustainTicks, old.delayMs, old.fadeInTicks, old.fadeOutTicks, old.pitchCents);
+                case "sustain" -> new NoteConfig(old.note, old.instrumentId, old.velocity, value, old.delayMs, old.fadeInTicks, old.fadeOutTicks, old.pitchCents);
+                case "delay" -> new NoteConfig(old.note, old.instrumentId, old.velocity, old.sustainTicks, value, old.fadeInTicks, old.fadeOutTicks, old.pitchCents);
+                case "fadein" -> new NoteConfig(old.note, old.instrumentId, old.velocity, old.sustainTicks, old.delayMs, value, old.fadeOutTicks, old.pitchCents);
+                case "fadeout" -> new NoteConfig(old.note, old.instrumentId, old.velocity, old.sustainTicks, old.delayMs, old.fadeInTicks, value, old.pitchCents);
                 default -> old;
             };
             notes.put(entry.getKey(), updated);
@@ -798,6 +818,50 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
     // -------------------------------------------------------------------------
     // Object / persistence helpers
     // -------------------------------------------------------------------------
+
+    private static String importKey(World world, ProjectionImport.Pos pos) {
+        return world.getUID() + ":" + pos.x() + ":" + pos.y() + ":" + pos.z();
+    }
+
+    private static BridgeItemType importType(int type) {
+        return switch (type) {
+            case 0 -> BridgeItemType.EXTENDED_NOTE_BLOCK;
+            case 1 -> BridgeItemType.GLOBAL_REDSTONE_TRANSMITTER;
+            case 3 -> BridgeItemType.NBS_PROJECTION_RECEIVER;
+            default -> throw new IllegalArgumentException("Unsupported import object type");
+        };
+    }
+
+    private boolean restoreProjection(World world, ProjectionImport.Plan plan) {
+        String transmitter = importKey(world, plan.begin().transmitter());
+        String receiver = importKey(world, plan.begin().receiver());
+        // Construct all replacement values before changing authoritative maps.
+        Map<String, NoteConfig> restoredNotes = new HashMap<>();
+        List<ProjectionNote> timeline = new ArrayList<>(plan.notes().size());
+        for (ProjectionImport.Note note : plan.notes()) {
+            restoredNotes.put(importKey(world, note.pos()), new NoteConfig(note.midi(), note.instrument(),
+                    note.velocity(), note.sustain(), note.delayMs(), note.fadeIn(), note.fadeOut(), note.pitchCents()));
+            timeline.add(new ProjectionNote(note.instrument(), note.midi(), note.velocity(), note.sustain(),
+                    note.pitchCents(), note.delayMs()));
+        }
+        stopProjection(receiver);
+        objects.put(transmitter, BridgeItemType.GLOBAL_REDSTONE_TRANSMITTER);
+        objects.put(receiver, BridgeItemType.NBS_PROJECTION_RECEIVER);
+        indexObject(transmitter, BridgeItemType.GLOBAL_REDSTONE_TRANSMITTER);
+        indexObject(receiver, BridgeItemType.NBS_PROJECTION_RECEIVER);
+        transmitterPower.remove(transmitter);
+        transmitterProjectionTarget.remove(transmitter);
+        for (String noteKey : restoredNotes.keySet()) {
+            stopActive(noteKey);
+            objects.put(noteKey, BridgeItemType.EXTENDED_NOTE_BLOCK);
+            indexObject(noteKey, BridgeItemType.EXTENDED_NOTE_BLOCK);
+        }
+        notes.putAll(restoredNotes);
+        projectionNotes.put(receiver, timeline);
+        // Save once per import, not once for every note. Render synchronization
+        // observes the completed maps on the next normal bridge logic tick.
+        return saveObjects() & saveNotes() & saveProjections();
+    }
 
     private int interactionRange() {
         return Math.max(1, getConfig().getInt("interaction-range", 6));
@@ -919,12 +983,12 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         }
     }
 
-    private void saveObjects() {
+    private boolean saveObjects() {
         org.bukkit.configuration.file.YamlConfiguration yml = new org.bukkit.configuration.file.YamlConfiguration();
         for (Map.Entry<String, BridgeItemType> entry : objects.entrySet()) {
             yml.set(entry.getKey(), entry.getValue().id);
         }
-        saveYaml(yml, "objects.yml");
+        return saveYaml(yml, "objects.yml");
     }
 
     private void loadNotes() {
@@ -940,11 +1004,12 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
                     yml.getInt(key + ".sustain", 20),
                     yml.getInt(key + ".delayMs", 0),
                     yml.getInt(key + ".fadeIn", 0),
-                    yml.getInt(key + ".fadeOut", 3)));
+                    yml.getInt(key + ".fadeOut", 3),
+                    yml.getInt(key + ".pitchCents", 0)));
         }
     }
 
-    private void saveNotes() {
+    private boolean saveNotes() {
         org.bukkit.configuration.file.YamlConfiguration yml = new org.bukkit.configuration.file.YamlConfiguration();
         for (Map.Entry<String, NoteConfig> entry : notes.entrySet()) {
             String p = entry.getKey();
@@ -956,8 +1021,9 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
             yml.set(p + ".delayMs", c.delayMs);
             yml.set(p + ".fadeIn", c.fadeInTicks);
             yml.set(p + ".fadeOut", c.fadeOutTicks);
+            yml.set(p + ".pitchCents", c.pitchCents);
         }
-        saveYaml(yml, "notes.yml");
+        return saveYaml(yml, "notes.yml");
     }
 
     private void loadProjections() {
@@ -982,7 +1048,7 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
         }
     }
 
-    private void saveProjections() {
+    private boolean saveProjections() {
         org.bukkit.configuration.file.YamlConfiguration yml = new org.bukkit.configuration.file.YamlConfiguration();
         for (Map.Entry<String, List<ProjectionNote>> entry : projectionNotes.entrySet()) {
             String key = entry.getKey();
@@ -999,15 +1065,25 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
                 yml.set(p + ".delayMs", note.delayMs());
             }
         }
-        saveYaml(yml, "projections.yml");
+        return saveYaml(yml, "projections.yml");
     }
 
-    private void saveYaml(org.bukkit.configuration.file.YamlConfiguration yml, String filename) {
+    private boolean saveYaml(org.bukkit.configuration.file.YamlConfiguration yml, String filename) {
         try {
             if (!getDataFolder().exists()) getDataFolder().mkdirs();
-            yml.save(new File(getDataFolder(), filename));
+            java.nio.file.Path destination = new File(getDataFolder(), filename).toPath();
+            java.nio.file.Path temporary = destination.resolveSibling(filename + ".tmp");
+            yml.save(temporary.toFile());
+            try {
+                java.nio.file.Files.move(temporary, destination, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (java.nio.file.AtomicMoveNotSupportedException unsupported) {
+                java.nio.file.Files.move(temporary, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            return true;
         } catch (IOException e) {
             getLogger().severe("Failed to save " + filename + ": " + e.getMessage());
+            return false;
         }
     }
 
@@ -1056,12 +1132,16 @@ public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listene
     }
 
     private record NoteConfig(int note, int instrumentId, int velocity, int sustainTicks,
-                              int delayMs, int fadeInTicks, int fadeOutTicks) {
+                              int delayMs, int fadeInTicks, int fadeOutTicks, int pitchCents) {
+        NoteConfig(int note, int instrumentId, int velocity, int sustainTicks,
+                   int delayMs, int fadeInTicks, int fadeOutTicks) {
+            this(note, instrumentId, velocity, sustainTicks, delayMs, fadeInTicks, fadeOutTicks, 0);
+        }
         @Override
         public String toString() {
             return "MIDI=" + note + ", instrument=" + instrumentId + ", velocity=" + velocity
                     + ", sustain=" + sustainTicks + "t, delay=" + delayMs + "ms, fadeIn=" + fadeInTicks
-                    + "t, fadeOut=" + fadeOutTicks + "t";
+                    + "t, fadeOut=" + fadeOutTicks + "t, pitchCents=" + pitchCents;
         }
     }
 

@@ -145,7 +145,8 @@ helper_block = r'''    private void handlePlacedBridgeInteraction(Player player,
 
             NoteConfig cfg = new NoteConfig(
                     request.note(), request.instrument(), request.velocity(), request.sustain(),
-                    request.delay(), request.fadeIn(), request.fadeOut());
+                    request.delay(), request.fadeIn(), request.fadeOut(),
+                    notes.getOrDefault(blockKey, defaultNoteConfig()).pitchCents());
             notes.put(blockKey, cfg);
             saveNotes();
             player.sendMessage("Extended Note Block settings saved: " + cfg);

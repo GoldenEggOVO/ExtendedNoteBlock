@@ -191,48 +191,69 @@
   "gui.extendednoteblock.nbs.export_failed": "生成失败：%s",
   "gui.extendednoteblock.nbs.invalid_output": "投影文件名无效",
   "gui.extendednoteblock.nbs.other_song": "选择其他歌曲",
-  "gui.extendednoteblock.nbs.open_output": "打开投影目录"
-, "gui.extendednoteblock.nbs.speed_mode": "速度模式：%s"
-, "gui.extendednoteblock.nbs.speed_free": "自由"
-, "gui.extendednoteblock.nbs.speed_compatible": "兼容档位"
-, "gui.extendednoteblock.nbs.octave_range": "音域：%s"
-, "gui.extendednoteblock.nbs.octave_two": "2 八度"
-, "gui.extendednoteblock.nbs.octave_six": "6 八度"
-, "gui.extendednoteblock.nbs.custom_instruments": "自定义音色：%s"
-, "gui.extendednoteblock.nbs.enabled": "开启"
-, "gui.extendednoteblock.nbs.disabled": "关闭"
-, "gui.extendednoteblock.nbs.custom_fallback": "回退音色 %1$s：%2$s"
-, "gui.extendednoteblock.nbs.preview_start": "试听"
-, "gui.extendednoteblock.nbs.preview_stop": "停止试听"
-, "gui.extendednoteblock.nbs.preview_started": "开始试听，共 %s 个音符"
-, "gui.extendednoteblock.nbs.preview_stopped": "试听已停止"
-, "gui.extendednoteblock.nbs.preview_finished": "试听完成"
-, "gui.extendednoteblock.nbs.preview_no_pack": "没有可用的活动音色包，无法试听"
-, "gui.extendednoteblock.nbs.preview_empty": "当前设置下没有可试听的音符"
-, "gui.extendednoteblock.nbs.vanilla_export": "原版红石 / 轨道 / 数据包导出"
-, "gui.extendednoteblock.vanilla.title": "原版音符盒音乐导出"
-, "gui.extendednoteblock.vanilla.target": "导出类型：%s"
-, "gui.extendednoteblock.vanilla.format": "结构格式：%s"
-, "gui.extendednoteblock.vanilla.distribution": "和弦分布：%s"
-, "gui.extendednoteblock.vanilla.pitch": "音高处理：%s"
-, "gui.extendednoteblock.vanilla.resolution": "时间精度：%s 步/秒"
-, "gui.extendednoteblock.vanilla.command": "命令方块：%s"
-, "gui.extendednoteblock.vanilla.minecart": "矿车：%s"
-, "gui.extendednoteblock.vanilla.loop": "循环：%s"
-, "gui.extendednoteblock.vanilla.shared": "共享播放：%s"
-, "gui.extendednoteblock.vanilla.rail_speed": "轨道速度（1-8 格/秒 ×10）"
-, "gui.extendednoteblock.vanilla.power_interval": "动力铁轨间隔"
-, "gui.extendednoteblock.vanilla.blocks_page": "方块与数据包设置"
-, "gui.extendednoteblock.vanilla.general_page": "返回常规设置"
-, "gui.extendednoteblock.vanilla.floor_block": "地板方块 ID"
-, "gui.extendednoteblock.vanilla.circuit_block": "线路方块 ID"
-, "gui.extendednoteblock.vanilla.rail_block": "轨道基座方块 ID"
-, "gui.extendednoteblock.vanilla.namespace": "数据包命名空间"
-, "gui.extendednoteblock.vanilla.category": "声音类别：%s"
-, "gui.extendednoteblock.vanilla.instrument_blocks": "16 种音色支撑方块"
-, "gui.extendednoteblock.vanilla.mapping_title": "原版音色支撑方块映射"
-, "gui.extendednoteblock.vanilla.open_output": "打开导出目录"
-, "gui.extendednoteblock.vanilla.export": "生成"
-, "gui.extendednoteblock.vanilla.exporting": "正在生成原版音乐..."
-, "gui.extendednoteblock.vanilla.exported": "已生成 %1$s：%2$s 个音符，顺延 %3$s，时序调整 %4$s"
+  "gui.extendednoteblock.nbs.open_output": "打开投影目录",
+  "gui.extendednoteblock.nbs.speed_mode": "速度模式：%s",
+  "gui.extendednoteblock.nbs.speed_free": "自由",
+  "gui.extendednoteblock.nbs.speed_compatible": "兼容档位",
+  "gui.extendednoteblock.nbs.octave_range": "音域：%s",
+  "gui.extendednoteblock.nbs.octave_two": "2 八度",
+  "gui.extendednoteblock.nbs.octave_six": "6 八度",
+  "gui.extendednoteblock.nbs.custom_instruments": "自定义音色：%s",
+  "gui.extendednoteblock.nbs.enabled": "开启",
+  "gui.extendednoteblock.nbs.disabled": "关闭",
+  "gui.extendednoteblock.nbs.custom_fallback": "回退音色 %1$s：%2$s",
+  "gui.extendednoteblock.nbs.preview_start": "试听",
+  "gui.extendednoteblock.nbs.preview_stop": "停止试听",
+  "gui.extendednoteblock.nbs.preview_started": "开始试听，共 %s 个音符",
+  "gui.extendednoteblock.nbs.preview_stopped": "试听已停止",
+  "gui.extendednoteblock.nbs.preview_finished": "试听完成",
+  "gui.extendednoteblock.nbs.preview_no_pack": "没有可用的活动音色包，无法试听",
+  "gui.extendednoteblock.nbs.preview_empty": "当前设置下没有可试听的音符",
+  "gui.extendednoteblock.nbs.vanilla_export": "原版红石 / 轨道 / 数据包导出",
+  "gui.extendednoteblock.vanilla.title": "原版音符盒音乐导出",
+  "gui.extendednoteblock.vanilla.target": "导出类型：%s",
+  "gui.extendednoteblock.vanilla.format": "结构格式：%s",
+  "gui.extendednoteblock.vanilla.distribution": "和弦分布：%s",
+  "gui.extendednoteblock.vanilla.pitch": "音高处理：%s",
+  "gui.extendednoteblock.vanilla.resolution": "时间精度：%s 步/秒",
+  "gui.extendednoteblock.vanilla.command": "命令方块：%s",
+  "gui.extendednoteblock.vanilla.minecart": "矿车：%s",
+  "gui.extendednoteblock.vanilla.loop": "循环：%s",
+  "gui.extendednoteblock.vanilla.shared": "共享播放：%s",
+  "gui.extendednoteblock.vanilla.rail_speed": "轨道速度（1-8 格/秒 ×10）",
+  "gui.extendednoteblock.vanilla.power_interval": "动力铁轨间隔",
+  "gui.extendednoteblock.vanilla.blocks_page": "方块与数据包设置",
+  "gui.extendednoteblock.vanilla.general_page": "返回常规设置",
+  "gui.extendednoteblock.vanilla.floor_block": "地板方块 ID",
+  "gui.extendednoteblock.vanilla.circuit_block": "线路方块 ID",
+  "gui.extendednoteblock.vanilla.rail_block": "轨道基座方块 ID",
+  "gui.extendednoteblock.vanilla.namespace": "数据包命名空间",
+  "gui.extendednoteblock.vanilla.category": "声音类别：%s",
+  "gui.extendednoteblock.vanilla.instrument_blocks": "16 种音色支撑方块",
+  "gui.extendednoteblock.vanilla.mapping_title": "原版音色支撑方块映射",
+  "gui.extendednoteblock.vanilla.open_output": "打开导出目录",
+  "gui.extendednoteblock.vanilla.export": "生成",
+  "gui.extendednoteblock.vanilla.exporting": "正在生成原版音乐...",
+  "gui.extendednoteblock.vanilla.exported": "已生成 %1$s：%2$s 个音符，顺延 %3$s，时序调整 %4$s",
+  "gui.extendednoteblock.import.title": "恢复 ENB",
+  "gui.extendednoteblock.import.choose": "请选择 Paper 音乐工坊导出的原始投影文件。",
+  "gui.extendednoteblock.import.file": "原始 ENB .litematic 文件",
+  "gui.extendednoteblock.import.browse": "浏览",
+  "gui.extendednoteblock.import.load": "读取",
+  "gui.extendednoteblock.import.hint": "先粘贴结构，再选择原始 ENB .litematic 文件。",
+  "gui.extendednoteblock.import.anchor": "已粘贴的红色混凝土发射器坐标：X / Y / Z",
+  "gui.extendednoteblock.import.rotation": "顺时针旋转：%s°",
+  "gui.extendednoteblock.import.mirror": "先镜像：%s",
+  "gui.extendednoteblock.import.none": "无",
+  "gui.extendednoteblock.import.restore": "恢复 ENB",
+  "gui.extendednoteblock.import.loading": "正在读取本地文件…",
+  "gui.extendednoteblock.import.loaded": "已读取 %s 个音符。核对发射器坐标、旋转和镜像后即可恢复。",
+  "gui.extendednoteblock.import.requires_server": "请连接安装了 ENB Paper Server 0.9.0+ 的服务器，需要 OP 或导入权限。",
+  "gui.extendednoteblock.import.file_hint": "显示 schematics/ 中的文件，也可返回上页输入文件完整路径。",
+  "gui.extendednoteblock.import.connecting": "等待服务器响应…",
+  "gui.extendednoteblock.import.uploading": "正在上传音符：%s / %s",
+  "gui.extendednoteblock.import.validating": "正在核对已粘贴方块：%s / %s",
+  "gui.extendednoteblock.import.complete": "已恢复 %s 个 ENB 音符和投影曲目，服务器已保存。",
+  "gui.extendednoteblock.import.failed": "恢复失败：%s",
+  "gui.extendednoteblock.import.interrupted": "恢复已中断。如果中断前正在完成，请检查方块或服务器日志确认结果。"
 }

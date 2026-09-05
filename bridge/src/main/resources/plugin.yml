@@ -10,5 +10,8 @@ commands:
     usage: /enb <help|give|set|info|remove|play|wand|projection|list|reload>
     permission: extendednoteblockbridge.use
 permissions:
+  extendednoteblockbridge.import:
+    description: Restore ENB identities and music data from a pasted Litematic
+    default: op
   extendednoteblockbridge.use:
     default: op

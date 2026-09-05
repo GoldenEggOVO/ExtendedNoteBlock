@@ -210,6 +210,8 @@ if projection_writer.exists():
             entry.putInt("Velocity", note.velocity());
             entry.putInt("SustainTicks", sustainTicks);
             entry.putInt("PitchCents", note.pitchCents());
+            entry.putInt("FadeInTicks", 0);
+            entry.putInt("FadeOutTicks", 0);
             entry.putLong("DelayMs", note.delayMs());
             noteList.add(entry);
         }
