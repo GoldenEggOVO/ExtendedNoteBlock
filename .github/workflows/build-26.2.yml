@@ -41,7 +41,7 @@ jobs:
           test -n "$FULL_JAR"
           jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/ExtendedNoteBlock.class'
           jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/item/ConductorWandItem.class'
-      - name: Verify Paper Client PDC-selective built-in resource pack
+      - name: Verify Paper Client CustomModelData built-in resource pack
         shell: bash
         run: |
           set -euo pipefail
@@ -50,7 +50,8 @@ jobs:
           jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_visuals/pack.mcmeta'
           jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_visuals/assets/extendednoteblock/items/conductor_wand.json'
           jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json'
-          unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'extendednoteblockbridge:enb_type'
+          unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'minecraft:custom_model_data'
+          unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'extendednoteblock:conductor_wand'
           unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'minecraft:item/blaze_rod'
           if jar tf "$CLIENT_JAR" | grep -q '^com/atemukesu/extendednoteblock/item/'; then
             echo 'Unsafe Full Fabric item classes leaked into Paper Client' >&2
@@ -89,12 +90,17 @@ jobs:
           java-version: '25'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Verify vanilla-safe PDC item identity source
+      - name: Prepare Paper CustomModelData source
+        run: python3 ../scripts/prepare_paper_custom_model_data.py
+      - name: Verify vanilla-safe PDC plus CustomModelData identity
         run: |
           grep -q 'PersistentDataType.STRING' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'bridgeTypeKey' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'getCustomModelDataComponent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'customModelData.setStrings(List.of("extendednoteblock:" + type.id))' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'setCustomModelDataComponent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           if grep -q 'DataComponentTypes.ITEM_MODEL' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
-            echo 'Paper server must not require a custom item_model resource on no-pack clients' >&2
+            echo 'Paper server must not force custom item_model IDs on no-pack clients' >&2
             exit 1
           fi
       - name: Build Paper/Purpur server plugin
@@ -191,31 +197,35 @@ jobs:
           ## Full Fabric
           **ExtendedNoteBlock-Full-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
           - For singleplayer, or Fabric servers where the server also installs the Full mod.
-          - Contains the real ExtendedNoteBlock custom blocks/items and the complete Fabric feature set.
+          - Contains the real ExtendedNoteBlock custom blocks/items and complete Fabric content.
           - Do not use this as the Paper/Purpur companion client.
 
           ## Paper/Purpur Server
           **ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar**
           - Install in Paper/Purpur `plugins/`.
-          - Uses only vanilla carrier ItemStacks/blocks plus PDC metadata.
-          - Does not force a custom item-model component, so clients with no Mod and no resource pack retain normal vanilla carrier models.
+          - Server logic identity remains PDC (`enb_type`).
+          - Each marked carrier item also receives a visual-only Minecraft 26.2 `minecraft:custom_model_data` string such as `extendednoteblock:conductor_wand`.
+          - The actual item ID remains vanilla (`minecraft:blaze_rod`, `minecraft:note_block`, concrete, etc.).
+          - Clients with no Mod/resource pack simply keep the normal vanilla carrier appearance.
 
           ## Paper Client
           **ExtendedNoteBlock-Paper-Client-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
           - Optional Fabric client companion for the Paper/Purpur server.
           - Registry-safe: no Full Fabric custom block/item registration is exposed to Paper.
           - Shares the Full version's sound engine, sound packs, NBS/MIDI/audio workshop and compatible client GUI code.
-          - Contains an **always-enabled built-in copy of the shared ENB visual resource pack**.
+          - Contains an **always-enabled built-in copy of the same CustomModelData Visuals pack**.
 
           ## Standalone Visual Pack
           **ExtendedNoteBlock-Visuals-${MOD_VERSION}-mc${MC_VERSION}.zip**
-          - Uses Minecraft 26.2 `minecraft:component` / `minecraft:custom_data` item-model conditions to detect the Paper plugin's `enb_type` PDC marker.
-          - Marked ENB carrier item -> original ExtendedNoteBlock model.
-          - Ordinary carrier item -> explicit vanilla fallback model.
-          - A client with no pack therefore still sees completely normal vanilla carriers.
-          - Placed bridge blocks remain vanilla-looking for now; a plain resource pack cannot distinguish PDC by world coordinate.
+          - Uses Minecraft 26.2 `minecraft:select` + `minecraft:custom_model_data` strings to choose ENB item models.
+          - Exact ENB string match -> original ExtendedNoteBlock model.
+          - No match / no CustomModelData -> explicit vanilla fallback model.
+          - Ordinary Blaze Rods, Note Blocks and concrete items are therefore unchanged.
+          - Placed bridge blocks remain vanilla-looking for now; a plain resource pack cannot distinguish plugin identity by world coordinate.
 
-          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety and built-in PDC selectors, standalone pack vanilla fallbacks, and Paper plugin runtime resources before publishing.
+          This is the Hypixel-style carrier architecture: vanilla server items + item metadata + client resource-pack model selection, without custom registry IDs on Paper.
+
+          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety, built-in CustomModelData selectors, standalone pack vanilla fallbacks, and Paper plugin runtime resources before publishing.
           EOF
 
           gh release create "$TAG" \
