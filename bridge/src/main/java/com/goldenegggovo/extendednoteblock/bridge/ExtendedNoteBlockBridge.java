@@ -42,7 +42,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-public final class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
+public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
     private static final String START_SOUND = "extendednoteblock:start_sound";
     private static final String UPDATE_VOLUME = "extendednoteblock:update_volume";
     private static final String STOP_SOUND = "extendednoteblock:stop_sound";

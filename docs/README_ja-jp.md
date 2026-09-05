@@ -32,7 +32,7 @@ Paper Client は Visuals と同じリソースを内蔵しています。Mod を
 - 2.9.0 では貼り付け後に N → Restore ENB から元の ENB Litematic を読み込み、赤い送信機の座標と回転・反転を指定してパラメーターを復元できます。Paper Server 0.9.0 と OP / import 権限が必要です。
 - CI は成功していますが、低音域などの実際の Purpur ゲーム内検証は引き続き必要です。
 
-詳細は[インストールガイド（中文）](INSTALLATION.md)、[2.8.1 変更内容（English）](releases/2.8.1.md)、[開発ガイド](DEVELOPMENT_ja-jp.md)を参照してください。
+詳細は[インストールガイド（中文）](INSTALLATION.md)、[2.9.0 変更内容（中文）](releases/2.9.0.md)、[開発ガイド](DEVELOPMENT_ja-jp.md)を参照してください。
 
 ## 原作者とライセンス
 

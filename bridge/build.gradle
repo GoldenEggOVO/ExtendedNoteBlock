@@ -23,6 +23,7 @@ sourceSets.main.java.srcDir('../src/main/java/com/atemukesu/extendednoteblock/br
 
 test {
     useJUnitPlatform()
+    testLogging { exceptionFormat = 'full' }
     afterSuite { descriptor, result ->
         if (!descriptor.parent && result.skippedTestCount > 0) {
             throw new GradleException('Bridge tests must execute; MockBukkit unsupported APIs cannot silently skip validation')

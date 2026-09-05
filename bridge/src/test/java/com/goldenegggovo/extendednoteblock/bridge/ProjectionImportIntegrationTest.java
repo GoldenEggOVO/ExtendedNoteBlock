@@ -80,7 +80,7 @@ class ProjectionImportIntegrationTest {
         String notesBefore = saved.saveToString(), projectionsBefore = yaml("projections").saveToString();
         // Reload from disk into emptied authoritative maps, then save them again.
         for (String method : List.of("loadObjects", "loadNotes", "loadProjections", "saveObjects", "saveNotes", "saveProjections")) {
-            var loader = plugin.getClass().getDeclaredMethod(method); loader.setAccessible(true); loader.invoke(plugin);
+            var loader = ExtendedNoteBlockBridge.class.getDeclaredMethod(method); loader.setAccessible(true); loader.invoke(plugin);
         }
         assertEquals(notesBefore, yaml("notes").saveToString());
         assertEquals(projectionsBefore, yaml("projections").saveToString());
