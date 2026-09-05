@@ -41,7 +41,7 @@ jobs:
           test -n "$FULL_JAR"
           jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/ExtendedNoteBlock.class'
           jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/item/ConductorWandItem.class'
-      - name: Verify Paper Client CustomModelData built-in resource pack
+      - name: Verify Paper Client visuals and placed rendering
         shell: bash
         run: |
           set -euo pipefail
@@ -54,6 +54,13 @@ jobs:
           unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'extendednoteblock:conductor_wand'
           unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'minecraft:item/blaze_rod'
           jar tf "$CLIENT_JAR" | grep -qx 'com/atemukesu/extendednoteblock/bridgeclient/BridgeNoteBlockScreen.class'
+          jar tf "$CLIENT_JAR" | grep -qx 'com/atemukesu/extendednoteblock/bridgeclient/BridgeWorldObjects.class'
+          jar tf "$CLIENT_JAR" | grep -qx 'com/atemukesu/extendednoteblock/bridgeclient/BridgeBlockRenderModels.class'
+          jar tf "$CLIENT_JAR" | grep -qx 'assets/extendednoteblock/models/block/c.json'
+          jar tf "$CLIENT_JAR" | grep -qx 'assets/extendednoteblock/models/block/c_on.json'
+          jar tf "$CLIENT_JAR" | grep -qx 'assets/extendednoteblock/models/block/global_redstone_transmitter.json'
+          jar tf "$CLIENT_JAR" | grep -qx 'assets/extendednoteblock/models/block/global_redstone_receiver_on.json'
+          jar tf "$CLIENT_JAR" | grep -qx 'assets/extendednoteblock/models/block/nbs_projection_receiver.json'
           if jar tf "$CLIENT_JAR" | grep -q '^com/atemukesu/extendednoteblock/item/'; then
             echo 'Unsafe Full Fabric item classes leaked into Paper Client' >&2
             exit 1
@@ -95,7 +102,9 @@ jobs:
         run: python3 ../scripts/prepare_paper_custom_model_data.py
       - name: Prepare Paper placed interactions
         run: python3 ../scripts/prepare_paper_interactions.py
-      - name: Verify vanilla-safe identity and right-click bridge
+      - name: Prepare Paper placed render synchronization
+        run: python3 ../scripts/prepare_paper_render_sync.py
+      - name: Verify vanilla-safe identity, interaction and render bridge
         run: |
           grep -q 'PersistentDataType.STRING' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'bridgeTypeKey' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
@@ -106,6 +115,10 @@ jobs:
           grep -q 'registerIncomingPluginChannel(this, NOTE_SAVE' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'handlePlacedBridgeInteraction(player, block, type)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'handleNoteSave(Player player, byte\[\] message)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'extendednoteblock:bridge_object_sync' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'sendRenderSnapshot(Player player)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'syncChangedRenderStates()' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'PlayerRegisterChannelEvent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           if grep -q 'DataComponentTypes.ITEM_MODEL' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
             echo 'Paper server must not force custom item_model IDs on no-pack clients' >&2
             exit 1
@@ -205,34 +218,30 @@ jobs:
           **ExtendedNoteBlock-Full-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
           - For singleplayer, or Fabric servers where the server also installs the Full mod.
           - Contains the real ExtendedNoteBlock custom blocks/items and complete Fabric content.
-          - Do not use this as the Paper/Purpur companion client.
 
           ## Paper/Purpur Server
           **ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar**
           - Install in Paper/Purpur `plugins/`.
-          - Server logic identity remains PDC (`enb_type`).
-          - Each marked carrier item also receives a visual-only Minecraft 26.2 `minecraft:custom_model_data` string.
-          - Right-clicking a placed Extended Note Block now opens the Paper Client editor GUI and saves validated values back to the server.
-          - Right-click transmitters/receivers/projection receivers for live usage/status help; Shift + right-click a Projection Receiver test-plays its loaded timeline.
-          - The actual item/block IDs remain vanilla and players without the client mod can still join.
+          - Server world/block IDs remain vanilla-only.
+          - Synchronizes managed ENB positions, object type, powered state and note pitch class to Paper Client.
+          - Existing right-click editor/status interactions remain available.
+          - Players without Paper Client still join normally and see vanilla carrier blocks.
 
           ## Paper Client
           **ExtendedNoteBlock-Paper-Client-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
-          - Optional Fabric client companion for the Paper/Purpur server.
-          - Registry-safe: no Full Fabric custom block/item registration is exposed to Paper.
-          - Shares the Full version's sound engine, sound packs, NBS/MIDI/audio workshop and compatible client GUI code.
-          - Contains an **always-enabled built-in copy of the same CustomModelData Visuals pack**.
-          - Includes the standalone Paper Extended Note Block editor screen used by right-click interaction.
+          - Registry-safe Paper companion; no Full Fabric custom Block/Item registration is sent to Paper.
+          - Replaces the baked model only at server-synchronized ENB coordinates.
+          - Extended Note Block uses the Full Fabric C/C#/D/.../B model selected from MIDI pitch class, including powered variants.
+          - Global Redstone Transmitter, Receiver and NBS Projection Receiver use their Full Fabric ON/OFF models.
+          - Ordinary vanilla note blocks, concrete and redstone blocks remain unchanged.
+          - Receiver remains a real vanilla redstone block while powered server-side, but Paper Client renders the ENB Receiver ON model at that coordinate.
 
           ## Standalone Visual Pack
           **ExtendedNoteBlock-Visuals-${MOD_VERSION}-mc${MC_VERSION}.zip**
-          - Uses Minecraft 26.2 `minecraft:select` + `minecraft:custom_model_data` strings to choose ENB item models.
-          - Exact ENB string match -> original ExtendedNoteBlock model.
-          - No match / no CustomModelData -> explicit vanilla fallback model.
-          - Ordinary Blaze Rods, Note Blocks and concrete items are therefore unchanged.
-          - Placed bridge blocks remain vanilla-looking for now; a plain resource pack cannot distinguish plugin identity by world coordinate.
+          - Continues to provide CustomModelData-based ENB **item** visuals without a client mod.
+          - Position-aware placed-block replacement requires Paper Client because a resource pack alone cannot know server-managed coordinates.
 
-          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety, CustomModelData visuals, Paper right-click editor channels and Paper plugin runtime resources before publishing.
+          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety/model assets/render classes, Paper render-sync channels and Paper plugin runtime resources before publishing.
           EOF
 
           gh release create "$TAG" \
