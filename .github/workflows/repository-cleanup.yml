@@ -10,7 +10,9 @@ permissions:
 
 jobs:
   cleanup:
-    if: github.repository == 'GoldenEggOVO/ExtendedNoteBlock' && github.event.head_commit.message == 'chore: clean superseded 2.8.1 release'
+    if: >-
+      github.repository == 'GoldenEggOVO/ExtendedNoteBlock' &&
+      github.event.head_commit.message == 'chore: clean superseded 2.8.1 release'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
