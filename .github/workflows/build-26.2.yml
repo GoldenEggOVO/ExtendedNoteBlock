@@ -119,6 +119,8 @@ jobs:
           grep -q 'sendRenderSnapshot(Player player)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'syncChangedRenderStates()' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'PlayerRegisterChannelEvent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'public List<String> onTabComplete' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'sendHelp(sender, args.length >= 2 ? args\[1\] : null)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           if grep -q 'DataComponentTypes.ITEM_MODEL' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
             echo 'Paper server must not force custom item_model IDs on no-pack clients' >&2
             exit 1
@@ -225,6 +227,7 @@ jobs:
           - Server world/block IDs remain vanilla-only.
           - Synchronizes managed ENB positions, object type, powered state and note pitch class to Paper Client.
           - Existing right-click editor/status interactions remain available.
+          - Adds `/enb help [command]` and context-aware TAB completion for ENB commands.
           - Players without Paper Client still join normally and see vanilla carrier blocks.
 
           ## Paper Client
@@ -241,7 +244,7 @@ jobs:
           - Continues to provide CustomModelData-based ENB **item** visuals without a client mod.
           - Position-aware placed-block replacement requires Paper Client because a resource pack alone cannot know server-managed coordinates.
 
-          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety/model assets/render classes, Paper render-sync channels and Paper plugin runtime resources before publishing.
+          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety/model assets/render classes, Paper render-sync channels, ENB command completion/help injection and Paper plugin runtime resources before publishing.
           EOF
 
           gh release create "$TAG" \
