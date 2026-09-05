@@ -9,6 +9,7 @@ only at those coordinates.
 Run after prepare_paper_interactions.py.
 """
 from pathlib import Path
+import runpy
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "bridge" / "src" / "main" / "java" / "com" / "goldenegggovo" / "extendednoteblock" / "bridge" / "ExtendedNoteBlockBridge.java"
@@ -241,3 +242,7 @@ if text != original:
     print(f"patched {SOURCE.relative_to(ROOT)}")
 else:
     print("Paper placed render sync already prepared")
+
+# Command UX is applied last so it sees the final Paper source after all other
+# bridge transformations and can compile against the exact command tree.
+runpy.run_path(str(ROOT / "scripts" / "prepare_paper_command_help.py"), run_name="__main__")
