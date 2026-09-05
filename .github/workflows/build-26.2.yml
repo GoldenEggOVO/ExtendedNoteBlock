@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - port/26.2
-      - release/three-editions
+      - release/26.2
   pull_request:
     branches:
       - main
