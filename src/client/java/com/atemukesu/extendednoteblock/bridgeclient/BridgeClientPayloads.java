@@ -12,7 +12,7 @@ import net.minecraft.resources.Identifier;
 /**
  * Registry-safe bridge payloads used by the Paper/Purpur companion.
  * Existing audio channel IDs intentionally match the full mod. Bridge-only
- * editor channels use dedicated IDs so Paper can own the authoritative state.
+ * editor/render channels use dedicated IDs so Paper can own authoritative state.
  */
 public final class BridgeClientPayloads {
     private BridgeClientPayloads() {
@@ -25,6 +25,7 @@ public final class BridgeClientPayloads {
         PayloadTypeRegistry.clientboundPlay().register(StartAdvancedSoundPayload.ID, StartAdvancedSoundPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(AdvancedUpdatePayload.ID, AdvancedUpdatePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(NoteEditPayload.ID, NoteEditPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ObjectSyncPayload.ID, ObjectSyncPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(NoteSavePayload.ID, NoteSavePayload.CODEC);
     }
 
@@ -148,6 +149,34 @@ public final class BridgeClientPayloads {
                 buf -> new AdvancedUpdatePayload(
                         buf.readUUID(), buf.readFloat(), buf.readFloat(),
                         buf.readDouble(), buf.readDouble(), buf.readDouble()));
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return ID;
+        }
+    }
+
+    /** Paper -> Fabric: one placed-object render cache operation. */
+    public record ObjectSyncPayload(
+            int operation,
+            BlockPos pos,
+            int typeId,
+            boolean powered,
+            int variant) implements CustomPacketPayload {
+
+        public static final Type<ObjectSyncPayload> ID = new Type<>(
+                Identifier.fromNamespaceAndPath("extendednoteblock", "bridge_object_sync"));
+
+        public static final StreamCodec<FriendlyByteBuf, ObjectSyncPayload> CODEC = StreamCodec.ofMember(
+                (payload, buf) -> {
+                    buf.writeInt(payload.operation);
+                    buf.writeBlockPos(payload.pos);
+                    buf.writeInt(payload.typeId);
+                    buf.writeBoolean(payload.powered);
+                    buf.writeInt(payload.variant);
+                },
+                buf -> new ObjectSyncPayload(
+                        buf.readInt(), buf.readBlockPos(), buf.readInt(), buf.readBoolean(), buf.readInt()));
 
         @Override
         public Type<? extends CustomPacketPayload> type() {
