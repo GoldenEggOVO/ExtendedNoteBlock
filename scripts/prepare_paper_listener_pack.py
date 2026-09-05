@@ -99,6 +99,12 @@ join_replacement = r'''    @EventHandler
             listenerPackReady.add(event.getPlayer().getUniqueId());
             getLogger().info("ENB listener resource pack loaded by " + event.getPlayer().getName());
             event.getPlayer().sendMessage("ENB 资源包已加载：原版客户端 MIDI 0-127 聆听模式已启用。");
+        } else if (status.equals("ACCEPTED")) {
+            getLogger().info("ENB listener resource pack accepted by " + event.getPlayer().getName());
+            event.getPlayer().sendMessage("ENB 资源包已接受，正在下载。");
+        } else if (status.equals("DOWNLOADED")) {
+            getLogger().info("ENB listener resource pack downloaded by " + event.getPlayer().getName());
+            event.getPlayer().sendMessage("ENB 资源包已下载，正在加载声音与材质。");
         } else if (status.equals("DECLINED") || status.startsWith("FAILED")
                 || status.equals("INVALID_URL") || status.equals("DISCARDED")) {
             listenerPackReady.remove(event.getPlayer().getUniqueId());
