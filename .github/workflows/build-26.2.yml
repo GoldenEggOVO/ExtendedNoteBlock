@@ -53,6 +53,7 @@ jobs:
           unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'minecraft:custom_model_data'
           unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'extendednoteblock:conductor_wand'
           unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'minecraft:item/blaze_rod'
+          jar tf "$CLIENT_JAR" | grep -qx 'com/atemukesu/extendednoteblock/bridgeclient/BridgeNoteBlockScreen.class'
           if jar tf "$CLIENT_JAR" | grep -q '^com/atemukesu/extendednoteblock/item/'; then
             echo 'Unsafe Full Fabric item classes leaked into Paper Client' >&2
             exit 1
@@ -92,13 +93,19 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
       - name: Prepare Paper CustomModelData source
         run: python3 ../scripts/prepare_paper_custom_model_data.py
-      - name: Verify vanilla-safe PDC plus CustomModelData identity
+      - name: Prepare Paper placed interactions
+        run: python3 ../scripts/prepare_paper_interactions.py
+      - name: Verify vanilla-safe identity and right-click bridge
         run: |
           grep -q 'PersistentDataType.STRING' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'bridgeTypeKey' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'getCustomModelDataComponent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'customModelData.setStrings(List.of("extendednoteblock:" + type.id))' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'setCustomModelDataComponent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'extendednoteblock:bridge_note_edit' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'registerIncomingPluginChannel(this, NOTE_SAVE' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'handlePlacedBridgeInteraction(player, block, type)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'handleNoteSave(Player player, byte\[\] message)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           if grep -q 'DataComponentTypes.ITEM_MODEL' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
             echo 'Paper server must not force custom item_model IDs on no-pack clients' >&2
             exit 1
@@ -204,9 +211,10 @@ jobs:
           **ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar**
           - Install in Paper/Purpur `plugins/`.
           - Server logic identity remains PDC (`enb_type`).
-          - Each marked carrier item also receives a visual-only Minecraft 26.2 `minecraft:custom_model_data` string such as `extendednoteblock:conductor_wand`.
-          - The actual item ID remains vanilla (`minecraft:blaze_rod`, `minecraft:note_block`, concrete, etc.).
-          - Clients with no Mod/resource pack simply keep the normal vanilla carrier appearance.
+          - Each marked carrier item also receives a visual-only Minecraft 26.2 `minecraft:custom_model_data` string.
+          - Right-clicking a placed Extended Note Block now opens the Paper Client editor GUI and saves validated values back to the server.
+          - Right-click transmitters/receivers/projection receivers for live usage/status help; Shift + right-click a Projection Receiver test-plays its loaded timeline.
+          - The actual item/block IDs remain vanilla and players without the client mod can still join.
 
           ## Paper Client
           **ExtendedNoteBlock-Paper-Client-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar**
@@ -214,6 +222,7 @@ jobs:
           - Registry-safe: no Full Fabric custom block/item registration is exposed to Paper.
           - Shares the Full version's sound engine, sound packs, NBS/MIDI/audio workshop and compatible client GUI code.
           - Contains an **always-enabled built-in copy of the same CustomModelData Visuals pack**.
+          - Includes the standalone Paper Extended Note Block editor screen used by right-click interaction.
 
           ## Standalone Visual Pack
           **ExtendedNoteBlock-Visuals-${MOD_VERSION}-mc${MC_VERSION}.zip**
@@ -223,9 +232,7 @@ jobs:
           - Ordinary Blaze Rods, Note Blocks and concrete items are therefore unchanged.
           - Placed bridge blocks remain vanilla-looking for now; a plain resource pack cannot distinguish plugin identity by world coordinate.
 
-          This is the Hypixel-style carrier architecture: vanilla server items + item metadata + client resource-pack model selection, without custom registry IDs on Paper.
-
-          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety, built-in CustomModelData selectors, standalone pack vanilla fallbacks, and Paper plugin runtime resources before publishing.
+          Built with Java 25. CI verifies Full Fabric content, Paper Client registry safety, CustomModelData visuals, Paper right-click editor channels and Paper plugin runtime resources before publishing.
           EOF
 
           gh release create "$TAG" \
