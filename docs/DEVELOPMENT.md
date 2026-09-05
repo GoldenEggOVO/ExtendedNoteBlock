@@ -32,7 +32,7 @@ Versions come from [gradle.properties](../gradle.properties), the [wrapper confi
 
 The active Gradle build does not include `legacy/`. The old version-switching tasks are not available in this branch.
 
-## Build Full Fabric, Paper Client and Visuals
+## Build Full Fabric, Paper Client and resource packs
 
 Run from the repository root with JDK 25 selected. The source-preparation scripts modify tracked files, so use a disposable checkout or a detached worktree for builds when you want to keep your development checkout clean:
 
@@ -47,6 +47,7 @@ chmod +x gradlew
 ./gradlew clean test build --stacktrace
 python3 scripts/make_paper_bridge_client_jar.py
 python3 scripts/make_visual_resource_pack.py
+python3 scripts/make_server_resource_pack.py
 ```
 
 The Paper Client packaging script consumes the Full build output and applies a strict class whitelist. Do not replace it with a copy of the Full JAR.
@@ -59,6 +60,7 @@ Run from the repository root, in this order:
 python3 scripts/prepare_paper_custom_model_data.py
 python3 scripts/prepare_paper_interactions.py
 python3 scripts/prepare_paper_render_sync.py
+python3 scripts/prepare_paper_listener_pack.py
 ./gradlew -p bridge clean build --stacktrace
 ```
 
@@ -71,9 +73,10 @@ On Windows, use `python` if Python 3 is installed under that name, replace `./gr
 | `build/libs/` | Full Fabric runtime JAR and sources JAR |
 | `build/paper-bridge-client/` | Paper Client JAR |
 | `build/visual-resource-pack/` | Visuals ZIP |
+| `build/server-resource-pack/` | Combined auto-download visual + listener ZIP |
 | `bridge/build/libs/` | Paper Server JAR |
 
-Release automation renames the runtime artifacts to `ExtendedNoteBlock-Full-Fabric-*`, `ExtendedNoteBlock-Paper-Client-Fabric-*`, `ExtendedNoteBlock-Paper-Server-*` and `ExtendedNoteBlock-Visuals-*`, then generates `SHA256SUMS.txt`.
+The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed GeneralUser GS SoundFont checksum, renders 399 physical samples, and does not include the source `.sf2` in the ZIP. Release automation injects the final pack asset URL and SHA-1 into the Paper Server JAR before generating `SHA256SUMS.txt`.
 
 ## Branches and releases
 
@@ -86,7 +89,7 @@ Release automation renames the runtime artifacts to `ExtendedNoteBlock-Full-Fabr
 
 The current [workflow](../.github/workflows/build-26.2.yml) builds pushes to `port/26.2` and `release/26.2`, and pull requests targeting `main`. Its release job runs only for a push to `port/26.2` whose head commit message starts with `release:` and whose build jobs succeed.
 
-Use `docs:` / `chore:` commits for repository maintenance. Branches may advance after a release; keep the published release tag anchored to the source commit that produced its artifacts. Full / Client / Visuals use `mod_version`, while Paper Server has its own version in `bridge/build.gradle`.
+Use `docs:` / `chore:` commits for repository maintenance. Branches may advance after a release; keep the published release tag anchored to the source commit that produced its artifacts. Full / Client / Visuals / Server Resources use `mod_version`, while Paper Server has its own version in `bridge/build.gradle`.
 
 ## Validation boundaries
 

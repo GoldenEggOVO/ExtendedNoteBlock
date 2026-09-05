@@ -7,6 +7,16 @@ interaction-range: 6
 # Maximum distance at which bridge sounds are sent to clients.
 audible-radius: 64
 
+# Combined ENB visuals + listener sounds. Official release JARs replace the two
+# placeholders below with the matching GitHub Release asset and its SHA-1.
+resource-pack:
+  enabled: true
+  required: true
+  id: "4ac1cf2c-ea6d-52a8-9605-8ecff682bd8d"
+  url: "__ENB_RESOURCE_PACK_URL__"
+  sha1: "__ENB_RESOURCE_PACK_SHA1__"
+  prompt: "ExtendedNoteBlock 需要方块材质和音乐音色包 / requires its visual and sound pack."
+
 wand:
   # Safety cap for conductor-wand cuboid edits.
   max-selection-volume: 262144

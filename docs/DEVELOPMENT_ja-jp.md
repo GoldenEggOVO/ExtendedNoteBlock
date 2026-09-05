@@ -6,7 +6,7 @@
 
 `src/` は Fabric と共有機能、`bridge/` は Paper / Purpur プラグイン、`scripts/` はソース準備とパッケージングを担当します。旧 1.20.1 / 1.21.1 のファイルは [legacy/](../legacy/README.md) に保存され、現在のビルドには含まれません。
 
-## Full Fabric / Paper Client / Visuals
+## Full Fabric / Paper Client / リソースパック
 
 リポジトリのルートで実行します。準備スクリプトは追跡対象ファイルを書き換えるため、ビルド専用のチェックアウトや worktree を使用してください。
 
@@ -16,6 +16,7 @@ chmod +x gradlew
 ./gradlew clean test build --stacktrace
 python3 scripts/make_paper_bridge_client_jar.py
 python3 scripts/make_visual_resource_pack.py
+python3 scripts/make_server_resource_pack.py
 ```
 
 Paper Client は Full のビルド結果から許可されたクラスのみを抽出します。Full JAR の名前を変更して代用することはできません。
@@ -26,6 +27,7 @@ Paper Client は Full のビルド結果から許可されたクラスのみを�
 python3 scripts/prepare_paper_custom_model_data.py
 python3 scripts/prepare_paper_interactions.py
 python3 scripts/prepare_paper_render_sync.py
+python3 scripts/prepare_paper_listener_pack.py
 ./gradlew -p bridge clean build --stacktrace
 ```
 
@@ -36,6 +38,7 @@ python3 scripts/prepare_paper_render_sync.py
 | `build/libs/` | Full Fabric と sources JAR |
 | `build/paper-bridge-client/` | Paper Client |
 | `build/visual-resource-pack/` | Visuals |
+| `build/server-resource-pack/` | 自動配信用の表示・試聴リソースパック |
 | `bridge/build/libs/` | Paper Server |
 
 開発ブランチは `port/26.2` です。`main` と `release/26.2` は確認済みのチェックポイントで同期し、公開済みのタグは成果物を作成したコミットに固定します。現在の CI は `port/26.2` への push で最新コミットメッセージが `release:` から始まる場合に、ビルド成功後のリリース処理を実行します。

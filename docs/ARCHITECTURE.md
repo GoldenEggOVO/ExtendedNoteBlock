@@ -29,7 +29,7 @@ ENB 物品通过 Bukkit PDC 的 `enb_type` 识别逻辑类型，CustomModelData 
 
 ## 物品外观与世界方块外观
 
-Paper Client 内置包与独立 Visuals ZIP 从相同资源生成。独立资源包只处理 ENB 标记物品，不能单独识别世界中的 ENB 坐标。
+Paper Client 内置包、独立 Visuals ZIP 与自动下发的 Server Resources 从相同视觉资源生成。普通资源包只能处理 ENB 标记物品，不能单独识别世界中的 ENB 坐标。
 
 Paper Server 向 Paper Client 同步维度内已登记对象的坐标、类型、ON/OFF 状态和音高类别。客户端只替换这些坐标的 baked model：
 
@@ -44,9 +44,11 @@ Paper Server 向 Paper Client 同步维度内已登记对象的坐标、类型�
 
 Paper Server 保存 MIDI Note、Instrument、Velocity、Sustain、Delay、Fade In、Fade Out 与导入的 Pitch Cents。高级 Bridge 声音协议还提供 pitch multiplier、pitch cents、音量 / 空间位置更新和 start / update / stop。
 
-客户端从最近的采样音符计算 `2^(半音差 / 12)`。Paper Client 2.8.0 添加专用、Registry-safe 的 SoundEngine Mixin，对 `extendednoteblock` 声音绕过 Minecraft 的最终 pitch clamp，并保留 Full 版约 48 格的声音衰减行为。2.8.1 将这个 Mixin 移到独立的 `bridgeclient.mixin` 包以修复启动错误，并将 48 格衰减限定到 ENB 声音；原版声音继续使用原版规则。
+Paper Client 从最近的采样音符计算 `2^(半音差 / 12)`。2.8.0 添加专用、Registry-safe 的 SoundEngine Mixin，对 `extendednoteblock` 声音绕过 Minecraft 的最终 pitch clamp；2.8.1 修复 Mixin 包冲突，并将 48 格衰减限定到 ENB 声音。
 
-该修复用于解决低音区被夹到同一音高的问题。编译与静态打包检查已通过；完整 MIDI 音域的实际声音仍需游戏内试听验证。没有 Paper Client 的玩家听最接近的原版 Note Block fallback。
+2.10.0 为没有 Paper Client 的玩家增加组合资源包。128 个 GM program 每四个映射到一种代表音色，共 32 种；每种预渲染 MIDI 0、12、…、120 共 11 个锚点，运行时只在原版允许的 0.5–2.0 倍范围内做小幅变调，因此覆盖 MIDI 0–127。另有 MIDI 35–81 共 47 个独立打击乐采样。每个事件提供 8 个逻辑别名，让服务端能独立停止常见的同音重叠而不复制 OGG。
+
+Paper Server 在玩家加入时发送带固定 UUID、HTTPS URL 与 SHA-1 的资源包请求，并只在收到 `SUCCESSFULLY_LOADED` 后向该玩家发送 `extendednoteblock_listener:*` 声音。加载中、拒绝或失败时保留 Note Block fallback；检测到 Paper Client 插件频道的玩家继续走 Bridge 声音协议，避免重复播放。原版模式不实时还原高级音量曲线、连续弯音或表达式声源移动。
 
 ## Litematic 导出与导入边界
 

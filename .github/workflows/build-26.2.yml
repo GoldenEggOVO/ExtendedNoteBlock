@@ -26,7 +26,7 @@ jobs:
       - uses: gradle/actions/wrapper-validation@v4
       - name: Prepare Minecraft 26.2 sources
         run: python3 scripts/prepare_26_2_sources.py
-      - name: Test Mixin package regression checks
+      - name: Test packaging and listener-bank regression checks
         run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
       - run: chmod +x gradlew
       - name: Build Full Fabric mod
@@ -50,6 +50,10 @@ jobs:
           if-no-files-found: ignore
       - name: Build standalone visual resource pack
         run: python3 scripts/make_visual_resource_pack.py
+      - name: Build combined auto-download resource pack
+        run: |
+          ffmpeg -version
+          python3 scripts/make_server_resource_pack.py
       - name: Verify Full Fabric runtime jar
         shell: bash
         run: |
@@ -100,6 +104,12 @@ jobs:
           name: extendednoteblock-visuals-26.2
           path: build/visual-resource-pack/*.zip
           if-no-files-found: error
+      - name: Upload combined server resource pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: extendednoteblock-server-resources-26.2
+          path: build/server-resource-pack/*.zip
+          if-no-files-found: error
 
   build-bridge:
     runs-on: ubuntu-latest
@@ -121,7 +131,9 @@ jobs:
         run: python3 ../scripts/prepare_paper_interactions.py
       - name: Prepare Paper placed render synchronization
         run: python3 ../scripts/prepare_paper_render_sync.py
-      - name: Verify vanilla-safe identity, interaction and render bridge
+      - name: Prepare automatic resource pack and vanilla listener audio
+        run: python3 ../scripts/prepare_paper_listener_pack.py
+      - name: Verify vanilla-safe identity, interaction, render and listener bridge
         run: |
           grep -q 'PersistentDataType.STRING' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'bridgeTypeKey' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
@@ -138,6 +150,10 @@ jobs:
           grep -q 'PlayerRegisterChannelEvent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'public List<String> onTabComplete' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'sendHelp(sender, args.length >= 2 ? args\[1\] : null)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'PlayerResourcePackStatusEvent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'setResourcePack(listenerPackId, listenerPackUrl, listenerPackSha1' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'ListenerSoundResolver.resolve' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'stopListenerSound(soundId)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           if grep -q 'DataComponentTypes.ITEM_MODEL' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
             echo 'Paper server must not force custom item_model IDs on no-pack clients' >&2
             exit 1
@@ -161,6 +177,9 @@ jobs:
           jar tf "$JAR" | grep -qx 'config.yml'
           jar tf "$JAR" | grep -qx 'com/atemukesu/extendednoteblock/bridgeprotocol/ProjectionImport.class'
           jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/BridgeProjectionImporter.class'
+          jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/ListenerSoundResolver.class'
+          unzip -p "$JAR" config.yml | grep -q '__ENB_RESOURCE_PACK_URL__'
+          unzip -p "$JAR" config.yml | grep -q '__ENB_RESOURCE_PACK_SHA1__'
       - name: Upload Paper server plugin artifact
         uses: actions/upload-artifact@v4
         with:
@@ -201,6 +220,12 @@ jobs:
           name: extendednoteblock-visuals-26.2
           path: artifacts/visuals
 
+      - name: Download combined server resource pack
+        uses: actions/download-artifact@v4
+        with:
+          name: extendednoteblock-server-resources-26.2
+          path: artifacts/server-resources
+
       - name: Prepare release files
         shell: bash
         run: |
@@ -214,16 +239,28 @@ jobs:
           CLIENT_JAR="$(find artifacts/client -maxdepth 1 -type f -name '*.jar' | head -n 1)"
           SERVER_JAR="$(find artifacts/server -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           VISUALS_ZIP="$(find artifacts/visuals -maxdepth 1 -type f -name '*.zip' | head -n 1)"
+          SERVER_PACK_ZIP="$(find artifacts/server-resources -maxdepth 1 -type f -name '*.zip' | head -n 1)"
 
           test -n "$FULL_JAR"
           test -n "$CLIENT_JAR"
           test -n "$SERVER_JAR"
           test -n "$VISUALS_ZIP"
+          test -n "$SERVER_PACK_ZIP"
 
           cp "$FULL_JAR" "release/ExtendedNoteBlock-Full-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
           cp "$CLIENT_JAR" "release/ExtendedNoteBlock-Paper-Client-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
           cp "$SERVER_JAR" "release/ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar"
           cp "$VISUALS_ZIP" "release/ExtendedNoteBlock-Visuals-${MOD_VERSION}-mc${MC_VERSION}.zip"
+          cp "$SERVER_PACK_ZIP" "release/ExtendedNoteBlock-Server-Resources-${MOD_VERSION}-mc${MC_VERSION}.zip"
+
+          PACK_FILE="release/ExtendedNoteBlock-Server-Resources-${MOD_VERSION}-mc${MC_VERSION}.zip"
+          SERVER_FILE="release/ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar"
+          PACK_SHA1="$(sha1sum "$PACK_FILE" | cut -d' ' -f1)"
+          PACK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${MOD_VERSION}-mc${MC_VERSION}/$(basename "$PACK_FILE")"
+          python3 scripts/configure_release_resource_pack.py "$SERVER_FILE" "$PACK_URL" "$PACK_SHA1"
+
+          unzip -p "$SERVER_FILE" config.yml | grep -Fq "$PACK_URL"
+          unzip -p "$SERVER_FILE" config.yml | grep -Fq "$PACK_SHA1"
           sha256sum release/* > release/SHA256SUMS.txt
 
           echo "MOD_VERSION=$MOD_VERSION" >> "$GITHUB_ENV"

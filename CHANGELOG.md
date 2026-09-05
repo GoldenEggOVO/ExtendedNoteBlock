@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.10.0 — Minecraft 26.2
+
+- Added an automatically delivered combined visual and listener resource pack for unmodified Paper/Purpur clients.
+- Added 32 representative GM timbres with 11 octave anchors each, covering MIDI 0–127 within vanilla's pitch range, plus 47 independent percussion samples.
+- Added eight logical aliases per sound for overlapping-note stop control without duplicating OGG data.
+- Paper Server 0.10.0 tracks resource-pack load status, routes modded and unmodified listeners separately, preserves vanilla fallback on failure, and stops custom sounds with normal note/projection lifetimes.
+- Release automation now builds the deterministic resource pack, injects its exact GitHub asset URL and SHA-1 into the Paper plugin, and validates both artifacts.
+
+See the [release notes](docs/releases/2.10.0.md).
+
 ## 2.9.0 — Minecraft 26.2
 
 - Added NBS Workshop → Restore ENB for already-pasted Paper projection Litematics, including 2.8.x metadata.

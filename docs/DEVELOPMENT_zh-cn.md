@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [English](DEVELOPMENT.md) · [日本語](DEVELOPMENT_ja-jp.md)
 
-当前分支只构建 Minecraft **26.2**，产出 Full Fabric、Paper Client、Paper Server 三个程序版本及独立 Visuals。Full Fabric 与 Paper Client 不可同时装在客户端。
+当前分支只构建 Minecraft **26.2**，产出 Full Fabric、Paper Client、Paper Server 三个程序版本，以及 Visuals 与自动下发的组合资源包。Full Fabric 与 Paper Client 不可同时装在客户端。
 
 ## 环境与目录
 
@@ -41,7 +41,7 @@ cd ../enb-build
 
 准备脚本是现有发布流程的一部分，不要省略，也不要把脚本生成的全部改动未经检查就提交回开发分支。
 
-## Full Fabric、Paper Client 与 Visuals
+## Full Fabric、Paper Client 与资源包
 
 在仓库根目录，使用 JDK 25：
 
@@ -51,6 +51,7 @@ chmod +x gradlew
 ./gradlew clean test build --stacktrace
 python3 scripts/make_paper_bridge_client_jar.py
 python3 scripts/make_visual_resource_pack.py
+python3 scripts/make_server_resource_pack.py
 ```
 
 Paper Client 从 Full 构建输出中按严格白名单提取客户端类，并内置同源资源包。不能直接重命名 Full JAR 来代替 Paper Client。
@@ -63,6 +64,7 @@ Paper Client 从 Full 构建输出中按严格白名单提取客户端类，并�
 python3 scripts/prepare_paper_custom_model_data.py
 python3 scripts/prepare_paper_interactions.py
 python3 scripts/prepare_paper_render_sync.py
+python3 scripts/prepare_paper_listener_pack.py
 ./gradlew -p bridge clean build --stacktrace
 ```
 
@@ -75,9 +77,10 @@ Windows 下可将 `python3` 换成指向 Python 3 的 `python`，将 `./gradlew`
 | `build/libs/` | Full Fabric 运行 JAR 与 sources JAR |
 | `build/paper-bridge-client/` | Paper Client JAR |
 | `build/visual-resource-pack/` | Visuals ZIP |
+| `build/server-resource-pack/` | 自动下发的视觉 + 聆听音色组合 ZIP |
 | `bridge/build/libs/` | Paper Server JAR |
 
-CI 在发布时统一命名四项运行产物并生成 `SHA256SUMS.txt`；不要把 sources JAR 当作游戏安装文件。
+组合资源包需要 JDK 25 与 FFmpeg。脚本会核对 GeneralUser GS SoundFont 的固定 SHA-256，渲染 399 个实际采样，且不会把源 `.sf2` 放入 ZIP。CI 发布时将最终资源包 URL 与 SHA-1 写入 Paper Server JAR，再统一生成 `SHA256SUMS.txt`。
 
 ## 分支与发布
 
@@ -90,7 +93,7 @@ CI 在发布时统一命名四项运行产物并生成 `SHA256SUMS.txt`；不要
 
 当前[工作流](../.github/workflows/build-26.2.yml)检查 `port/26.2` / `release/26.2` 的 push，以及目标为 `main` 的 PR。只有推送到 `port/26.2`、最新提交信息以 `release:` 开头、两个构建任务都成功，才执行发布任务。
 
-文档和整理使用 `docs:` / `chore:` 提交。分支可以在发布后继续前进；正式 Tag 保持指向产物实际使用的提交。Full / Client / Visuals 使用 `gradle.properties` 中的 `mod_version`；Paper Server 使用 `bridge/build.gradle` 中的独立版本号。
+文档和整理使用 `docs:` / `chore:` 提交。分支可以在发布后继续前进；正式 Tag 保持指向产物实际使用的提交。Full / Client / Visuals / Server Resources 使用 `gradle.properties` 中的 `mod_version`；Paper Server 使用 `bridge/build.gradle` 中的独立版本号。
 
 ## 验证范围
 

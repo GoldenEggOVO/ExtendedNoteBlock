@@ -1,0 +1,21 @@
+GeneralUser GS 2.0.2
+Copyright 1997-2025 S. Christian Collins
+
+License v2.0 notice embedded by the author in the distributed SoundFont:
+
+GeneralUser GS may be used without restriction for private or commercial music
+creation. The SoundFont is provided to the community free of charge and may be
+used in software projects or modified and repackaged. The contained samples are
+licensed for full use in music production, including commercial recordings.
+
+Some samples originated in freely available SoundFont banks. The author notes
+that the exact origin of every historic sample cannot be guaranteed, but none
+were knowingly taken from commercial SoundFont packages or sample CDs. Please
+contact the author if a restricted sample is identified so it can be replaced.
+
+Project and contact information:
+https://www.schristiancollins.com/generaluser.php
+https://www.schristiancollins.com/contact
+
+The ExtendedNoteBlock listener resource pack contains rendered OGG audio, not
+the source SoundFont. This notice is retained in the generated pack.
