@@ -1,53 +1,38 @@
-# Extended Note Block
+# Extended Note Block · Minecraft 26.2
 
-[English](/README.md) | [简体中文](/docs/README_zh-cn.md) | **日本語**
+[简体中文](../README.md) · **日本語** · [開発ガイド](DEVELOPMENT_ja-jp.md)
 
-[![GitHub License](https://img.shields.io/github/license/atemukesu/ExtendedNoteBlock?style=for-the-badge&logo=github&labelColor=24292f)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/atemukesu/ExtendedNoteBlock?style=for-the-badge&logo=github&labelColor=24292f)](https://github.com/atemukesu/ExtendedNoteBlock/stargazers)
-[![Modrinth](https://img.shields.io/modrinth/dt/extendednoteblock?style=for-the-badge&logo=modrinth&color=1BD964&labelColor=24292f)](https://modrinth.com/mod/extendednoteblock)
-[![Modrinth](https://img.shields.io/modrinth/v/extendednoteblock?style=for-the-badge&logo=modrinth&color=1BD964&labelColor=24292f)](https://modrinth.com/mod/extendednoteblock)
-[![Modrinth](https://img.shields.io/modrinth/game-versions/extendednoteblock?style=for-the-badge&logo=modrinth&color=1BD964&labelColor=24292f)](https://modrinth.com/mod/extendednoteblock)
+![Extended Note Block Banner](assets/ENB-Banner.png)
 
-![Extended Note Block Banner](/docs/assets/ENB-Banner.png)
+Extended Note Block は、拡張音符ブロック、指揮棒、ワイヤレスレッドストーン、NBS / MIDI / 音声ファイルの読み込みと音楽構造の書き出しを提供します。
 
-**Extended Note Block** は、Fabric プラットフォーム向けに設計された、Minecraft でプロフェッショナルな音楽制作体験を実現するための Mod です。
+現在のリリースは Full Fabric / Paper Client **2.8.0**、Paper Server **0.8.1** です。[ダウンロード](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.8.0-mc26.2)
 
-### 主な機能
-* **拡張音符ブロック**: MIDI ピッチ (0-127)、ベロシティ、サステイン、ディレイ、フェード制御に対応。
-* **アドバンスドモード**: 音量やピッチのエンベロープ編集、および数学的式を用いた音源移動 (`x`, `y`, `z`, `t`) が可能。
-* **ワイヤレスレッドストーン**: 全域対応のレッドストーン信号伝送（送信機/受信機）。
-* **指揮棒**: 範囲選択および範囲内の音符ブロックの一括編集をサポート。
-* **スムーズ移動**: プレイヤーを指定した方向に滑らかに移動させるコマンド機能。
+## エディションの選択
 
-### インストール方法
+**Full Fabric と Paper Client を同じクライアントに同時導入しないでください。**
 
-1.  [Fabric Loader](https://fabricmc.net/) と [Fabric API](https://modrinth.com/mod/fabric-api) をインストールしてください。
-2.  **Extended Note Block** をダウンロードし、`mods` フォルダに入れてください。
-3.  *(推奨)* [Carpet Mod](https://github.com/gnembon/fabric-carpet) のインストールを推奨します。
+| エディション | 用途 | 導入先 |
+| --- | --- | --- |
+| Full Fabric | シングルプレイ / 同じ Mod を導入した Fabric サーバー | `mods/` |
+| Paper Client | ENB Bridge を導入した Paper / Purpur への接続 | Fabric クライアントの `mods/` |
+| Paper Server | Paper / Purpur サーバープラグイン | サーバーの `plugins/` |
+| Visuals | 任意のアイテム用リソースパック | `resourcepacks/` |
 
-### 使い方
+対象は Minecraft **26.2**、Java **25**。Fabric 側の構築基準は Loader **0.19.5** と Fabric API **0.159.0+26.2** です。Fabric サーバーで遊ぶ場合はサーバーにも Full Fabric と Fabric API を導入します。
 
-[Click here to view the detailed User Manual](https://atemukesu.github.io/ExtendedNoteBlock/ja/)
+Paper Client は Visuals と同じリソースを内蔵しています。Mod を導入しないプレイヤーも Paper サーバーに接続でき、近いバニラ音色のフォールバックを聞くことができます。配置済み ENB ブロックの専用モデル表示には Paper Client が必要です。
 
-### スクリーンショット
+## 使用方法と現在の制限
 
-![GUI](/docs/assets/sh1.png)
-![Advanced Mode](/docs/assets/sh2.png)
-![Conductor's Wand](/docs/assets/sh3.png)
-![Colorful](/docs/assets/sh4.png)
-![ConductorScreen](/docs/assets/sh5.png)
+- デフォルトの **N** キーで NBS Workshop を開きます。
+- Paper では OP が `/enb give all` で ENB アイテムを取得できます。
+- 2.8.0 には GM 楽器選択と 128 鍵ピアノを備えた Paper 編集画面、低音域の pitch clamp 修正、バニラキャリアを使う Paper Litematic 出力が含まれます。
+- Paper Litematic のメタデータは保存されますが、貼り付け後の ENB パラメーター自動復元は未実装です。
+- CI は成功していますが、低音域などの実際の Purpur ゲーム内検証は引き続き必要です。
 
-### 貢献
+詳細は[インストールガイド（中文）](INSTALLATION.md)、[2.8.0 変更内容（English）](releases/2.8.0.md)、[開発ガイド](DEVELOPMENT_ja-jp.md)を参照してください。
 
-あらゆる形での貢献を歓迎します！以下の方法で参加いただけます：
+## 原作者とライセンス
 
-* **Issue の作成**: バグ報告、新機能の提案、改善案の提出。
-* **Pull Request の送信**: 既知のバグ修正、コードの最適化、ドキュメントの整備。
-* **ローカライズ**: 多言語への翻訳サポート。
-
-マルチバージョンプロジェクトのセットアップ、ビルド手順、開発ワークフローについては、[開発ガイド](/docs/DEVELOPMENT_ja-jp.md) を参照してください。
-
-PR を送信する前に、コードがプロジェクトのスタイルガイドに準拠していることを確認してください。
-
-### ライセンス
-本プロジェクトは [MIT ライセンス](LICENSE) の下で公開されています。
+原作者は [Atemukesu](https://github.com/atemukesu/ExtendedNoteBlock)、26.1.1 移植と Workshop 拡張は [BF_skt](https://github.com/BianFuuuu/ExtendedNoteBlock)、26.2 / Paper Bridge の保守は **GoldenEggOVO** です。[MIT License](../LICENSE) と元の著作権表記を維持しています。

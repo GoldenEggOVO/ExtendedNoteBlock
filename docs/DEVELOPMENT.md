@@ -1,71 +1,95 @@
-# Development Guide
+# Development Guide · Minecraft 26.2
 
-## Multi-Version Project Structure
+[Home](../README.md) · [简体中文](DEVELOPMENT_zh-cn.md) · [日本語](DEVELOPMENT_ja-jp.md)
 
-This project manages two Minecraft versions (`1.20.1` and `1.21.1`) on a single branch using Gradle tasks to switch between them.
+This branch targets Minecraft **26.2**. It builds three program editions: Full Fabric, a registry-safe Paper Client, and a Paper / Purpur server plugin. The Paper Client and Full Fabric must not be installed together.
 
-### Directory Layout
+## Toolchain
 
-```
-gradle/
-  active-version.properties   # Currently active version key
-  versions/
-    1.20.1.properties          # 1.20.1 dependency versions
-    1.21.1.properties          # 1.21.1 dependency versions
-versions/
-  1.20.1/                      # 1.20.1-specific source code & resources
-  1.21.1/                      # 1.21.1-specific source code & resources
-src/
-  main/java/                   # Shared main source code
-  main/resources/              # Shared resources (assets, data, lang, etc.)
-  client/java/                 # Shared client source code
-  client/resources/            # Shared client resources
-```
+| Component | Current build baseline |
+| --- | --- |
+| Java JDK | 25 |
+| Gradle wrapper | 9.5.1 |
+| Fabric Loom | 1.17.20 |
+| Fabric Loader | 0.19.5 |
+| Fabric API | 0.159.0+26.2 |
+| Helper scripts | Python 3 |
 
-**Rules**:
-- Files **identical** across versions → keep in `src/<dir>/`
-- Files that **differ** between versions → move to `versions/<ver>/<dir>/`
+Versions come from [gradle.properties](../gradle.properties), the [wrapper configuration](../gradle/wrapper/gradle-wrapper.properties), and [bridge/build.gradle](../bridge/build.gradle). Bridge currently uses the `26.2.build.+` Paper API dependency selector; its resolved build can change between builds.
 
-### Common Tasks
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| `src/main/` | Full Fabric content, shared music logic and assets |
+| `src/client/` | Fabric screens, sound engine and Paper companion code |
+| `src/test/` | Existing automated tests |
+| `bridge/` | Independent Paper / Purpur Gradle project |
+| `scripts/` | 26.2 source preparation and client / resource-pack packaging |
+| `.github/workflows/build-26.2.yml` | Build, verification and release workflow |
+| `docs/` | Installation, architecture, development, roadmap and release notes |
+| `legacy/` | Inactive upstream 1.20.1 / 1.21.1 sources, settings and publishing tool |
+
+The active Gradle build does not include `legacy/`. The old version-switching tasks are not available in this branch.
+
+## Build Full Fabric, Paper Client and Visuals
+
+Run from the repository root with JDK 25 selected. The source-preparation scripts modify tracked files, so use a disposable checkout or a detached worktree for builds when you want to keep your development checkout clean:
 
 ```bash
-# Version switching
-./gradlew switchTo1201          # Switch to 1.20.1
-./gradlew switchTo1211          # Switch to 1.21.1
-./gradlew showActiveVersion     # Show current version
-
-# Build & run
-./gradlew runClient             # Run client for current version
-./gradlew build                 # Build current version
-./gradlew clean build           # Clean build (recommended after switching versions)
-
-# File management
-./gradlew makeVersionSpecific -Pfile=main/java/.../Foo.java
-                                # Move a shared file into version-specific dirs
-                                # Copies from src/ to versions/1.20.1/ and versions/1.21.1/
-                                # then deletes the original from src/
-
-./gradlew promoteToShared -Pfile=main/java/.../Bar.java
-                                # Promote a version-specific file back to shared
-                                # Fails if the two versions differ
-
-./gradlew diffVersion -Pfile=main/java/.../Bar.java
-                                # Show diff between the two version-specific files
+git worktree add --detach ../enb-build port/26.2
+cd ../enb-build
 ```
 
-The `-Pfile=` path is relative to project root and must include the source set prefix (`main/java/`, `client/java/`, etc.).
+```bash
+python3 scripts/prepare_26_2_sources.py
+chmod +x gradlew
+./gradlew clean test build --stacktrace
+python3 scripts/make_paper_bridge_client_jar.py
+python3 scripts/make_visual_resource_pack.py
+```
 
-### Development Workflow
+The Paper Client packaging script consumes the Full build output and applies a strict class whitelist. Do not replace it with a copy of the Full JAR.
 
-1. Switch to target version: `./gradlew switchTo1201`
-2. Write code in your IDE (the entire project root)
-3. Run directly: `./gradlew runClient` (no `clean` needed)
-4. If you modify shared code in `src/`, the changes apply to both versions automatically
-5. If a file needs different implementations per version, split it with `makeVersionSpecific`
-6. If version-specific files become identical, merge them with `promoteToShared`
+## Build Paper Server
 
-### Adding a New Version
+Run from the repository root, in this order:
 
-1. Create `<ver>.properties` in `gradle/versions/` with the correct dependency versions
-2. Add the version key to `ext.versionKeys` in `build.gradle`
-3. Create the corresponding directory structure in `versions/<ver>/` and put version-specific files there
+```bash
+python3 scripts/prepare_paper_custom_model_data.py
+python3 scripts/prepare_paper_interactions.py
+python3 scripts/prepare_paper_render_sync.py
+./gradlew -p bridge clean build --stacktrace
+```
+
+`prepare_paper_render_sync.py` also invokes `prepare_paper_command_help.py`. These preparation steps are part of the current build pipeline; compiling the unprepared plugin source alone does not reproduce the release.
+
+On Windows, use `python` if Python 3 is installed under that name, replace `./gradlew` with `.\gradlew.bat`, and omit `chmod`.
+
+| Output directory | Artifact |
+| --- | --- |
+| `build/libs/` | Full Fabric runtime JAR and sources JAR |
+| `build/paper-bridge-client/` | Paper Client JAR |
+| `build/visual-resource-pack/` | Visuals ZIP |
+| `bridge/build/libs/` | Paper Server JAR |
+
+Release automation renames the runtime artifacts to `ExtendedNoteBlock-Full-Fabric-*`, `ExtendedNoteBlock-Paper-Client-Fabric-*`, `ExtendedNoteBlock-Paper-Server-*` and `ExtendedNoteBlock-Visuals-*`, then generates `SHA256SUMS.txt`.
+
+## Branches and releases
+
+| Ref | Role |
+| --- | --- |
+| `port/26.2` | Main development branch |
+| `main` | Repository landing branch, synchronized at agreed checkpoints |
+| `release/26.2` | Release maintenance branch, synchronized at agreed checkpoints |
+| `v<mod-version>-mc26.2` | Exact source commit for a published release |
+
+The current [workflow](../.github/workflows/build-26.2.yml) builds pushes to `port/26.2` and `release/26.2`, and pull requests targeting `main`. Its release job runs only for a push to `port/26.2` whose head commit message starts with `release:` and whose build jobs succeed.
+
+Use `docs:` / `chore:` commits for repository maintenance. Branches may advance after a release; keep the published release tag anchored to the source commit that produced its artifacts. Full / Client / Visuals use `mod_version`, while Paper Server has its own version in `bridge/build.gradle`.
+
+## Validation boundaries
+
+CI checks the configured tests, Full runtime content, Paper Client registry safety and packaged resources, plugin source injection, and plugin runtime resources. A passing run does not establish in-game behavior on Purpur.
+
+The outstanding gameplay checks and planned Paper features are tracked in [ROADMAP.md](ROADMAP.md). Keep the MIT license and upstream credits when moving or reusing source files.

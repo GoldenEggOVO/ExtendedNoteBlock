@@ -1,71 +1,99 @@
-# 开发指南
+# 开发指南 · Minecraft 26.2
 
-## 多版本项目结构
+[返回首页](../README.md) · [English](DEVELOPMENT.md) · [日本語](DEVELOPMENT_ja-jp.md)
 
-本项目使用单分支管理两个 Minecraft 版本（`1.20.1` 和 `1.21.1`），通过 Gradle 任务切换版本。
+当前分支只构建 Minecraft **26.2**，产出 Full Fabric、Paper Client、Paper Server 三个程序版本及独立 Visuals。Full Fabric 与 Paper Client 不可同时装在客户端。
 
-### 目录结构
+## 环境与目录
 
-```
-gradle/
-  active-version.properties   # 当前激活的版本
-  versions/
-    1.20.1.properties          # 1.20.1 依赖版本配置
-    1.21.1.properties          # 1.21.1 依赖版本配置
-versions/
-  1.20.1/                      # 1.20.1 独有代码和资源
-  1.21.1/                      # 1.21.1 独有代码和资源
-src/
-  main/java/                   # 两版本共享的主代码
-  main/resources/              # 两版本共享的资源 (assets, data, lang 等)
-  client/java/                 # 两版本共享的客户端代码
-  client/resources/            # 两版本共享的客户端资源
-```
+| 项目 | 当前构建基线 |
+| --- | --- |
+| Java JDK | 25 |
+| Gradle Wrapper | 9.5.1 |
+| Fabric Loom | 1.17.20 |
+| Fabric Loader | 0.19.5 |
+| Fabric API | 0.159.0+26.2 |
+| 辅助脚本 | Python 3 |
 
-**规则**：
-- 两版本**相同**的文件 → 放 `src/<dir>/` 中共享
-- 两版本**不同**的文件 → 分开放入 `versions/<ver>/<dir>/` 中
+版本配置见 [gradle.properties](../gradle.properties)、[Gradle Wrapper](../gradle/wrapper/gradle-wrapper.properties) 和 [bridge/build.gradle](../bridge/build.gradle)。Paper API 当前使用动态依赖 `26.2.build.+`，不同构建解析到的具体 Paper API build 可能不同。
 
-### 常用任务
+| 目录 | 职责 |
+| --- | --- |
+| `src/main/` | Full Fabric 内容、共享音乐逻辑与资源 |
+| `src/client/` | 界面、声音、Paper 客户端伴侣代码 |
+| `src/test/` | 现有自动化测试 |
+| `bridge/` | 独立 Paper / Purpur 插件工程 |
+| `scripts/` | 源码准备和打包脚本 |
+| `.github/workflows/` | CI 与发布定义 |
+| `docs/` | 安装、架构、开发、待办和版本说明 |
+| `legacy/` | 不参与构建的上游 1.20.1 / 1.21.1 历史文件 |
+
+当前 Gradle 不再提供旧版切换任务。历史文件的用途见 [legacy/README.md](../legacy/README.md)。
+
+## 构建前
+
+当前源码准备脚本会修改已跟踪的 Java / 资源文件。需要保持开发目录干净时，可在独立 worktree 中构建；以下示例构建已提交的 `port/26.2`，不会包含原目录的未提交修改：
 
 ```bash
-# 切换版本
-./gradlew switchTo1201      # 切换到 1.20.1
-./gradlew switchTo1211      # 切换到 1.21.1
-./gradlew showActiveVersion # 查看当前版本
-
-# 构建和运行
-./gradlew runClient         # 运行当前版本客户端
-./gradlew build             # 构建当前版本
-./gradlew clean build       # 清理后构建（切换版本后首次推荐）
-
-# 文件管理
-./gradlew makeVersionSpecific -Pfile=main/java/.../Foo.java
-                            # 将共享文件变成版本独有
-                            # 文件从 src/ 复制到 versions/1.20.1/ 和 versions/1.21.1/
-                            # 然后删除 src/ 下的原文件
-
-./gradlew promoteToShared -Pfile=main/java/.../Bar.java
-                            # 将版本独有文件提回共享
-                            # 要求两版本内容完全相同，否则会报错
-
-./gradlew diffVersion -Pfile=main/java/.../Bar.java
-                            # 查看两版本间该文件的差异
+git worktree add --detach ../enb-build port/26.2
+cd ../enb-build
 ```
 
-`-Pfile=` 参数路径相对于项目根目录，需要包含 `main/java/`、`client/java/` 等前缀。
+准备脚本是现有发布流程的一部分，不要省略，也不要把脚本生成的全部改动未经检查就提交回开发分支。
 
-### 开发工作流
+## Full Fabric、Paper Client 与 Visuals
 
-1. 切到目标版本：`./gradlew switchTo1201`
-2. 在 IDE 中开发代码（打开项目根目录即可）
-3. 直接运行：`./gradlew runClient`（无需 `clean`）
-4. 如果修改了共享代码（`src/`），切版本后自动适用于另一版本
-5. 如果某文件两版本需要不同实现，用 `makeVersionSpecific` 拆分
-6. 如果版本独有文件变回相同了，用 `promoteToShared` 合并
+在仓库根目录，使用 JDK 25：
 
-### 添加新版本
+```bash
+python3 scripts/prepare_26_2_sources.py
+chmod +x gradlew
+./gradlew clean test build --stacktrace
+python3 scripts/make_paper_bridge_client_jar.py
+python3 scripts/make_visual_resource_pack.py
+```
 
-1. 在 `gradle/versions/` 下创建 `<ver>.properties`，填写对应依赖版本
-2. 在 `build.gradle` 的 `ext.versionKeys` 列表中添加版本 key
-3. 在 `versions/<ver>/` 下创建对应的目录结构并放入版本独有文件
+Paper Client 从 Full 构建输出中按严格白名单提取客户端类，并内置同源资源包。不能直接重命名 Full JAR 来代替 Paper Client。
+
+## Paper Server
+
+在仓库根目录依次执行：
+
+```bash
+python3 scripts/prepare_paper_custom_model_data.py
+python3 scripts/prepare_paper_interactions.py
+python3 scripts/prepare_paper_render_sync.py
+./gradlew -p bridge clean build --stacktrace
+```
+
+最后一个准备脚本还会调用 `prepare_paper_command_help.py`。直接编译未经准备的插件源码，不能复现当前 Release。
+
+Windows 下可将 `python3` 换成指向 Python 3 的 `python`，将 `./gradlew` 换成 `.\gradlew.bat`，并跳过 `chmod`。
+
+| 输出目录 | 产物 |
+| --- | --- |
+| `build/libs/` | Full Fabric 运行 JAR 与 sources JAR |
+| `build/paper-bridge-client/` | Paper Client JAR |
+| `build/visual-resource-pack/` | Visuals ZIP |
+| `bridge/build/libs/` | Paper Server JAR |
+
+CI 在发布时统一命名四项运行产物并生成 `SHA256SUMS.txt`；不要把 sources JAR 当作游戏安装文件。
+
+## 分支与发布
+
+| Ref | 用途 |
+| --- | --- |
+| `port/26.2` | 主要开发分支 |
+| `main` | 仓库展示分支，在确定的检查点同步 |
+| `release/26.2` | 发布维护分支，在确定的检查点同步 |
+| `v<模组版本>-mc26.2` | 对应正式产物的精确源码提交 |
+
+当前[工作流](../.github/workflows/build-26.2.yml)检查 `port/26.2` / `release/26.2` 的 push，以及目标为 `main` 的 PR。只有推送到 `port/26.2`、最新提交信息以 `release:` 开头、两个构建任务都成功，才执行发布任务。
+
+文档和整理使用 `docs:` / `chore:` 提交。分支可以在发布后继续前进；正式 Tag 保持指向产物实际使用的提交。Full / Client / Visuals 使用 `gradle.properties` 中的 `mod_version`；Paper Server 使用 `bridge/build.gradle` 中的独立版本号。
+
+## 验证范围
+
+CI 验证现有测试、Full 运行内容、Paper Client 的 Registry 安全与资源、插件源码注入和运行资源。CI 成功不等于真实游戏运行测试。
+
+游戏验证与功能待办见 [ROADMAP.md](ROADMAP.md)。整理或复用源码时保留 MIT 许可证与原作者署名。

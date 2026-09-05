@@ -1,71 +1,43 @@
-# 開発ガイド
+# 開発ガイド · Minecraft 26.2
 
-## マルチバージョンプロジェクト構成
+[ホーム（简体中文）](../README.md) · [English](DEVELOPMENT.md) · [简体中文](DEVELOPMENT_zh-cn.md)
 
-このプロジェクトは、単一ブランチで 2 つの Minecraft バージョン（`1.20.1` と `1.21.1`）を管理し、Gradle タスクで切り替えます。
+このブランチの対象は Minecraft **26.2** です。JDK **25**、Gradle Wrapper **9.5.1**、Loom **1.17.20**、Fabric Loader **0.19.5**、Fabric API **0.159.0+26.2**、Python 3 を使用します。
 
-### ディレクトリ構成
+`src/` は Fabric と共有機能、`bridge/` は Paper / Purpur プラグイン、`scripts/` はソース準備とパッケージングを担当します。旧 1.20.1 / 1.21.1 のファイルは [legacy/](../legacy/README.md) に保存され、現在のビルドには含まれません。
 
-```
-gradle/
-  active-version.properties   # 現在アクティブなバージョン
-  versions/
-    1.20.1.properties          # 1.20.1 依存関係バージョン設定
-    1.21.1.properties          # 1.21.1 依存関係バージョン設定
-versions/
-  1.20.1/                      # 1.20.1 専用コードとリソース
-  1.21.1/                      # 1.21.1 専用コードとリソース
-src/
-  main/java/                   # 共有メインコード
-  main/resources/              # 共有リソース (assets, data, lang 等)
-  client/java/                 # 共有クライアントコード
-  client/resources/            # 共有クライアントリソース
-```
+## Full Fabric / Paper Client / Visuals
 
-**ルール**：
-- 両バージョンで**同一**のファイル → `src/<dir>/` に配置
-- バージョン間で**異なる**ファイル → `versions/<ver>/<dir>/` に分離
-
-### よく使うタスク
+リポジトリのルートで実行します。準備スクリプトは追跡対象ファイルを書き換えるため、ビルド専用のチェックアウトや worktree を使用してください。
 
 ```bash
-# バージョン切り替え
-./gradlew switchTo1201      # 1.20.1 に切り替え
-./gradlew switchTo1211      # 1.21.1 に切り替え
-./gradlew showActiveVersion # 現在のバージョンを表示
-
-# ビルドと実行
-./gradlew runClient         # 現在のバージョンでクライアントを起動
-./gradlew build             # 現在のバージョンをビルド
-./gradlew clean build       # クリーンビルド（バージョン切替後の初回推奨）
-
-# ファイル管理
-./gradlew makeVersionSpecific -Pfile=main/java/.../Foo.java
-                            # 共有ファイルをバージョン専用に分割
-                            # src/ から versions/1.20.1/ と versions/1.21.1/ に複製後、
-                            # src/ の原本を削除
-
-./gradlew promoteToShared -Pfile=main/java/.../Bar.java
-                            # バージョン専用ファイルを共有に戻す
-                            # 両バージョンの内容が同一でないとエラー
-
-./gradlew diffVersion -Pfile=main/java/.../Bar.java
-                            # バージョン間の差分を表示
+python3 scripts/prepare_26_2_sources.py
+chmod +x gradlew
+./gradlew clean test build --stacktrace
+python3 scripts/make_paper_bridge_client_jar.py
+python3 scripts/make_visual_resource_pack.py
 ```
 
-`-Pfile=` のパスはプロジェクトルートからの相対パスで、`main/java/` や `client/java/` などのプレフィックスを含める必要があります。
+Paper Client は Full のビルド結果から許可されたクラスのみを抽出します。Full JAR の名前を変更して代用することはできません。
 
-### 開発ワークフロー
+## Paper Server
 
-1. 対象バージョンに切り替え：`./gradlew switchTo1201`
-2. IDE でコードを記述（プロジェクトルートを開くだけ）
-3. 直接実行：`./gradlew runClient`（`clean` は不要）
-4. 共有コード（`src/`）を変更した場合、バージョン切替後も自動的に適用
-5. バージョンごとに異なる実装が必要な場合は `makeVersionSpecific` で分割
-6. バージョン専用ファイルが同一になった場合は `promoteToShared` で結合
+```bash
+python3 scripts/prepare_paper_custom_model_data.py
+python3 scripts/prepare_paper_interactions.py
+python3 scripts/prepare_paper_render_sync.py
+./gradlew -p bridge clean build --stacktrace
+```
 
-### 新しいバージョンの追加
+`prepare_paper_render_sync.py` はコマンドヘルプの準備も行います。Windows では `python3` を Python 3 の `python`、`./gradlew` を `.\gradlew.bat` に置き換え、`chmod` を省略します。
 
-1. `gradle/versions/` に `<ver>.properties` を作成し、依存関係のバージョンを記述
-2. `build.gradle` の `ext.versionKeys` リストにバージョンキーを追加
-3. `versions/<ver>/` に対応するディレクトリ構造を作成し、バージョン専用ファイルを配置
+| 出力 | 内容 |
+| --- | --- |
+| `build/libs/` | Full Fabric と sources JAR |
+| `build/paper-bridge-client/` | Paper Client |
+| `build/visual-resource-pack/` | Visuals |
+| `bridge/build/libs/` | Paper Server |
+
+開発ブランチは `port/26.2` です。`main` と `release/26.2` は確認済みのチェックポイントで同期し、公開済みのタグは成果物を作成したコミットに固定します。現在の CI は `port/26.2` への push で最新コミットメッセージが `release:` から始まる場合に、ビルド成功後のリリース処理を実行します。
+
+詳細は [English の開発ガイド](DEVELOPMENT.md) と [CI 定義](../.github/workflows/build-26.2.yml) を参照してください。CI の成功は実際のゲーム内検証を意味しません。

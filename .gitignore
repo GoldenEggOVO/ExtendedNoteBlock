@@ -2,6 +2,8 @@
 #  Build output & Distribution files
 # =================================================================
 build/
+/release/
+/artifacts/
 .gradle/
 migrated-mojmap*/
 out/
