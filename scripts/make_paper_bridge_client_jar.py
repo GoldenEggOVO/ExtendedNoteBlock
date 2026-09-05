@@ -6,9 +6,8 @@ custom blocks/items. That is correct for single-player/Fabric servers, but unsaf
 against a vanilla-registry Paper/Purpur server.
 
 This script starts from Loom's remapped JAR and emits a strict whitelist JAR.
-It also embeds the same visual pack that is published as a standalone resource
-pack under resourcepacks/bridge_visuals/, so the Paper Client can register it as
-an always-enabled built-in pack.
+It also embeds the same CustomModelData-driven visual pack that is published as
+a standalone resource pack under resourcepacks/bridge_visuals/.
 """
 
 from __future__ import annotations
@@ -17,7 +16,7 @@ import json
 import zipfile
 from pathlib import Path
 
-from make_visual_resource_pack import CARRIER_ITEMS, carrier_selector
+from make_visual_resource_pack import CARRIER_ITEMS, carrier_selector, custom_model_key
 
 ROOT = Path(__file__).resolve().parents[1]
 LIBS = ROOT / "build" / "libs"
@@ -172,8 +171,8 @@ with zipfile.ZipFile(source_jar, "r") as zin, zipfile.ZipFile(
         if is_visual_asset(info.filename):
             zout.writestr("resourcepacks/bridge_visuals/" + info.filename, data)
 
-    # Same PDC-selective carrier selectors as the standalone Visuals ZIP.
-    # Each selector has a vanilla fallback, so ordinary items never change.
+    # Same CustomModelData selectors as the standalone Visuals ZIP.
+    # Every selector has a vanilla fallback, so ordinary carrier items never change.
     for carrier, (logical_id, vanilla_model) in CARRIER_ITEMS.items():
         zout.writestr(
             f"resourcepacks/bridge_visuals/assets/minecraft/items/{carrier}.json",
@@ -246,8 +245,10 @@ with zipfile.ZipFile(out_jar, "r") as check:
     for carrier, (logical_id, vanilla_model) in CARRIER_ITEMS.items():
         entry = f"resourcepacks/bridge_visuals/assets/minecraft/items/{carrier}.json"
         raw = check.read(entry).decode("utf-8")
-        if "extendednoteblockbridge:enb_type" not in raw or logical_id not in raw or vanilla_model not in raw:
-            raise SystemExit(f"Paper Client carrier selector {carrier} lacks ENB condition or vanilla fallback")
+        if '"property": "minecraft:custom_model_data"' not in raw:
+            raise SystemExit(f"Paper Client selector {carrier} is not CustomModelData-driven")
+        if custom_model_key(logical_id) not in raw or vanilla_model not in raw:
+            raise SystemExit(f"Paper Client selector {carrier} lacks ENB CustomModelData key or vanilla fallback")
 
     if not jlayer_jars:
         raise SystemExit("NBS audio import requires the bundled JLayer dependency, but no jlayer jar was found")
