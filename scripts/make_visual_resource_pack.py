@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 """Build the shared ExtendedNoteBlock visual resource pack for Minecraft 26.2.
 
-Paper/Purpur bridge items are ordinary vanilla carrier ItemStacks with a Bukkit
-PersistentDataContainer key named `extendednoteblockbridge:enb_type`. In the
-serialized ItemStack this lives in minecraft:custom_data/PublicBukkitValues.
+Paper/Purpur bridge items remain ordinary vanilla carrier ItemStacks. PDC is the
+server-side logical identity, while minecraft:custom_model_data is visual-only.
+The Paper plugin writes one namespaced string into CustomModelData, for example:
 
-Minecraft 26.2 item model definitions can condition on the custom_data component.
-This pack therefore overrides only the five carrier *item definitions* with a
-condition:
+  extendednoteblock:conductor_wand
 
-  ENB PDC marker matches -> original ExtendedNoteBlock model
-  otherwise              -> original vanilla model
+Minecraft 26.2 item definitions can select on the strings list of
+minecraft:custom_model_data. This pack therefore overrides only the five carrier
+item definitions with a safe selector:
 
-That preserves a perfect no-pack/no-mod fallback and does not change ordinary
-vanilla carrier items. Placed blocks are intentionally not globally overridden;
-a plain resource pack cannot distinguish PDC by world coordinate.
+  matching ENB CustomModelData string -> original ExtendedNoteBlock model
+  anything else / no CustomModelData  -> original vanilla model
+
+Placed blocks are intentionally not globally overridden; a plain resource pack
+cannot distinguish plugin identity by world coordinate.
 """
 
 from __future__ import annotations
@@ -28,7 +29,7 @@ ASSET_ROOT = ROOT / "src" / "main" / "resources" / "assets" / "extendednoteblock
 OUT_DIR = ROOT / "build" / "visual-resource-pack"
 RESOURCE_PACK_FORMAT = 88
 VISUAL_DIRS = ("blockstates", "items", "lang", "models", "textures")
-PDC_KEY = "extendednoteblockbridge:enb_type"
+CMD_NAMESPACE = "extendednoteblock"
 
 # carrier item id -> (ENB logical id, vanilla fallback baked model)
 CARRIER_ITEMS = {
@@ -61,22 +62,27 @@ def iter_visual_files():
                 yield path
 
 
+def custom_model_key(logical_id: str) -> str:
+    return f"{CMD_NAMESPACE}:{logical_id}"
+
+
 def carrier_selector(logical_id: str, vanilla_model: str) -> bytes:
+    """Create a 26.2 item model selector keyed by CustomModelData strings[0]."""
     model = {
         "model": {
-            "type": "minecraft:condition",
-            "property": "minecraft:component",
-            "predicate": "minecraft:custom_data",
-            "value": {
-                "PublicBukkitValues": {
-                    PDC_KEY: logical_id,
+            "type": "minecraft:select",
+            "property": "minecraft:custom_model_data",
+            "index": 0,
+            "cases": [
+                {
+                    "when": custom_model_key(logical_id),
+                    "model": {
+                        "type": "minecraft:model",
+                        "model": f"extendednoteblock:item/{logical_id}",
+                    },
                 }
-            },
-            "on_true": {
-                "type": "minecraft:model",
-                "model": f"extendednoteblock:item/{logical_id}",
-            },
-            "on_false": {
+            ],
+            "fallback": {
                 "type": "minecraft:model",
                 "model": vanilla_model,
             },
@@ -106,13 +112,18 @@ This pack contains the original visual assets shared by Full Fabric and Paper Cl
 
 Paper/Purpur item behavior
 --------------------------
-Bridge items stay vanilla ItemStacks. The Paper plugin stores `enb_type` in Bukkit
-PDC. This pack conditionally checks that custom_data marker:
-- marked ENB carrier item -> original ExtendedNoteBlock model
-- ordinary carrier item -> original vanilla model
+Bridge items remain vanilla ItemStacks. The Paper plugin keeps its authoritative
+`enb_type` PDC marker and also writes a visual-only CustomModelData string such as:
 
-A player without this pack sees ordinary vanilla carrier items, with no missing-model
-requirement. Paper Client embeds this same pack automatically.
+    extendednoteblock:conductor_wand
+
+The resource pack reads strings[0] from minecraft:custom_model_data:
+- matching ENB string -> original ExtendedNoteBlock model
+- ordinary/no CustomModelData -> explicit vanilla fallback model
+
+Therefore players without this resource pack still see completely normal vanilla
+carriers, and ordinary Blaze Rods / Note Blocks / concrete items are unchanged.
+Paper Client embeds this same pack automatically.
 
 Placed blocks
 -------------
@@ -133,8 +144,8 @@ later add position-aware rendering without changing ordinary vanilla blocks.
             rel = path.relative_to(ASSET_ROOT)
             zf.write(path, (Path("assets") / "extendednoteblock" / rel).as_posix())
 
-        # These are safe vanilla item-definition overrides: every selector has a
-        # vanilla fallback and only switches model when the exact ENB PDC marker matches.
+        # Safe vanilla item-definition overrides: each selector has a vanilla
+        # fallback and switches only for the exact ENB CustomModelData string.
         for carrier, (logical_id, vanilla_model) in CARRIER_ITEMS.items():
             zf.writestr(
                 f"assets/minecraft/items/{carrier}.json",
@@ -159,12 +170,12 @@ later add position-aware rendering without changing ordinary vanilla blocks.
         if missing:
             raise SystemExit(f"Visual resource pack is missing required entries: {missing}")
 
-        # We never override vanilla blockstates/models/textures. Only the five item
-        # definition selectors above are allowed in the minecraft namespace.
+        # Never globally replace vanilla blockstates/models/textures. Only the
+        # five item-definition selectors above are allowed in minecraft namespace.
+        allowed_minecraft = {f"assets/minecraft/items/{carrier}.json" for carrier in CARRIER_ITEMS}
         unexpected_minecraft_entries = sorted(
             name for name in names
-            if name.startswith("assets/minecraft/")
-            and name not in {f"assets/minecraft/items/{carrier}.json" for carrier in CARRIER_ITEMS}
+            if name.startswith("assets/minecraft/") and name not in allowed_minecraft
         )
         if unexpected_minecraft_entries:
             raise SystemExit(
@@ -174,8 +185,9 @@ later add position-aware rendering without changing ordinary vanilla blocks.
 
         for carrier, (logical_id, vanilla_model) in CARRIER_ITEMS.items():
             raw = check.read(f"assets/minecraft/items/{carrier}.json").decode("utf-8")
-            if PDC_KEY not in raw or logical_id not in raw or vanilla_model not in raw:
-                raise SystemExit(f"Carrier selector {carrier} is missing ENB condition or vanilla fallback")
+            key = custom_model_key(logical_id)
+            if '"property": "minecraft:custom_model_data"' not in raw or key not in raw or vanilla_model not in raw:
+                raise SystemExit(f"Carrier selector {carrier} is missing CustomModelData match or vanilla fallback")
 
     print(output)
 
