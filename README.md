@@ -41,7 +41,8 @@ Paper Client 与 Full Fabric 尽量共享同一套客户端能力：
 - 本地试听、投影预览；
 - 原版红石、铁轨、Litematica、结构 `.nbt`、数据包 ZIP 导出；
 - Bridge 高级声音与 pitch-cents 协议；
-- Paper 专用音符盒编辑 GUI 协议。
+- Paper 专用音符盒编辑 GUI 协议；
+- **按服务器同步坐标渲染已放置的 ENB 方块，复用 Full Fabric 原模型与 ON/OFF 状态。**
 
 Paper Client **内置与独立 `Visuals` ZIP 同源的 ENB 模型/纹理，并作为 always-enabled built-in resource pack 注册**，所以安装 Paper Client 后不需要再单独安装 Visuals ZIP。
 
@@ -50,7 +51,7 @@ Paper Client **内置与独立 `Visuals` ZIP 同源的 ENB 模型/纹理，并�
 Paper 服务端世界与背包始终只使用 `minecraft:*` 原版载体。插件使用两层元数据：
 
 - Bukkit PDC `enb_type`：服务器逻辑身份；
-- `minecraft:custom_model_data` 字符串：仅用于客户端材质选择。
+- `minecraft:custom_model_data` 字符串：仅用于客户端物品材质选择。
 
 | ENB 逻辑对象 | Paper 实际载体 | CustomModelData string |
 | --- | --- | --- |
@@ -96,13 +97,32 @@ Visuals Pack / Paper Client 内置包使用 Minecraft 26.2 的 `minecraft:select
 
 这就是 Paper 版采用的 Hypixel 风格思路：**原版载体 + 服务器元数据 + 客户端资源包模型选择**。
 
-### 已放置方块的当前限制
+### 已放置方块渲染（Paper Client）
 
-CustomModelData 属于 ItemStack。物品放到世界里后，方块本身仍是普通 `minecraft:*` Block，纯 Resource Pack 无法知道某个坐标是否由 ENB Bridge 管理。
+CustomModelData 只负责 ItemStack。物品放到世界后，Paper 服务端仍然只保存普通 `minecraft:*` Block；为了既显示 Full Fabric 外观、又不影响普通原版方块，Paper Client 使用了第二层“坐标感知渲染”。
 
-为避免误伤原版方块，Visuals ZIP **故意不全局覆盖** Note Block / Concrete / Redstone Block 的 blockstate。目前 Paper 世界中已放置的 Bridge 方块仍使用原版方块外观。
+Paper Server 会向支持该协议的 Paper Client 同步当前维度中由 Bridge 管理的：
 
-后续 Paper Client 会通过 ENB 对象位置同步 + 客户端定向渲染，只对真正的 Bridge 对象显示 Full Fabric 方块外观，而不影响普通原版方块。
+- 方块坐标；
+- ENB 逻辑类型；
+- 当前 ON/OFF 状态；
+- Extended Note Block 的 MIDI 音高 pitch class。
+
+Paper Client 只包装可能作为载体的 Note Block / 红绿紫 Concrete / Redstone Block 的 baked model。渲染每个坐标时：
+
+- 该坐标不是 ENB Bridge 对象 -> 原版模型完全不变；
+- 该坐标是 ENB Bridge 对象 -> 输出对应 Full Fabric 模型。
+
+当前四类已放置方块的视觉行为：
+
+- Extended Note Block：根据 MIDI `note % 12` 使用 C / C# / D / ... / B 原模型，并根据红石状态切换 `_on` 模型；
+- Global Redstone Transmitter：使用 Full Fabric Transmitter OFF/ON 模型；
+- Global Redstone Receiver：使用 Full Fabric Receiver OFF/ON 模型。服务端 ON 时仍然是真正的 `minecraft:redstone_block`，因此红石输出保持 15，但 Paper Client 在该坐标显示 Receiver ON 外观；
+- NBS Projection Receiver：使用 Full Fabric Projection Receiver OFF/ON 模型。
+
+客户端进入服务器、切换世界或注册同步频道时会收到完整快照；后续放置、破坏、移除、音高修改与红石状态变化会增量刷新对应坐标的 chunk geometry。
+
+**独立 Visuals ZIP 仍然只能负责物品外观。** 没有 Paper Client 的玩家无法知道服务器管理的世界坐标，因此已放置方块继续显示原版载体，这是预期的兼容回退行为。
 
 ## 运行环境
 
@@ -121,7 +141,8 @@ CustomModelData 属于 ItemStack。物品放到世界里后，方块本身仍是
 - MIDI 0-127 全音域；
 - 力度、延音、播放延迟、淡入、淡出；
 - Full Fabric 支持音量曲线、弯音曲线和表达式声源移动；
-- Paper Bridge 支持扩展播放、pitch-cents 投影与无 Mod 原版 fallback。
+- Paper Bridge 支持扩展播放、pitch-cents 投影与无 Mod 原版 fallback；
+- Paper Client 右键已放置的 Extended Note Block 可打开独立编辑 GUI，并保存回 Paper 服务端。
 
 ### 指挥棒
 
@@ -168,7 +189,7 @@ Paper Bridge 中指挥棒使用带 ENB 标记的烈焰棒：
 ## Paper/Purpur 快速安装
 
 1. 服务端 `plugins/` 放 `ExtendedNoteBlock-Paper-Server-*.jar`。
-2. 需要完整 ENB 音色和客户端工具的玩家，在 Fabric 26.2 客户端 `mods/` 放 `ExtendedNoteBlock-Paper-Client-Fabric-*.jar`。
+2. 需要完整 ENB 音色、客户端工具和已放置方块 Full Fabric 外观的玩家，在 Fabric 26.2 客户端 `mods/` 放 `ExtendedNoteBlock-Paper-Client-Fabric-*.jar`。
 3. Paper Client 已内置 Visuals，不需要再装独立 ZIP。
 4. 不装 Paper Client 的玩家也可以直接进入服务器；如果只想要 ENB 标记物品的原 Mod 外观，可单独启用 `ExtendedNoteBlock-Visuals-*.zip`。
 
@@ -178,7 +199,7 @@ OP 可使用：
 /enb give all
 ```
 
-> 从旧版 Paper Server 升级后，背包里已经存在的旧 ENB 载体可能没有新的 CustomModelData 字符串。测试材质时建议重新执行 `/enb give all` 获取一套新物品；新掉落的 Bridge 物品也会自动带上新视觉标记。
+> 从旧版 Paper Server 升级后，背包里已经存在的旧 ENB 载体可能没有新的 CustomModelData 字符串。测试物品材质时建议重新执行 `/enb give all` 获取一套新物品；已放置并仍记录在 `objects.yml` 中的 Bridge 方块不需要重新放置，Paper Client 登录后会收到同步快照。
 
 ## Full Fabric 快速安装
 
@@ -202,8 +223,10 @@ GitHub Actions 发布前会验证：
 - Paper Client 不泄漏自定义 Block / Item / Server Registry 类；
 - Paper Client JAR 内存在 always-enabled built-in Visuals pack；
 - Paper Client 与独立 Visuals ZIP 都包含 CustomModelData string 选择器与明确的原版 fallback；
+- Paper Client JAR 包含坐标缓存、动态 baked-model 包装器与四类 Full Fabric 方块模型资源；
 - 独立 Visuals ZIP 不全局覆盖原版方块 blockstate；
-- Paper Server 同时保留 PDC 逻辑身份与 CustomModelData 视觉身份，同时不发送自定义注册表 ItemStack；
+- Paper Server 同时保留 PDC 逻辑身份与 CustomModelData 物品视觉身份，同时不发送自定义注册表 ItemStack；
+- Paper Server 编译验证 `bridge_object_sync` 世界对象同步、右键编辑通道与运行资源；
 - Paper Server JAR 包含 `plugin.yml` / `config.yml`。
 
 ## 项目来源与作者
