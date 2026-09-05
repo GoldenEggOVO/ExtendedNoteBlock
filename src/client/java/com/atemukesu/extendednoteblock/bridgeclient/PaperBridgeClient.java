@@ -8,6 +8,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.fabricmc.fabric.api.resource.v1.pack.PackActivationType;
@@ -37,6 +38,7 @@ public final class PaperBridgeClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         registerBuiltInVisualPack();
+        BridgeBlockRenderModels.register();
         ConfigManager.initialize();
 
         SoundPackManager packs = SoundPackManager.getInstance();
@@ -84,6 +86,11 @@ public final class PaperBridgeClient implements ClientModInitializer {
                     context.client().gui.setScreen(new BridgeNoteBlockScreen(parent, payload));
                 }));
 
+        ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.ObjectSyncPayload.ID,
+                (payload, context) -> context.client().execute(() -> BridgeWorldObjects.apply(payload)));
+
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> BridgeWorldObjects.clear());
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             ClientSoundManager.tickPauseRecovery(client);
             while (openNbsWorkshopKey.consumeClick()) {
@@ -93,7 +100,7 @@ public final class PaperBridgeClient implements ClientModInitializer {
             }
         });
 
-        LOGGER.info("ExtendedNoteBlock Paper Client loaded (registry-safe mode, built-in visuals, NBS workshop and note editor).");
+        LOGGER.info("ExtendedNoteBlock Paper Client loaded (registry-safe mode, built-in visuals, placed-block rendering, NBS workshop and note editor).");
     }
 
     private static void registerBuiltInVisualPack() {
