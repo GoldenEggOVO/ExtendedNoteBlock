@@ -24,6 +24,7 @@ OUT_DIR = ROOT / "build" / "paper-bridge-client"
 ASSET_ROOT = ROOT / "src" / "main" / "resources" / "assets" / "extendednoteblock"
 RESOURCE_PACK_FORMAT = 88
 VISUAL_DIRS = ("blockstates/", "items/", "lang/", "models/", "textures/")
+BRIDGE_MIXIN_CONFIG = "extendednoteblock.bridgeclient.mixins.json"
 
 
 def read_properties(path: Path) -> dict[str, str]:
@@ -64,6 +65,20 @@ def built_in_pack_metadata() -> bytes:
     ).encode("utf-8")
 
 
+def bridge_mixin_metadata() -> bytes:
+    return json.dumps(
+        {
+            "required": True,
+            "package": "com.atemukesu.extendednoteblock.bridgeclient",
+            "compatibilityLevel": "JAVA_25",
+            "client": ["BridgeSoundEngineMixin"],
+            "injectors": {"defaultRequire": 1},
+        },
+        ensure_ascii=False,
+        indent=2,
+    ).encode("utf-8")
+
+
 props = read_properties(ROOT / "gradle.properties")
 mc_version = props["minecraft_version"]
 mod_version = props["mod_version"]
@@ -87,6 +102,7 @@ ALLOWED_CLASSES = (
     CLASS_PREFIX + "client/gui/screen/NbsWorkshopScreen",
     CLASS_PREFIX + "client/gui/screen/VanillaExportScreen",
     CLASS_PREFIX + "client/gui/screen/VanillaBlockMappingScreen",
+    CLASS_PREFIX + "client/gui/widget/ComboBoxWidget",
     CLASS_PREFIX + "client/gui/widget/NbsProjectionPreviewWidget",
     CLASS_PREFIX + "nbs/NbsSong",
     CLASS_PREFIX + "nbs/NbsReader",
@@ -145,6 +161,7 @@ metadata = {
     "entrypoints": {
         "client": ["com.atemukesu.extendednoteblock.bridgeclient.PaperBridgeClient"]
     },
+    "mixins": [BRIDGE_MIXIN_CONFIG],
     "depends": {
         "fabricloader": f">={loader_version}",
         "minecraft": mc_version,
@@ -182,6 +199,7 @@ with zipfile.ZipFile(source_jar, "r") as zin, zipfile.ZipFile(
     if pack_icon is not None:
         zout.writestr("resourcepacks/bridge_visuals/pack.png", pack_icon)
     zout.writestr("resourcepacks/bridge_visuals/pack.mcmeta", built_in_pack_metadata())
+    zout.writestr(BRIDGE_MIXIN_CONFIG, bridge_mixin_metadata())
     zout.writestr(
         "fabric.mod.json",
         json.dumps(metadata, ensure_ascii=False, indent=2).encode("utf-8"),
@@ -203,15 +221,19 @@ with zipfile.ZipFile(out_jar, "r") as check:
     required = [
         CLASS_PREFIX + "bridgeclient/PaperBridgeClient.class",
         CLASS_PREFIX + "bridgeclient/BridgeClientPayloads.class",
+        CLASS_PREFIX + "bridgeclient/BridgeSoundEngineMixin.class",
+        CLASS_PREFIX + "bridgeclient/BridgeNoteBlockScreen.class",
         CLASS_PREFIX + "sound/ClientSoundManager.class",
         CLASS_PREFIX + "sound/SoundPackManager.class",
         CLASS_PREFIX + "client/gui/screen/NbsWorkshopScreen.class",
         CLASS_PREFIX + "client/gui/screen/VanillaExportScreen.class",
+        CLASS_PREFIX + "client/gui/widget/ComboBoxWidget.class",
         CLASS_PREFIX + "nbs/NbsReader.class",
         CLASS_PREFIX + "nbs/MidiToNbsConverter.class",
         CLASS_PREFIX + "nbs/vanilla/VanillaStructureGenerator.class",
         "resourcepacks/bridge_visuals/pack.mcmeta",
         "resourcepacks/bridge_visuals/assets/extendednoteblock/items/conductor_wand.json",
+        BRIDGE_MIXIN_CONFIG,
         "fabric.mod.json",
     ]
     required.extend(
@@ -224,6 +246,13 @@ with zipfile.ZipFile(out_jar, "r") as check:
 
     if CLASS_PREFIX + "ExtendedNoteBlock.class" in names:
         raise SystemExit("Full content-mod initializer must not exist in the Paper Client JAR")
+
+    mod_json = json.loads(check.read("fabric.mod.json").decode("utf-8"))
+    if BRIDGE_MIXIN_CONFIG not in mod_json.get("mixins", []):
+        raise SystemExit("Paper Client fabric.mod.json does not load the pitch-range mixin config")
+    mixin_json = json.loads(check.read(BRIDGE_MIXIN_CONFIG).decode("utf-8"))
+    if "BridgeSoundEngineMixin" not in mixin_json.get("client", []):
+        raise SystemExit("Paper Client mixin config does not include BridgeSoundEngineMixin")
 
     forbidden_bytecode_refs = (
         b"com/atemukesu/extendednoteblock/block/",
