@@ -119,59 +119,39 @@ helper_block = r'''    private void handlePlacedBridgeInteraction(Player player,
     }
 
     private void handleNoteSave(Player player, byte[] message) {
-        try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(message))) {
-            long packedPos = in.readLong();
-            int x = unpackBlockX(packedPos);
-            int y = unpackBlockY(packedPos);
-            int z = unpackBlockZ(packedPos);
-            int note = in.readInt();
-            int instrument = in.readInt();
-            int velocity = in.readInt();
-            int sustain = in.readInt();
-            int delay = in.readInt();
-            int fadeIn = in.readInt();
-            int fadeOut = in.readInt();
+        if (!player.hasPermission("extendednoteblockbridge.use")) {
+            player.sendMessage("You do not have permission to edit Extended Note Blocks.");
+            return;
+        }
+        try {
+            NoteSaveRequest request = NoteSaveRequest.decode(message);
+            World world = player.getWorld();
+            Location location = player.getLocation();
+            // Check reach, world height and loaded chunks BEFORE getBlockAt:
+            // client-supplied coordinates must never cause a distant chunk load.
+            if (!request.isWithinReach(location.getX(), location.getY(), location.getZ(),
+                    world.getMinHeight(), world.getMaxHeight(), interactionRange() + 2.0)
+                    || !world.isChunkLoaded(request.x() >> 4, request.z() >> 4)) {
+                player.sendMessage("Could not save ENB settings: that block is out of reach or not loaded.");
+                return;
+            }
 
-            Block block = player.getWorld().getBlockAt(x, y, z);
+            Block block = world.getBlockAt(request.x(), request.y(), request.z());
             String blockKey = key(block);
             if (objects.get(blockKey) != BridgeItemType.EXTENDED_NOTE_BLOCK || block.getType() != Material.NOTE_BLOCK) {
                 player.sendMessage("Could not save ENB settings: that block is no longer an Extended Note Block.");
                 return;
             }
 
-            double maxDistance = interactionRange() + 2.0;
-            Location center = block.getLocation().add(0.5, 0.5, 0.5);
-            if (player.getLocation().distanceSquared(center) > maxDistance * maxDistance) {
-                player.sendMessage("Could not save ENB settings: you are too far away from that block.");
-                return;
-            }
-
             NoteConfig cfg = new NoteConfig(
-                    clamp(note, 0, 127),
-                    clamp(instrument, 0, 128),
-                    clamp(velocity, 0, 127),
-                    clamp(sustain, 1, 400),
-                    clamp(delay, 0, 3_600_000),
-                    clamp(fadeIn, 0, 400),
-                    clamp(fadeOut, 0, 400));
+                    request.note(), request.instrument(), request.velocity(), request.sustain(),
+                    request.delay(), request.fadeIn(), request.fadeOut());
             notes.put(blockKey, cfg);
             saveNotes();
             player.sendMessage("Extended Note Block settings saved: " + cfg);
         } catch (IOException | RuntimeException e) {
             getLogger().warning("Invalid bridge_note_save payload from " + player.getName() + ": " + e.getMessage());
         }
-    }
-
-    private static int unpackBlockX(long packed) {
-        return (int) (packed >> 38);
-    }
-
-    private static int unpackBlockY(long packed) {
-        return (int) (packed << 52 >> 52);
-    }
-
-    private static int unpackBlockZ(long packed) {
-        return (int) (packed << 26 >> 38);
     }
 
 '''

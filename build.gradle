@@ -38,6 +38,30 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.12.2'
+    productionRuntimeMods "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+// Test the packaged Paper edition in a production Fabric client. Its classpath
+// must not accidentally include the Full mod's source-set outputs or JAR.
+sourceSets {
+    paperClientSmoke {
+        compileClasspath += sourceSets.client.compileClasspath + sourceSets.client.output + sourceSets.main.output
+    }
+}
+
+tasks.register('paperClientSmokeJar', Jar) {
+    from sourceSets.paperClientSmoke.output
+    archiveFileName = 'enb-paper-client-smoke.jar'
+    destinationDirectory = layout.buildDirectory.dir('test-mods')
+}
+
+tasks.register('runPaperClientSmoke', net.fabricmc.loom.task.prod.ClientProductionRunTask) {
+    dependsOn tasks.named('paperClientSmokeJar')
+    mods.setFrom(configurations.productionRuntimeMods, tasks.named('paperClientSmokeJar'),
+            layout.buildDirectory.file("paper-bridge-client/ExtendedNoteBlock-Paper-Client-Fabric-${project.mod_version}-mc${project.minecraft_version}.jar"))
+    runDir = layout.buildDirectory.dir('run/paperClientSmoke')
+    useXVFB = true
+    jvmArgs.addAll('-Xmx2G', '-Dorg.lwjgl.glfw.checkThread0=false')
 }
 
 test {

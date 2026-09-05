@@ -26,11 +26,26 @@ jobs:
       - uses: gradle/actions/wrapper-validation@v4
       - name: Prepare Minecraft 26.2 sources
         run: python3 scripts/prepare_26_2_sources.py
+      - name: Test Mixin package regression checks
+        run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
       - run: chmod +x gradlew
       - name: Build Full Fabric mod
         run: ./gradlew clean test build --stacktrace
       - name: Build Paper-safe client jar with built-in visual pack
         run: python3 scripts/make_paper_bridge_client_jar.py
+      - name: Launch packaged Paper Client and check sound mixins
+        timeout-minutes: 10
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 'true'
+          ALSOFT_DRIVERS: 'null'
+        run: ./gradlew runPaperClientSmoke --stacktrace
+      - name: Preserve Paper Client startup logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-client-startup-logs
+          path: build/run/paperClientSmoke/logs/
+          if-no-files-found: ignore
       - name: Build standalone visual resource pack
         run: python3 scripts/make_visual_resource_pack.py
       - name: Verify Full Fabric runtime jar

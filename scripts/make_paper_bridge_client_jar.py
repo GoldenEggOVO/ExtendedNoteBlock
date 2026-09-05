@@ -17,6 +17,7 @@ import zipfile
 from pathlib import Path
 
 from make_visual_resource_pack import CARRIER_ITEMS, carrier_selector, custom_model_key
+from verify_mixin_packages import verify_mixin_packages
 
 ROOT = Path(__file__).resolve().parents[1]
 LIBS = ROOT / "build" / "libs"
@@ -69,7 +70,7 @@ def bridge_mixin_metadata() -> bytes:
     return json.dumps(
         {
             "required": True,
-            "package": "com.atemukesu.extendednoteblock.bridgeclient",
+            "package": "com.atemukesu.extendednoteblock.bridgeclient.mixin",
             "compatibilityLevel": "JAVA_25",
             "client": ["BridgeSoundEngineMixin"],
             "injectors": {"defaultRequire": 1},
@@ -221,7 +222,7 @@ with zipfile.ZipFile(out_jar, "r") as check:
     required = [
         CLASS_PREFIX + "bridgeclient/PaperBridgeClient.class",
         CLASS_PREFIX + "bridgeclient/BridgeClientPayloads.class",
-        CLASS_PREFIX + "bridgeclient/BridgeSoundEngineMixin.class",
+        CLASS_PREFIX + "bridgeclient/mixin/BridgeSoundEngineMixin.class",
         CLASS_PREFIX + "bridgeclient/BridgeNoteBlockScreen.class",
         CLASS_PREFIX + "sound/ClientSoundManager.class",
         CLASS_PREFIX + "sound/SoundPackManager.class",
@@ -253,6 +254,7 @@ with zipfile.ZipFile(out_jar, "r") as check:
     mixin_json = json.loads(check.read(BRIDGE_MIXIN_CONFIG).decode("utf-8"))
     if "BridgeSoundEngineMixin" not in mixin_json.get("client", []):
         raise SystemExit("Paper Client mixin config does not include BridgeSoundEngineMixin")
+    verify_mixin_packages(check)
 
     forbidden_bytecode_refs = (
         b"com/atemukesu/extendednoteblock/block/",

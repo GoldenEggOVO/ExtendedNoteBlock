@@ -1,4 +1,4 @@
-package com.atemukesu.extendednoteblock.bridgeclient;
+package com.atemukesu.extendednoteblock.bridgeclient.mixin;
 
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundEngine;
@@ -28,7 +28,8 @@ public abstract class BridgeSoundEngineMixin {
             ordinal = 1)
     private float extendedNoteBlock$useFullAttenuationDistance(float attenuationDistance,
             SoundInstance soundInstance) {
-        if (soundInstance.getAttenuation() == SoundInstance.Attenuation.LINEAR) {
+        if ("extendednoteblock".equals(soundInstance.getIdentifier().getNamespace())
+                && soundInstance.getAttenuation() == SoundInstance.Attenuation.LINEAR) {
             return 48.0F;
         }
         return attenuationDistance;
