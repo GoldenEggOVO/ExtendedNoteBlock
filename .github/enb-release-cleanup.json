@@ -1,0 +1,46 @@
+{
+  "keep_assets": [
+    [
+      546410388,
+      "ExtendedNoteBlock-Full-Fabric-2.10.1-mc26.2.jar",
+      21564437,
+      "sha256:4f25ce8923a60cb302689aa627d9fe54e7a90b843ffb7d54960a910a843e901f"
+    ],
+    [
+      546410389,
+      "ExtendedNoteBlock-Paper-Client-Fabric-2.10.1-mc26.2.jar",
+      21354747,
+      "sha256:d52cf763c8ea05198ea96b3e0a5d72a7ee8b5dccb3f4bce6730bba3162577a0e"
+    ],
+    [
+      546410384,
+      "ExtendedNoteBlock-Paper-Server-0.10.1-mc26.2.jar",
+      89145,
+      "sha256:9494c07a828619edcda45fa5bba474f895f52f1cc160eb0db364242859eb8c47"
+    ],
+    [
+      546410386,
+      "ExtendedNoteBlock-Server-Resources-2.10.1-mc26.2.zip",
+      21499658,
+      "sha256:f77ecee14539bbac0e5eb5de892f573c83537239fcc266ff00dd0152c71e90e7"
+    ],
+    [
+      546410385,
+      "ExtendedNoteBlock-Visuals-2.10.1-mc26.2.zip",
+      62890,
+      "sha256:43cfaac70167859c247b022188760d0d4331ef1e86a4e355f2370c52c94ec01e"
+    ],
+    [
+      546410396,
+      "SHA256SUMS.txt",
+      620,
+      "sha256:b3d633627c16c4eef617acaa7f34fbd111a158277a9cd12be7abfc14e61ca429"
+    ]
+  ],
+  "keep_id": 383399183,
+  "keep_sha": "553a3ee87934605414cdc030d29337600a79375a",
+  "keep_tag": "v2.10.1-mc26.2",
+  "old_id": 383380690,
+  "old_sha": "c4472444d02a17e9e1fe3e47b5f366dd86fe41d9",
+  "old_tag": "v2.10.0-mc26.2"
+}
