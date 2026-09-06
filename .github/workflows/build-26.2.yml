@@ -8,12 +8,80 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: build-26-2-${{ github.ref }}
+  cancel-in-progress: ${{ !(github.event_name == 'push' && startsWith(github.event.head_commit.message, 'release:')) }}
 
 jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      run-build: ${{ steps.scope.outputs.run-build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate documentation and repository metadata
+        run: |
+          python3 scripts/check_documentation.py
+          python3 -m unittest discover -s scripts -p 'test_documentation.py' -v
+      - name: Decide whether full builds are required
+        id: scope
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+
+          run_build=true
+          diff_range=""
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            run_build=true
+          elif [[ "$EVENT_NAME" == "push" && "$REF_NAME" == "port/26.2" && "$HEAD_MESSAGE" == release:* ]]; then
+            run_build=true
+          elif [[ "$EVENT_NAME" == "push" && "$REF_NAME" == "release/26.2" ]]; then
+            git fetch --no-tags origin port/26.2:refs/remotes/origin/port/26.2
+            if git merge-base --is-ancestor "$GITHUB_SHA" origin/port/26.2; then
+              run_build=false
+              echo "Skipping duplicate full build for a commit already present on port/26.2."
+            fi
+          elif [[ "$EVENT_NAME" == "pull_request" ]]; then
+            diff_range="${BASE_SHA}...${GITHUB_SHA}"
+          elif [[ "$EVENT_NAME" == "push" && -n "$BEFORE_SHA" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
+            diff_range="${BEFORE_SHA}..${GITHUB_SHA}"
+          fi
+
+          if [[ -n "$diff_range" ]]; then
+            run_build=false
+            while IFS= read -r path; do
+              case "$path" in
+                README.md|CHANGELOG.md|CONTRIBUTING.md|SECURITY.md|THIRD_PARTY_NOTICES.md|LICENSE|docs/*|.github/ISSUE_TEMPLATE/*|scripts/check_documentation.py|scripts/test_documentation.py)
+                  ;;
+                *)
+                  run_build=true
+                  echo "Full build required by: $path"
+                  break
+                  ;;
+              esac
+            done < <(git diff --name-only "$diff_range")
+          fi
+
+          echo "run-build=$run_build" >> "$GITHUB_OUTPUT"
+          echo "Full builds required: $run_build"
+
   build-mod:
+    needs: quality-gate
+    if: needs.quality-gate.outputs.run-build == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -111,6 +179,8 @@ jobs:
           if-no-files-found: error
 
   build-bridge:
+    needs: quality-gate
+    if: needs.quality-gate.outputs.run-build == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -207,9 +277,12 @@ jobs:
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/port/26.2' && startsWith(github.event.head_commit.message, 'release:')
     needs:
+      - quality-gate
       - build-mod
       - build-bridge
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 

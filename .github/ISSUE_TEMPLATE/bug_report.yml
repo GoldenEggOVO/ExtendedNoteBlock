@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a reproducible crash, compatibility problem or incorrect behavior.
+title: "[Bug] "
+body:
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Affected edition
+      options:
+        - Full Fabric
+        - Paper Client
+        - Paper Server
+        - Server Resources pack / unmodified client
+        - Unsure
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Include ENB, Minecraft, Java, Fabric Loader or Paper/Purpur versions as applicable.
+      placeholder: ENB 2.12.0 / Paper Server 0.12.0, Minecraft 26.2, Java 25, ...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Give the smallest sequence that reproduces the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and screenshots
+      description: Attach the relevant log or screenshot after removing addresses, tokens and personal information.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I am using Minecraft 26.2 and the latest published ENB release.
+          required: true
+        - label: I checked the installation guide and searched existing issues.
+          required: true
+        - label: This report does not disclose a security vulnerability.
+          required: true

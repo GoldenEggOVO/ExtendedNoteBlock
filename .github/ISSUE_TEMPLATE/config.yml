@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Installation and troubleshooting
+    url: https://github.com/GoldenEggOVO/ExtendedNoteBlock/blob/main/docs/INSTALLATION.md
+    about: Check supported editions, setup steps and common errors before reporting.
+  - name: Private security report
+    url: https://github.com/GoldenEggOVO/ExtendedNoteBlock/security/advisories/new
+    about: Report vulnerabilities privately instead of opening a public issue.

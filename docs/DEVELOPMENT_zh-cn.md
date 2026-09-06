@@ -13,9 +13,10 @@
 | Fabric Loom | 1.17.20 |
 | Fabric Loader | 0.19.5 |
 | Fabric API | 0.159.0+26.2 |
+| Paper API | 26.2.build.119-stable |
 | 辅助脚本 | Python 3 |
 
-版本配置见 [gradle.properties](../gradle.properties)、[Gradle Wrapper](../gradle/wrapper/gradle-wrapper.properties) 和 [bridge/build.gradle](../bridge/build.gradle)。Paper API 当前使用动态依赖 `26.2.build.+`，不同构建解析到的具体 Paper API build 可能不同。
+版本配置见 [gradle.properties](../gradle.properties)、[Gradle Wrapper](../gradle/wrapper/gradle-wrapper.properties) 和 [bridge/build.gradle](../bridge/build.gradle)。Paper API 固定为 `26.2.build.119-stable`，确保相同源码使用同一套 API 基线。
 
 | 目录 | 职责 |
 | --- | --- |
@@ -89,7 +90,7 @@ Windows 下可将 `python3` 换成指向 Python 3 的 `python`，将 `./gradlew`
 | `release/26.2` | 发布维护分支，在确定的检查点同步 |
 | `v<模组版本>-mc26.2` | 对应正式产物的精确源码提交 |
 
-当前[工作流](../.github/workflows/build-26.2.yml)检查 `port/26.2` / `release/26.2` 的 push，以及目标为 `main` 的 PR。只有推送到 `port/26.2`、最新提交信息以 `release:` 开头、两个构建任务都成功，才执行发布任务。
+当前[工作流](../.github/workflows/build-26.2.yml)会在 `port/26.2` / `release/26.2` 的 push、目标为 `main` 的 PR 和手动运行时执行文档质量检查。代码变化与 `release:` 提交运行 Full / Client / Server 完整构建；仅文档变化会跳过耗时构建，同步到 `release/26.2` 时也只运行质量门。只有推送到 `port/26.2`、最新提交信息以 `release:` 开头、两个构建任务都成功，才执行发布任务。
 
 文档和整理使用 `docs:` / `chore:` 提交。分支可以在发布后继续前进；正式 Tag 保持指向产物实际使用的提交。Full / Client / Server Resources 使用 `gradle.properties` 中的 `mod_version`；Paper Server 使用 `bridge/build.gradle` 中的独立版本号。
 
@@ -103,4 +104,4 @@ CI 验证现有测试、Full 运行内容、Paper Client 的 Registry 安全与�
 
 构建并运行 Paper Client 打包脚本后，执行 `./gradlew runPaperClientSmoke`。Linux 需要 Xvfb 和可用的 OpenGL 驱动，CI 使用软件渲染。测试使用独立的 `src/paperClientSmoke/` 模块，等待资源加载后检查内置物品包是否启用、原版载体物品选择器、音符盒 GUI、原版 Block/Item Registry、MIDI 0–127 的 SoundEngine pitch，以及原版声音行为。测试模块不会进入正式 JAR。
 
-Mixin 包范围回归检查：`python3 -m unittest discover -s scripts -p 'test_*.py' -v`。Paper 保存数据测试：`./gradlew -p bridge test`。Release 工作流检查启动成功标记，并从 `docs/releases/<mod_version>.md` 读取当前版本说明。
+文档链接、版本号、图片引用与第三方声明检查：`python3 scripts/check_documentation.py`。完整 Python 回归检查：`python3 -m unittest discover -s scripts -p 'test_*.py' -v`。Paper 保存数据测试：`./gradlew -p bridge test`。Release 工作流检查启动成功标记，并从 `docs/releases/<mod_version>.md` 读取当前版本说明。

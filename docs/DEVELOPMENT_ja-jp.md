@@ -2,7 +2,7 @@
 
 [ホーム（简体中文）](../README.md) · [ドキュメント一覧](README.md) · [English](DEVELOPMENT.md) · [简体中文](DEVELOPMENT_zh-cn.md)
 
-このブランチの対象は Minecraft **26.2** です。JDK **25**、Gradle Wrapper **9.5.1**、Loom **1.17.20**、Fabric Loader **0.19.5**、Fabric API **0.159.0+26.2**、Python 3 を使用します。
+このブランチの対象は Minecraft **26.2** です。JDK **25**、Gradle Wrapper **9.5.1**、Loom **1.17.20**、Fabric Loader **0.19.5**、Fabric API **0.159.0+26.2**、Paper API **26.2.build.119-stable**、Python 3 を使用します。Paper API は再現可能なビルドのため固定されています。
 
 `src/` は Fabric と共有機能、`bridge/` は Paper / Purpur プラグイン、`scripts/` はソース準備とパッケージングを担当します。旧 1.20.1 / 1.21.1 のファイルは [legacy/](../legacy/README.md) に保存され、現在のビルドには含まれません。
 
@@ -41,8 +41,8 @@ python3 scripts/prepare_paper_listener_pack.py
 
 Server Resources のビルドは 751 個のサンプルをピーク正規化し、Vorbis quality 4 でエンコードして各 OGG を再デコードします。50,000,000 bytes 以上のパックと実質的に無音の出力は拒否されます。Release は URL と SHA-1 を `config.yml` と JAR 内の `enb-release-pack.properties` の両方へ書き込み、古いサーバー設定が公式アップデートを上書きしないようにします。
 
-開発ブランチは `port/26.2` です。`main` と `release/26.2` は確認済みのチェックポイントで同期し、公開済みのタグは成果物を作成したコミットに固定します。現在の CI は `port/26.2` への push で最新コミットメッセージが `release:` から始まる場合に、ビルド成功後のリリース処理を実行します。
+開発ブランチは `port/26.2` です。`main` と `release/26.2` は確認済みのチェックポイントで同期し、公開済みのタグは成果物を作成したコミットに固定します。CI は常に文書を検証し、コード変更と `release:` コミットだけで完全なビルドを実行します。文書のみの変更と `release/26.2` への同期では重いビルドを省略します。`port/26.2` への push で最新コミットメッセージが `release:` から始まる場合にのみ、ビルド成功後のリリース処理を実行します。
 
 詳細は [English の開発ガイド](DEVELOPMENT.md) と [CI 定義](../.github/workflows/build-26.2.yml) を参照してください。CI の成功は実際のゲーム内検証を意味しません。
 
-Paper Client のパッケージ作成後、`./gradlew runPaperClientSmoke` で実際の Fabric クライアント起動、リソース読み込み、GUI、音程を検証できます。Linux では Xvfb が必要です。テスト用 Mod はリリース JAR に含まれません。Purpur マルチプレイと実際の音は別途確認が必要です。
+`python3 scripts/check_documentation.py` はローカルリンク、見出し、画像参照、現在のバージョン、Release 記事索引、第三者表記を確認します。Paper Client のパッケージ作成後、`./gradlew runPaperClientSmoke` で実際の Fabric クライアント起動、リソース読み込み、GUI、音程を検証できます。Linux では Xvfb が必要です。テスト用 Mod はリリース JAR に含まれません。Purpur マルチプレイと実際の音は別途確認が必要です。

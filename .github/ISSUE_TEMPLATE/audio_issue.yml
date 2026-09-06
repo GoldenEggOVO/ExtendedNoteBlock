@@ -1,0 +1,58 @@
+name: Audio quality report
+description: Report distortion, wrong pitch, missing notes, balance or instrument-mapping problems.
+title: "[Audio] "
+body:
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Playback mode
+      options:
+        - Full Fabric
+        - Paper Client
+        - Unmodified client with Server Resources pack
+        - Unsure
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions and pack status
+      description: Include ENB/server versions and whether the server pack loaded successfully.
+    validations:
+      required: true
+  - type: input
+    id: sound
+    attributes:
+      label: Instrument and note
+      description: Give the GM program/instrument and MIDI note when known.
+      placeholder: Program 5 Electric Piano 1, MIDI 24
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce
+      description: Include the command, NBS/MIDI excerpt or ENB setup needed to hear it.
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What sounds wrong
+      description: Describe distortion, pitch, volume, timing, looping or comparison with the expected timbre.
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Optional recording or source file
+      description: Attach a short recording or minimal source file if its license permits sharing.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I tested with the latest published release and restarted after updating.
+          required: true
+        - label: I identified whether the issue occurs with a Mod client or the server resource pack.
+          required: true

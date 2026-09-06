@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/badge/Release-2.12.0-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.12.0-mc26.2)
 [![License](https://img.shields.io/github/license/GoldenEggOVO/ExtendedNoteBlock?style=flat-square)](LICENSE)
 
-![Extended Note Block Banner](docs/assets/ENB-Banner.png)
+![Extended Note Block Banner](docs/assets/ENB-Banner.webp)
 
 Extended Note Block 为 Minecraft 带来完整 MIDI 音域的扩展音符盒、指挥棒、无线红石和 NBS 音乐工坊。它支持 MIDI、NBS 与常见音频导入，也可以将歌曲导出为 Minecraft 音乐结构。
 
@@ -68,6 +68,8 @@ Paper Server 默认强制下发 2.12.0 的物品 + 声音资源包。资源包�
 | [开发指南](docs/DEVELOPMENT_zh-cn.md) | 工具链、构建、测试、分支与发布流程 |
 | [路线图](docs/ROADMAP.md) | 已完成能力、实机验证和后续功能 |
 | [版本记录](CHANGELOG.md) | 版本级变更摘要与历史发布文章 |
+| [参与贡献](CONTRIBUTING.md) | 问题报告、开发流程与提交检查清单 |
+| [安全策略](SECURITY.md) | 私下报告安全问题与支持范围 |
 
 ## 来源与许可证
 
@@ -76,4 +78,4 @@ Paper Server 默认强制下发 2.12.0 的物品 + 声音资源包。资源包�
 - Minecraft 26.2 / Paper-Purpur Bridge 维护：**GoldenEggOVO**。
 - [原版详细手册](https://atemukesu.github.io/ExtendedNoteBlock/) 可供 Full Fabric 功能参考；Paper 的实际能力以本仓库文档为准。
 
-本项目使用 [MIT License](LICENSE)，并保留原作者版权声明。
+本项目使用 [MIT License](LICENSE)，并保留原作者版权声明。音频及其他依赖材料见[第三方声明](THIRD_PARTY_NOTICES.md)。

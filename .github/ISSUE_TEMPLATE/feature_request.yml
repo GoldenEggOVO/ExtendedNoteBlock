@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest a focused improvement to gameplay, authoring or server operation.
+title: "[Feature] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: Describe what you are trying to accomplish and who benefits.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Explain the user-visible result rather than only an implementation detail.
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Relevant edition
+      multiple: true
+      options:
+        - Full Fabric
+        - Paper Client
+        - Paper Server
+        - Server Resources pack / unmodified client
+        - Documentation or tooling
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Note current workarounds or important compatibility/performance tradeoffs.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and the roadmap for the same request.
+          required: true

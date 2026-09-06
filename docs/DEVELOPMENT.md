@@ -13,9 +13,10 @@ This branch targets Minecraft **26.2**. It builds three program editions: Full F
 | Fabric Loom | 1.17.20 |
 | Fabric Loader | 0.19.5 |
 | Fabric API | 0.159.0+26.2 |
+| Paper API | 26.2.build.119-stable |
 | Helper scripts | Python 3 |
 
-Versions come from [gradle.properties](../gradle.properties), the [wrapper configuration](../gradle/wrapper/gradle-wrapper.properties), and [bridge/build.gradle](../bridge/build.gradle). Bridge currently uses the `26.2.build.+` Paper API dependency selector; its resolved build can change between builds.
+Versions come from [gradle.properties](../gradle.properties), the [wrapper configuration](../gradle/wrapper/gradle-wrapper.properties), and [bridge/build.gradle](../bridge/build.gradle). Paper API is pinned to `26.2.build.119-stable` so identical source revisions resolve the same API baseline.
 
 ## Repository layout
 
@@ -85,7 +86,7 @@ The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed Gen
 | `release/26.2` | Release maintenance branch, synchronized at agreed checkpoints |
 | `v<mod-version>-mc26.2` | Exact source commit for a published release |
 
-The current [workflow](../.github/workflows/build-26.2.yml) builds pushes to `port/26.2` and `release/26.2`, and pull requests targeting `main`. Its release job runs only for a push to `port/26.2` whose head commit message starts with `release:` and whose build jobs succeed.
+The current [workflow](../.github/workflows/build-26.2.yml) validates documentation on pushes to `port/26.2` and `release/26.2`, pull requests targeting `main`, and manual runs. Code changes and `release:` commits run the complete Full / Client / Server build. Documentation-only changes skip those expensive jobs, and synchronized pushes to `release/26.2` run only the quality gate. The release job runs only for a push to `port/26.2` whose head commit message starts with `release:` and whose build jobs succeed.
 
 Use `docs:` / `chore:` commits for repository maintenance. Branches may advance after a release; keep the published release tag anchored to the source commit that produced its artifacts. Full / Client / Server Resources use `mod_version`, while Paper Server has its own version in `bridge/build.gradle`.
 
@@ -99,4 +100,4 @@ The outstanding gameplay checks and planned Paper features are tracked in [ROADM
 
 After building and packaging the Paper Client, run `./gradlew runPaperClientSmoke`. On Linux this requires Xvfb and an OpenGL-capable driver (CI uses software rendering). The separate `src/paperClientSmoke/` test mod is never packaged in release JARs. The task starts the actual Paper Client JAR with Fabric, waits for resource loading, checks the built-in item pack, opens the note editor, verifies vanilla Block/Item registries and checks MIDI 0–127 pitch factors plus vanilla attenuation/pitch behavior. It does not connect to a Paper server or verify audible output.
 
-`python3 -m unittest discover -s scripts -p 'test_*.py' -v` tests the Mixin package guard. `./gradlew -p bridge test` runs the server payload validation tests. The release workflow requires these checks and the startup success marker, and publishes the matching `docs/releases/<mod_version>.md` file as release notes.
+`python3 scripts/check_documentation.py` validates local links, headings, screenshot references, current version markers, release-note indexes and third-party notices. `python3 -m unittest discover -s scripts -p 'test_*.py' -v` includes that integration check and the Mixin package guard. `./gradlew -p bridge test` runs the server payload validation tests. The release workflow requires these checks and the startup success marker, and publishes the matching `docs/releases/<mod_version>.md` file as release notes.

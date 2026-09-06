@@ -2,7 +2,7 @@
 
 [简体中文](../README.md) · **日本語** · [ドキュメント一覧](README.md) · [開発ガイド](DEVELOPMENT_ja-jp.md)
 
-![Extended Note Block Banner](assets/ENB-Banner.png)
+![Extended Note Block Banner](assets/ENB-Banner.webp)
 
 Extended Note Block は、MIDI 0–127 に対応する拡張音符ブロック、指揮棒、ワイヤレスレッドストーン、NBS 音楽ワークショップを Minecraft に追加します。NBS / MIDI / 一般的な音声ファイルの読み込み、試聴、音楽構造の書き出しにも対応します。
 

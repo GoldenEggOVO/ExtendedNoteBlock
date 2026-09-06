@@ -4,6 +4,12 @@
 
 ## Unreleased — Minecraft 26.2
 
+- Added automated documentation checks for local links, heading anchors, asset references, current version markers, release-note indexing and third-party notices.
+- Added contribution guidance, structured bug/feature/audio issue forms, a private security-reporting policy and a root third-party notice.
+- Split CI into an always-on quality gate and conditional full builds, avoiding duplicate heavy builds for documentation-only commits and synchronized release-branch pushes.
+- Pinned Paper API to `26.2.build.119-stable` for reproducible dependency resolution.
+- Losslessly converted documentation screenshots from PNG to WebP and documented `legacy/` as an inactive, read-only archive.
+
 ## 2.12.0 — Minecraft 26.2
 
 - Removed the resource-pack-only fake world-block renderer and its packet refresh/indexing path; no-Mod players again see the real vanilla Paper carriers.

@@ -23,6 +23,9 @@
 | [開発ガイド](DEVELOPMENT_ja-jp.md) | 日本語のビルド・開発リファレンス |
 | [路线图与验证](ROADMAP.md) | 已完成能力、实机验证和后续功能 |
 | [历史源码归档](../legacy/README.md) | 不参与当前 26.2 构建的旧版源码与工具 |
+| [参与贡献](../CONTRIBUTING.md) | Issue、Pull Request、构建与检查要求 |
+| [安全策略](../SECURITY.md) | 私下报告漏洞和当前支持范围 |
+| [第三方声明](../THIRD_PARTY_NOTICES.md) | 上游代码与音频素材的来源和许可 |
 
 ## 版本记录
 

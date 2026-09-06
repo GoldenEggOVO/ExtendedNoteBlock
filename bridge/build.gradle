@@ -4,6 +4,7 @@ plugins {
 
 group = 'com.goldenegggovo.extendednoteblock.bridge'
 version = '0.12.0'
+def paperApiVersion = '26.2.build.119-stable'
 
 repositories {
     mavenCentral()
@@ -11,10 +12,10 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:26.2.build.+'
+    compileOnly "io.papermc.paper:paper-api:${paperApiVersion}"
     testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
     testImplementation 'org.mockbukkit.mockbukkit:mockbukkit-v26.2:4.116.1'
-    testImplementation 'io.papermc.paper:paper-api:26.2.build.+'
+    testImplementation "io.papermc.paper:paper-api:${paperApiVersion}"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.12.2'
 }
 
