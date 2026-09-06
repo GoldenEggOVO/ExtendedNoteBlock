@@ -39,7 +39,7 @@ python3 scripts/prepare_paper_listener_pack.py
 | `build/server-resource-pack/` | 自動配信用のアイテム・試聴リソースパック |
 | `bridge/build/libs/` | Paper Server |
 
-Server Resources のビルドは 751 個のサンプルをピーク正規化し、Vorbis quality 5 でエンコードして各 OGG を再デコードします。50,000,000 bytes 以上のパックと実質的に無音の出力は拒否されます。Release は URL と SHA-1 を `config.yml` と JAR 内の `enb-release-pack.properties` の両方へ書き込み、古いサーバー設定が公式アップデートを上書きしないようにします。
+Server Resources のビルドは 751 個のサンプルをピーク正規化し、Vorbis quality 4 でエンコードして各 OGG を再デコードします。50,000,000 bytes 以上のパックと実質的に無音の出力は拒否されます。Release は URL と SHA-1 を `config.yml` と JAR 内の `enb-release-pack.properties` の両方へ書き込み、古いサーバー設定が公式アップデートを上書きしないようにします。
 
 開発ブランチは `port/26.2` です。`main` と `release/26.2` は確認済みのチェックポイントで同期し、公開済みのタグは成果物を作成したコミットに固定します。現在の CI は `port/26.2` への push で最新コミットメッセージが `release:` から始まる場合に、ビルド成功後のリリース処理を実行します。
 

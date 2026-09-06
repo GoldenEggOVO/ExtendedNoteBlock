@@ -8,7 +8,7 @@
 - Retained ENB inventory item models and mandatory-by-default listener audio in one automatically delivered Server Resources pack.
 - Removed the redundant standalone Visuals ZIP from builds and releases while keeping Paper Client's built-in item selectors.
 - Doubled melodic sampling density from 11 octave anchors to 22 half-octave anchors, reducing normal vanilla-client pitch shifting to about three semitones.
-- Raised Vorbis quality to 5, added high-precision SoXR fallback resampling and a short trimmed-tail fade, and enforced a 50,000,000-byte release ceiling.
+- Raised Vorbis quality to 4, added high-precision SoXR fallback resampling and a short trimmed-tail fade, and enforced a 50,000,000-byte release ceiling.
 - Avoided destructive stereo phase cancellation by deriving positional mono audio and normalization from the centered renderer's left main channel.
 - Generated edge anchors outside MIDI 12-120 from the nearest healthy SoundFont source instead of trusting transient-only extreme presets.
 - Kept naturally quiet timbres inside that healthy source range instead of falling back to a misleading edge-note transient.

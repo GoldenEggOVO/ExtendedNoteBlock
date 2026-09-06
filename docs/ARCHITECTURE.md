@@ -46,7 +46,7 @@ Paper Server 保存 MIDI Note、Instrument、Velocity、Sustain、Delay、Fade I
 
 Paper Client 从最近的采样音符计算 `2^(半音差 / 12)`。2.8.0 添加专用、Registry-safe 的 SoundEngine Mixin，对 `extendednoteblock` 声音绕过 Minecraft 的最终 pitch clamp；2.8.1 修复 Mixin 包冲突，并将 48 格衰减限定到 ENB 声音。
 
-2.12.0 的组合资源包为 128 个 GM program 每四个映射一种代表音色，共 32 种；每种预渲染 MIDI 0、6、…、126 共 22 个锚点，将常规实时变调压缩到约 ±3 半音，同时覆盖 MIDI 0–127。另有 MIDI 35–81 共 47 个独立打击乐采样。每个事件提供 8 个逻辑别名，让服务端能独立停止常见的同音重叠而不复制 OGG。物理采样采用 OGG quality 5、高精度 SoXR 离线重采样、尾部淡出和有上限的峰值归一化；构建会逐个解码检查并拒绝达到 50,000,000 bytes 的包。
+2.12.0 的组合资源包为 128 个 GM program 每四个映射一种代表音色，共 32 种；每种预渲染 MIDI 0、6、…、126 共 22 个锚点，将常规实时变调压缩到约 ±3 半音，同时覆盖 MIDI 0–127。另有 MIDI 35–81 共 47 个独立打击乐采样。每个事件提供 8 个逻辑别名，让服务端能独立停止常见的同音重叠而不复制 OGG。物理采样采用 OGG quality 4、高精度 SoXR 离线重采样、尾部淡出和有上限的峰值归一化；构建会逐个解码检查并拒绝达到 50,000,000 bytes 的包。
 
 Paper Server 在玩家加入 40 ticks 后发送带固定 UUID、HTTPS URL 与 SHA-1 的资源包请求，并只在收到 `SUCCESSFULLY_LOADED` 后向该玩家发送 `extendednoteblock_listener:*` 声音。正式 URL / SHA-1 来自 JAR 内独立 metadata，默认不受旧磁盘配置覆盖；`/enb pack status|resend` 提供诊断和重发。加载中、拒绝或失败时保留 Note Block fallback；检测到 Paper Client 插件频道的玩家继续走 Bridge 声音协议，避免重复播放。原版模式不实时还原高级音量曲线、连续弯音或表达式声源移动。
 

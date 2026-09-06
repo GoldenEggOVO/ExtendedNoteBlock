@@ -64,7 +64,8 @@ class ServerResourcePackTest(unittest.TestCase):
         self.assertEqual(module.RESOURCE_PACK_FORMAT, meta["pack"]["max_format"])
         self.assertEqual("26.2", module.metadata(False)["minecraft"])
         self.assertEqual(6, module.metadata(False)["anchor_step_semitones"])
-        self.assertEqual(5, module.metadata(False)["ogg_vorbis_quality"])
+        self.assertEqual(4, module.metadata(False)["ogg_vorbis_quality"])
+        self.assertEqual(9.5, module.metadata(False)["maximum_rendered_hold_seconds"])
         self.assertEqual(50_000_000, module.metadata(False)["maximum_pack_bytes"])
         self.assertEqual(30_000, module.metadata(False)["sample_peak_normalization"]["maximum_encoded_pcm16"])
 
