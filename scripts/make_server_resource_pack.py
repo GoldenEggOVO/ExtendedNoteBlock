@@ -45,6 +45,22 @@ OUT_DIR = ROOT / "build" / "server-resource-pack"
 WORK_DIR = ROOT / "build" / "server-resource-pack-work"
 
 NAMESPACE = "extendednoteblock_listener"
+# Two deliberately reserved Note Block states are used only in client-side
+# block-change packets sent by the Paper plugin.  The world itself remains a
+# normal Note Block, while an unmodified client with this pack can render an
+# ENB without any display entities.  Every other vanilla Note Block state maps
+# straight back to the original model.
+NOTE_BLOCK_INSTRUMENTS = (
+    "harp", "basedrum", "snare", "hat", "bass", "flute", "bell", "guitar",
+    "chime", "xylophone", "iron_xylophone", "cow_bell", "didgeridoo", "bit",
+    "banjo", "pling", "trumpet", "trumpet_exposed", "trumpet_weathered",
+    "trumpet_oxidized", "zombie", "skeleton", "creeper", "dragon",
+    "wither_skeleton", "piglin", "custom_head",
+)
+VANILLA_ENB_INSTRUMENT = "custom_head"
+VANILLA_ENB_NOTE = 24
+VANILLA_ENB_OFF_MODEL = f"{NAMESPACE}:block/enb"
+VANILLA_ENB_ON_MODEL = f"{NAMESPACE}:block/enb_on"
 REPRESENTATIVE_PROGRAMS = tuple(range(0, 128, 4))
 MELODIC_ANCHORS = tuple(range(0, 121, 12))
 DRUM_NOTES = tuple(range(35, 82))
@@ -378,6 +394,13 @@ def metadata(smoke: bool) -> dict:
         "drum_notes": list((35,) if smoke else DRUM_NOTES),
         "voice_aliases": VOICE_ALIASES,
         "attenuation_distance": ATTENUATION_DISTANCE,
+        "vanilla_enb_visual": {
+            "carrier": "minecraft:note_block",
+            "reserved_instrument": VANILLA_ENB_INSTRUMENT,
+            "reserved_note": VANILLA_ENB_NOTE,
+            "off_texture": "extendednoteblock:block/a_top",
+            "on_texture": "extendednoteblock:block/a_top_on",
+        },
         "maximum_rendered_hold_seconds": HOLD_SECONDS,
         "sample_peak_normalization": {
             "minimum_preferred_source_pcm16": MIN_PREFERRED_SOURCE_PEAK,
@@ -387,6 +410,47 @@ def metadata(smoke: bool) -> dict:
         "soundfont": "GeneralUser GS 2.0.2",
         "soundfont_sha256": SOUNDFONT_SHA256,
     }
+
+
+def note_block_variant_key(instrument: str, note: int, powered: bool) -> str:
+    return f"instrument={instrument},note={note},powered={'true' if powered else 'false'}"
+
+
+def listener_note_blockstate() -> bytes:
+    """Keep vanilla Note Blocks vanilla except for the two reserved fake states."""
+    variants: dict[str, dict[str, str]] = {}
+    for instrument in NOTE_BLOCK_INSTRUMENTS:
+        for note in range(25):
+            for powered in (False, True):
+                model = "minecraft:block/note_block"
+                if instrument == VANILLA_ENB_INSTRUMENT and note == VANILLA_ENB_NOTE:
+                    model = VANILLA_ENB_ON_MODEL if powered else VANILLA_ENB_OFF_MODEL
+                variants[note_block_variant_key(instrument, note, powered)] = {"model": model}
+    return (json.dumps({"variants": variants}, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
+
+
+def listener_enb_model(texture: str, *, emissive: bool) -> bytes:
+    """Build a full cube whose six faces all use the requested ENB texture."""
+    faces = {
+        face: {"texture": "#all", "cullface": face}
+        for face in ("down", "up", "north", "south", "west", "east")
+    }
+    element: dict[str, object] = {
+        "from": [0, 0, 0],
+        "to": [16, 16, 16],
+        "shade": not emissive,
+        "faces": faces,
+    }
+    if emissive:
+        # Model emission makes the active texture render at full brightness;
+        # it does not mutate the real world's light or redstone state.
+        element["light_emission"] = 15
+    model = {
+        "ambientocclusion": not emissive,
+        "textures": {"all": texture, "particle": texture},
+        "elements": [element],
+    }
+    return (json.dumps(model, ensure_ascii=False, indent=2) + "\n").encode()
 
 
 def build_zip(tasks: list[RenderTask], ogg_dir: Path, output: Path, smoke: bool) -> None:
@@ -408,8 +472,11 @@ Audio layout
 - {VOICE_ALIASES} logical aliases per sample for overlapping-note stop control
 
 Placed Paper bridge blocks remain vanilla registry carriers. Custom inventory
-items use safe CustomModelData selectors; the Paper Client provides exact
-position-aware models for placed blocks.
+items use safe CustomModelData selectors. For players without Paper Client, the
+plugin sends coordinate-local fake Note Block states: every face uses a_top.png,
+or a_top_on.png at full brightness while powered. The real block remains a Note
+Block, no display entity is spawned, and ordinary blocks retain vanilla models.
+Paper Client users keep the original pitch-specific position-aware models.
 """
 
     entries: list[tuple[str, bytes, bool]] = [
@@ -428,6 +495,13 @@ position-aware models for placed blocks.
         entries.append(((Path("assets") / "extendednoteblock" / rel).as_posix(), path.read_bytes(), True))
     for carrier, (logical_id, vanilla_model) in CARRIER_ITEMS.items():
         entries.append((f"assets/minecraft/items/{carrier}.json", carrier_selector(logical_id, vanilla_model), True))
+    entries.extend((
+        ("assets/minecraft/blockstates/note_block.json", listener_note_blockstate(), True),
+        (f"assets/{NAMESPACE}/models/block/enb.json",
+         listener_enb_model("extendednoteblock:block/a_top", emissive=False), True),
+        (f"assets/{NAMESPACE}/models/block/enb_on.json",
+         listener_enb_model("extendednoteblock:block/a_top_on", emissive=True), True),
+    ))
     for task in tasks:
         folder = "drums" if task.bank == 128 else "melodic"
         entries.append((f"assets/{NAMESPACE}/sounds/{folder}/{task.ogg_name.split('.', 1)[1]}",
@@ -447,6 +521,9 @@ def validate(output: Path, tasks: list[RenderTask], smoke: bool) -> None:
             "enb_server_pack.json",
             f"assets/{NAMESPACE}/sounds.json",
             "assets/extendednoteblock/items/extended_note_block.json",
+            "assets/minecraft/blockstates/note_block.json",
+            f"assets/{NAMESPACE}/models/block/enb.json",
+            f"assets/{NAMESPACE}/models/block/enb_on.json",
             *(f"assets/minecraft/items/{carrier}.json" for carrier in CARRIER_ITEMS),
         }
         missing = sorted(required - names)
@@ -460,6 +537,21 @@ def validate(output: Path, tasks: list[RenderTask], smoke: bool) -> None:
         audio = [name for name in names if name.endswith(".ogg")]
         if len(audio) != len(tasks):
             raise SystemExit(f"Expected {len(tasks)} physical samples, found {len(audio)}")
+        note_block = json.loads(zf.read("assets/minecraft/blockstates/note_block.json"))
+        variants = note_block.get("variants", {})
+        expected_variants = len(NOTE_BLOCK_INSTRUMENTS) * 25 * 2
+        if len(variants) != expected_variants:
+            raise SystemExit(f"Expected {expected_variants} Note Block variants, found {len(variants)}")
+        custom = {
+            key: value["model"] for key, value in variants.items()
+            if value.get("model") != "minecraft:block/note_block"
+        }
+        expected_custom = {
+            note_block_variant_key(VANILLA_ENB_INSTRUMENT, VANILLA_ENB_NOTE, False): VANILLA_ENB_OFF_MODEL,
+            note_block_variant_key(VANILLA_ENB_INSTRUMENT, VANILLA_ENB_NOTE, True): VANILLA_ENB_ON_MODEL,
+        }
+        if custom != expected_custom:
+            raise SystemExit(f"Unexpected reserved Note Block model mapping: {custom}")
         if not smoke:
             for instrument in range(128):
                 for anchor in MELODIC_ANCHORS:

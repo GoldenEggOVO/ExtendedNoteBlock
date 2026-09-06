@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — Minecraft 26.2
+
+- Added entity-free placed ENB visuals for unmodified clients that accept the automatically delivered server resource pack.
+- Rendered all six OFF faces with `a_top.png` and all six powered faces with full-bright `a_top_on.png`; the real Paper carrier remains a Note Block.
+- Added per-player chunk-indexed multi-block updates and lifecycle restoration without mutating world blocks or reserving normal Redstone Lamp states.
+- Kept Paper Client on its original pitch-specific renderer and skipped/removed the simplified listener pack when the Mod channel is detected.
+- Added exhaustive Note Block fallback validation so only the two reserved packet-only states select ENB models.
+
 ## 2.10.1 — Minecraft 26.2
 
 - Fixed automatic listener-pack delivery after upgrades by reading release-managed URL, UUID and SHA-1 metadata directly from the installed Paper Server JAR instead of allowing an old on-disk config to shadow it.

@@ -2,7 +2,9 @@ import importlib.util
 import json
 import re
 import sys
+import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +61,66 @@ class ServerResourcePackTest(unittest.TestCase):
         self.assertEqual(module.RESOURCE_PACK_FORMAT, meta["pack"]["min_format"])
         self.assertEqual(module.RESOURCE_PACK_FORMAT, meta["pack"]["max_format"])
         self.assertEqual("26.2", module.metadata(False)["minecraft"])
+
+    def test_only_two_reserved_note_block_states_select_enb_models(self):
+        blockstate = json.loads(module.listener_note_blockstate())
+        variants = blockstate["variants"]
+        self.assertEqual(len(module.NOTE_BLOCK_INSTRUMENTS) * 25 * 2, len(variants))
+
+        custom = {
+            key: value["model"] for key, value in variants.items()
+            if value["model"] != "minecraft:block/note_block"
+        }
+        self.assertEqual({
+            module.note_block_variant_key(module.VANILLA_ENB_INSTRUMENT, module.VANILLA_ENB_NOTE, False):
+                module.VANILLA_ENB_OFF_MODEL,
+            module.note_block_variant_key(module.VANILLA_ENB_INSTRUMENT, module.VANILLA_ENB_NOTE, True):
+                module.VANILLA_ENB_ON_MODEL,
+        }, custom)
+        self.assertEqual(
+            {"model": "minecraft:block/note_block"},
+            variants[module.note_block_variant_key("harp", 0, False)],
+        )
+
+    def test_vanilla_enb_models_use_a_top_on_all_six_faces(self):
+        for texture, emissive in (
+            ("extendednoteblock:block/a_top", False),
+            ("extendednoteblock:block/a_top_on", True),
+        ):
+            model = json.loads(module.listener_enb_model(texture, emissive=emissive))
+            self.assertEqual(texture, model["textures"]["all"])
+            element = model["elements"][0]
+            self.assertEqual({"down", "up", "north", "south", "west", "east"}, set(element["faces"]))
+            self.assertTrue(all(face["texture"] == "#all" for face in element["faces"].values()))
+            if emissive:
+                self.assertEqual(15, element["light_emission"])
+                self.assertFalse(element["shade"])
+            else:
+                self.assertNotIn("light_emission", element)
+
+    def test_built_server_pack_contains_entity_free_placed_visual_entries(self):
+        tasks = module.render_tasks(smoke=True)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ogg_dir = root / "ogg"
+            ogg_dir.mkdir()
+            for task in tasks:
+                (ogg_dir / task.ogg_name).write_bytes(b"OggS-test-fixture")
+            output = root / "server-resources.zip"
+            module.build_zip(tasks, ogg_dir, output, smoke=True)
+            module.validate(output, tasks, smoke=True)
+
+            with zipfile.ZipFile(output) as pack:
+                names = set(pack.namelist())
+                self.assertIn("assets/minecraft/blockstates/note_block.json", names)
+                self.assertIn(
+                    f"assets/{module.NAMESPACE}/models/block/enb.json", names
+                )
+                self.assertIn(
+                    f"assets/{module.NAMESPACE}/models/block/enb_on.json", names
+                )
+                self.assertIn("assets/extendednoteblock/textures/block/a_top.png", names)
+                self.assertIn("assets/extendednoteblock/textures/block/a_top_on.png", names)
 
     def test_quiet_edge_samples_receive_bounded_normalization(self):
         self.assertEqual(module.MAX_NORMALIZATION_GAIN, module.normalization_gain(1))

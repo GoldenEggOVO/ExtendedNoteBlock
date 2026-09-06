@@ -29,7 +29,11 @@ ENB 物品通过 Bukkit PDC 的 `enb_type` 识别逻辑类型，CustomModelData 
 
 ## 物品外观与世界方块外观
 
-Paper Client 内置包、独立 Visuals ZIP 与自动下发的 Server Resources 从相同视觉资源生成。普通资源包只能处理 ENB 标记物品，不能单独识别世界中的 ENB 坐标。
+Paper Client 内置包、独立 Visuals ZIP 与自动下发的 Server Resources 复用同源视觉资源。资源包本身不能读取服务端 PDC 或坐标，因此 Paper Server 会对成功加载组合包、且没有安装 Paper Client 的玩家发送坐标级假方块状态；世界存档中的真实载体仍为 `minecraft:note_block`。
+
+无 Mod 客户端的 ENB 使用两个预留的 Note Block 状态：OFF 模型六面统一引用 `a_top.png`，ON 模型六面统一引用 `a_top_on.png` 并以模型级 15 亮度渲染。组合包完整列出 Note Block 的 1350 个状态，除这两个预留状态外全部显式回退 `minecraft:block/note_block`。这不会生成 `BlockDisplay`、改变世界方块或占用红石灯状态；模型满亮也不会在世界中产生真实光照。
+
+服务器按玩家已收到的区块维护 ENB 坐标索引，并用 multi-block change 按区块 section 批量刷新。资源包加载成功、区块发送、切换世界、ENB 放置 / 删除与通电状态变化都会同步；资源包撤销时恢复该玩家看到的真实方块状态。
 
 Paper Server 向 Paper Client 同步维度内已登记对象的坐标、类型、ON/OFF 状态和音高类别。客户端只替换这些坐标的 baked model：
 
@@ -38,7 +42,7 @@ Paper Server 向 Paper Client 同步维度内已登记对象的坐标、类型�
 - Receiver ON 在服务端仍是真实 `redstone_block`，提供原版强度 15 的红石输出。
 - 非 ENB 管理坐标保持原版渲染。
 
-登录、切换世界和频道注册时同步快照；对象变化时增量更新。
+登录、切换世界和频道注册时同步快照；对象变化时增量更新。检测到 Paper Client 插件频道后，服务器不再下发（或移除已下发的）原版聆听组合包，并恢复任何客户端假状态；Mod 客户端继续看到原本的按音高模型和 `_on` 变体。
 
 ## 声音
 

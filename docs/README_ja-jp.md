@@ -22,7 +22,7 @@ Extended Note Block は、拡張音符ブロック、指揮棒、ワイヤレス
 
 対象は Minecraft **26.2**、Java **25**。Fabric 側の構築基準は Loader **0.19.5** と Fabric API **0.159.0+26.2** です。Fabric サーバーで遊ぶ場合はサーバーにも Full Fabric と Fabric API を導入します。
 
-Paper Client は Visuals と同じリソースを内蔵しています。2.10.1 では自動配信と旧設定の移行を修正し、Mod を導入しないプレイヤーもサーバーリソースパックの読み込み後に MIDI 0–127 の ENB 音楽を聞けます。配置済み ENB ブロックの座標別モデル表示には引き続き Paper Client が必要です。
+Paper Client は Visuals と同じリソースを内蔵しています。サーバーリソースパックの読み込み後、Mod を導入しないプレイヤーも MIDI 0–127 の ENB 音楽を聞き、配置済み ENB の軽量モデルを表示できます。OFF は全 6 面に `a_top.png`、ON は全 6 面に明るい `a_top_on.png` を使い、表示エンティティは生成しません。Paper Client は従来どおり音程別の完全なモデルを使用します。
 
 ## 使用方法と現在の制限
 

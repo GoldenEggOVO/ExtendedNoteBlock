@@ -141,6 +141,12 @@ jobs:
           GENERATED_SHA256="$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
           python3 ../scripts/prepare_paper_listener_pack.py
           test "$GENERATED_SHA256" = "$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
+      - name: Prepare entity-free resource-pack-only ENB block visuals
+        run: |
+          python3 ../scripts/prepare_paper_vanilla_visuals.py
+          GENERATED_SHA256="$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
+          python3 ../scripts/prepare_paper_vanilla_visuals.py
+          test "$GENERATED_SHA256" = "$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
       - name: Verify vanilla-safe identity, interaction, render and listener bridge
         run: |
           grep -q 'PersistentDataType.STRING' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
@@ -168,6 +174,16 @@ jobs:
           grep -q 'action.equals("test")' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'ListenerSoundResolver.resolve' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'stopListenerSound(soundId)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'PlayerChunkLoadEvent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'instrument=custom_head,note=24,powered=false' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'instrument=custom_head,note=24,powered=true' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'sendBlockChanges(states)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'sendVanillaEnbChunk(player, worldId, chunkKey)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'player.removeResourcePack(listenerPackId)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          if grep -q 'BlockDisplay' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
+            echo 'Vanilla ENB visuals must not create display entities' >&2
+            exit 1
+          fi
           if grep -q 'DataComponentTypes.ITEM_MODEL' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
             echo 'Paper server must not force custom item_model IDs on no-pack clients' >&2
             exit 1

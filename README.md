@@ -25,7 +25,7 @@ Extended Note Block 为 Minecraft 提供扩展音符盒、指挥棒、无线红�
 | **Visuals** | 可选独立资源包，提供 ENB 标记物品的外观 | 客户端 `resourcepacks/` |
 | **Server Resources** | 方块 / 物品资源与原版客户端聆听音色；由插件自动下发 | 玩家进服时接受服务器资源包 |
 
-Paper Client 已经内置同源 Visuals 资源，通常不需要再装独立 ZIP。2.10.1 起，Paper Server 会可靠下发并明确显示组合资源包状态；成功加载后，没有客户端 Mod 的玩家也能听到覆盖 MIDI 0–127 的 ENB 音乐。拒绝或加载失败时仍使用原版音符盒回退。
+Paper Client 已经内置同源 Visuals 资源，通常不需要再装独立 ZIP。Paper Server 会可靠下发并明确显示组合资源包状态；成功加载后，没有客户端 Mod 的玩家既能听到覆盖 MIDI 0–127 的 ENB 音乐，也能看到已放置 ENB 的轻量方块外观。拒绝或加载失败时仍使用原版音符盒回退。
 
 ## 快速安装
 
@@ -56,6 +56,7 @@ Paper Client 已经内置同源 Visuals 资源，通常不需要再装独立 ZIP
 | Litematic、结构 NBT、数据包导出 | 支持 | 支持；Projection Litematic 使用原版载体 |
 | 粘贴后恢复 ENB 参数 | 使用真实 ENB 方块数据 | N 键工坊 → 恢复 ENB；读取原始投影文件恢复参数 |
 | 无 Mod 玩家聆听 | 需要 Full Fabric | 接受自动资源包；32 种代表音色映射 128 个 GM 编号，完整覆盖 MIDI 0–127 |
+| 无 Mod 玩家世界方块外观 | 需要 Full Fabric | 接受自动资源包；ENB 六面统一 A 材质，通电时使用满亮 A-on 材质；无实体 |
 
 音乐工坊支持 `.nbs`、`.mid`、`.midi`、WAV、MP3、OGG、AIFF / AIF 和 AU。音频分析属于音高检测转换，不保证完整还原原曲的全部声部。
 

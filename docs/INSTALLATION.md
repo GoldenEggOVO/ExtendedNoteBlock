@@ -36,7 +36,7 @@ Full Fabric 注册真正的 ENB 方块和物品。连接纯 Paper / Purpur 服�
 
 1. 停服后，将 Paper Server JAR 放入 `plugins/`；更新时移出旧版同插件 JAR。
 2. 启动服务器，让插件加载配置与持久化数据。
-3. 普通客户端进服时接受 ENB 服务器资源包；无需安装 Mod 即可听音乐。
+3. 普通客户端进服时接受 ENB 服务器资源包；无需安装 Mod 即可听音乐并看到轻量 ENB 方块材质。
 4. 需要编辑、精确世界方块模型与完整表现力时，再安装 Fabric Loader、Fabric API 和 Paper Client JAR；Full Fabric 与 Paper Client 二选一。
 5. OP 在游戏内运行 `/enb give all`，放置 ENB 物品后右键测试编辑界面。
 
@@ -44,7 +44,9 @@ Full Fabric 注册真正的 ENB 方块和物品。连接纯 Paper / Purpur 服�
 
 自定义托管时，将 `resource-pack.use-official-release` 改为 `false`，并同时填写自定义 UUID、HTTPS URL 与 ZIP 的 40 位 SHA-1。`/enb reload` 会重新读取配置并向在线玩家下发。
 
-组合包包含与 Visuals 同源的方块 / 物品模型和材质，以及原版客户端聆听音色。资源包无法根据服务端坐标区分同一种原版方块，因此背包中的 ENB 标记物品有专用外观，但已放置世界方块的精确 ENB 模型仍需要 Paper Client。Paper Client 用户继续走 Mod 声音协议，不会重复发声。
+组合包包含与 Visuals 同源的方块 / 物品模型和材质，以及原版客户端聆听音色。成功加载后，Paper Server 会把已登记 ENB 的坐标以客户端假 Note Block 状态批量发送：关闭时六面均为 `a_top.png`，通电时六面均为满亮显示的 `a_top_on.png`。真实世界方块仍是音符盒，不产生展示实体，普通原版方块与红石灯保持原样；模型满亮不等于向周围投射真实光照。
+
+Paper Client 用户不会使用这套简化的假状态和组合包，而是继续走 Mod 声音协议及按音高区分的原始世界模型。资源包玩家若要看到新方块外观，需要同时更新对应版本的 Paper Server 和自动下发的 `Server-Resources`；单独安装轻量 Visuals ZIP 仍主要用于物品外观。
 
 原版聆听模式将全部 128 个 GM 乐器编号映射到 32 种代表音色，每种使用 11 个跨八度锚点覆盖 MIDI 0–127，另含 47 个打击乐音色。它保留乐器类别、音高、力度、延音、延迟和基础空间位置；连续音高 / 音量曲线与移动声源仍以 Paper Client 最完整。
 
