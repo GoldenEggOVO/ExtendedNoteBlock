@@ -119,6 +119,21 @@ class ServerResourcePackTest(unittest.TestCase):
         self.assertEqual(high_healthy, source)
         self.assertEqual(2.0, factor)
 
+    def test_extreme_anchors_are_generated_from_the_healthy_source_window(self):
+        low = module.RenderTask(0, 20, 0, "low")
+        low_source = module.RenderTask(0, 20, 12, "low-source")
+        high_source = module.RenderTask(0, 20, 120, "high-source")
+        high = module.RenderTask(0, 20, 126, "high")
+        tasks = [low, low_source, high_source, high]
+        peaks = {task: 4_000 for task in tasks}
+
+        source, factor = module.choose_source(low, tasks, peaks)
+        self.assertEqual(low_source, source)
+        self.assertEqual(0.5, factor)
+        source, factor = module.choose_source(high, tasks, peaks)
+        self.assertEqual(high_source, source)
+        self.assertAlmostEqual(2.0 ** 0.5, factor)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -10,6 +10,7 @@
 - Doubled melodic sampling density from 11 octave anchors to 22 half-octave anchors, reducing normal vanilla-client pitch shifting to about three semitones.
 - Raised Vorbis quality to 5, added high-precision SoXR fallback resampling and a short trimmed-tail fade, and enforced a 50,000,000-byte release ceiling.
 - Avoided destructive stereo phase cancellation by deriving positional mono audio and normalization from the centered renderer's left main channel.
+- Generated edge anchors outside MIDI 12-120 from the nearest healthy SoundFont source instead of trusting transient-only extreme presets.
 
 See the [release notes](docs/releases/2.12.0.md).
 

@@ -58,6 +58,8 @@ MAX_PACK_BYTES = 50_000_000
 HOLD_SECONDS = 10.0
 TAIL_SECONDS = 2.0
 MIN_PREFERRED_SOURCE_PEAK = 512
+HEALTHY_SOURCE_NOTE_MIN = 12
+HEALTHY_SOURCE_NOTE_MAX = 120
 TARGET_SOURCE_PEAK = 16_384
 MAX_NORMALIZATION_GAIN = 128.0
 MIN_ENCODED_PEAK = 256
@@ -304,12 +306,14 @@ def choose_source(task: RenderTask, tasks: list[RenderTask], peaks: dict[RenderT
         if peaks[task] < 8:
             raise RuntimeError(f"SoundFont rendered an inaudible percussion sample: {task.stem}")
         return task, 1.0
-    if peaks[task] >= MIN_PREFERRED_SOURCE_PEAK:
+    if (HEALTHY_SOURCE_NOTE_MIN <= task.note <= HEALTHY_SOURCE_NOTE_MAX
+            and peaks[task] >= MIN_PREFERRED_SOURCE_PEAK):
         return task, 1.0
 
     candidates = [
         candidate for candidate in tasks
         if candidate.bank == task.bank and candidate.program == task.program
+        and HEALTHY_SOURCE_NOTE_MIN <= candidate.note <= HEALTHY_SOURCE_NOTE_MAX
         and peaks[candidate] >= MIN_PREFERRED_SOURCE_PEAK
     ]
     if not candidates:
@@ -405,6 +409,8 @@ def metadata(smoke: bool) -> dict:
         "mono_source_channel": "left (renderer is centered)",
         "sample_peak_normalization": {
             "minimum_preferred_source_pcm16": MIN_PREFERRED_SOURCE_PEAK,
+            "healthy_source_note_min": HEALTHY_SOURCE_NOTE_MIN,
+            "healthy_source_note_max": HEALTHY_SOURCE_NOTE_MAX,
             "target_pcm16": TARGET_SOURCE_PEAK,
             "minimum_encoded_pcm16": MIN_ENCODED_PEAK,
             "maximum_encoded_pcm16": MAX_ENCODED_PEAK,
