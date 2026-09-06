@@ -9,9 +9,9 @@
 
 Extended Note Block 为 Minecraft 提供扩展音符盒、指挥棒、无线红石和 NBS 音乐工坊，支持 MIDI、NBS 与常见音频导入、试听和音乐结构导出。
 
-**当前正式版：Full Fabric / Paper Client 2.10.1，Paper Server 0.10.1，目标 Minecraft 26.2。**
+**当前正式版：Full Fabric / Paper Client 2.11.0，Paper Server 0.11.0，目标 Minecraft 26.2。**
 
-[下载正式版](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.10.1-mc26.2) · [2.10.1 更新说明](docs/releases/2.10.1.md) · [安装指南](docs/INSTALLATION.md) · [日本語](docs/README_ja-jp.md)
+[下载正式版](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.11.0-mc26.2) · [2.11.0 更新说明](docs/releases/2.11.0.md) · [安装指南](docs/INSTALLATION.md) · [日本語](docs/README_ja-jp.md)
 
 ## 选择安装版本
 
@@ -32,13 +32,13 @@ Paper Client 已经内置同源 Visuals 资源，通常不需要再装独立 ZIP
 ### 单人模式 / Fabric 服务器
 
 1. 准备 Minecraft **26.2**、Java **25**、Fabric Loader **0.19.5** 和 Fabric API **0.159.0+26.2**。
-2. 将 `ExtendedNoteBlock-Full-Fabric-2.10.1-mc26.2.jar` 放入客户端 `mods/`。
+2. 将 `ExtendedNoteBlock-Full-Fabric-2.11.0-mc26.2.jar` 放入客户端 `mods/`。
 3. Fabric 多人服务器还需安装同版 Full Fabric 和 Fabric API。
 
 ### Paper / Purpur 服务器
 
-1. 将 `ExtendedNoteBlock-Paper-Server-0.10.1-mc26.2.jar` 放入服务器 `plugins/`，重启服务器；正式 JAR 已内置匹配资源包的下载地址与校验值。
-2. 普通玩家直接进服并接受资源包即可聆听。需要全部 128 种独立音色、编辑界面和世界方块精确外观的玩家，在 Fabric 26.2 客户端安装 Fabric API 与 `ExtendedNoteBlock-Paper-Client-Fabric-2.10.1-mc26.2.jar`。
+1. 将 `ExtendedNoteBlock-Paper-Server-0.11.0-mc26.2.jar` 放入服务器 `plugins/`，重启服务器；正式 JAR 已内置匹配资源包的下载地址与校验值。
+2. 普通玩家直接进服并接受资源包即可聆听、看到轻量 ENB 方块外观。需要全部 128 种独立音色、编辑界面和世界方块精确外观的玩家，在 Fabric 26.2 客户端安装 Fabric API 与 `ExtendedNoteBlock-Paper-Client-Fabric-2.11.0-mc26.2.jar`。
 3. OP 在游戏内运行 `/enb give all` 获取测试物品。
 
 默认按 **N** 打开 NBS 音乐工坊；右键已登记的 ENB 音符盒打开编辑界面。升级、目录和常见问题见[安装指南](docs/INSTALLATION.md)。
@@ -60,7 +60,7 @@ Paper Client 已经内置同源 Visuals 资源，通常不需要再装独立 ZIP
 
 音乐工坊支持 `.nbs`、`.mid`、`.midi`、WAV、MP3、OGG、AIFF / AIF 和 AU。音频分析属于音高检测转换，不保证完整还原原曲的全部声部。
 
-**2.10.1 修复自动下发、旧配置迁移和极端音区过轻的问题，需更新 Paper Server 0.10.1。** 2.9.0 的 Litematic 参数恢复流程保持兼容：粘贴后打开 N 键工坊 →「恢复 ENB」，读取原始投影文件即可恢复身份、参数和曲目。[完整步骤与限制](docs/INSTALLATION.md#paper-litematic-恢复-enb)。
+**2.11.0 为只装自动资源包的玩家增加无实体、坐标级的 ENB 方块外观，需更新 Paper Server 0.11.0。** 关闭时六面使用 A 材质，通电时六面使用满亮 A-on 材质；Paper Client 仍显示原本的按音高模型。2.9.0 的 Litematic 参数恢复流程保持兼容。[完整步骤与限制](docs/INSTALLATION.md#paper-litematic-恢复-enb)。
 
 CI 包含实际客户端启动和模拟 Paper 插件导入测试；实际 Purpur 多人游戏中的新恢复流程仍需验证。
 

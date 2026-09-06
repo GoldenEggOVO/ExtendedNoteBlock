@@ -4,15 +4,15 @@
 
 ## 下载与依赖
 
-从 [v2.10.1-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.10.1-mc26.2) 下载所需文件。Release 同时提供 `SHA256SUMS.txt`。
+从 [v2.11.0-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.11.0-mc26.2) 下载所需文件。Release 同时提供 `SHA256SUMS.txt`。
 
 | 文件 | 安装对象 |
 | --- | --- |
-| `ExtendedNoteBlock-Full-Fabric-2.10.1-mc26.2.jar` | 单人 / Fabric 服务端模式 |
-| `ExtendedNoteBlock-Paper-Client-Fabric-2.10.1-mc26.2.jar` | Paper / Purpur 专用 Fabric 客户端 |
-| `ExtendedNoteBlock-Paper-Server-0.10.1-mc26.2.jar` | Paper / Purpur 服务端，内置自动资源包配置 |
-| `ExtendedNoteBlock-Server-Resources-2.10.1-mc26.2.zip` | 插件自动下发的组合材质与聆听音色包 |
-| `ExtendedNoteBlock-Visuals-2.10.1-mc26.2.zip` | 不含声音的可选独立物品资源包 |
+| `ExtendedNoteBlock-Full-Fabric-2.11.0-mc26.2.jar` | 单人 / Fabric 服务端模式 |
+| `ExtendedNoteBlock-Paper-Client-Fabric-2.11.0-mc26.2.jar` | Paper / Purpur 专用 Fabric 客户端 |
+| `ExtendedNoteBlock-Paper-Server-0.11.0-mc26.2.jar` | Paper / Purpur 服务端，内置自动资源包配置 |
+| `ExtendedNoteBlock-Server-Resources-2.11.0-mc26.2.zip` | 插件自动下发的组合材质与聆听音色包 |
+| `ExtendedNoteBlock-Visuals-2.11.0-mc26.2.zip` | 不含声音的可选独立物品资源包 |
 
 | 环境 | 本版本构建基线 |
 | --- | --- |
@@ -44,7 +44,7 @@ Full Fabric 注册真正的 ENB 方块和物品。连接纯 Paper / Purpur 服�
 
 自定义托管时，将 `resource-pack.use-official-release` 改为 `false`，并同时填写自定义 UUID、HTTPS URL 与 ZIP 的 40 位 SHA-1。`/enb reload` 会重新读取配置并向在线玩家下发。
 
-组合包包含与 Visuals 同源的方块 / 物品模型和材质，以及原版客户端聆听音色。成功加载后，Paper Server 会把已登记 ENB 的坐标以客户端假 Note Block 状态批量发送：关闭时六面均为 `a_top.png`，通电时六面均为满亮显示的 `a_top_on.png`。真实世界方块仍是音符盒，不产生展示实体，普通原版方块与红石灯保持原样；模型满亮不等于向周围投射真实光照。
+组合包包含与 Visuals 同源的方块 / 物品模型和材质，以及原版客户端聆听音色。成功加载后，Paper Server 会把已登记 ENB 的坐标以客户端假 Note Block 状态批量发送：关闭时六面均为 `a_top.png`，通电时六面均为满亮显示的 `a_top_on.png`。真实世界方块仍是音符盒，不产生展示实体，红石灯与绝大多数原版状态保持原样；模型满亮不等于向周围投射真实光照。唯一的资源包级冲突是极少见的普通 `custom_head + note 24` 音符盒状态也会使用该模型，但不会改变其世界数据或红石行为。
 
 Paper Client 用户不会使用这套简化的假状态和组合包，而是继续走 Mod 声音协议及按音高区分的原始世界模型。资源包玩家若要看到新方块外观，需要同时更新对应版本的 Paper Server 和自动下发的 `Server-Resources`；单独安装轻量 Visuals ZIP 仍主要用于物品外观。
 
@@ -113,7 +113,7 @@ Litematica 只放置原版载体。2.9.0 新增「恢复 ENB」入口，可将�
 
 ### MIDI 低音区听起来仍然相同
 
-Paper Client 请确认版本为 2.10.1 或更新；原版客户端先执行 `/enb pack status`，必须看到 `SUCCESSFULLY_LOADED (MIDI 0-127 listener enabled)`。可用同一乐器依次试听 **0 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120**。若拒绝或未成功加载组合包，插件只会播放原版音符盒回退，低音区仍受原版限制。MIDI 0–15 的物理频率低于或接近人耳与普通扬声器下限，即使技术映射正确，也可能几乎听不到。
+Paper Client 请确认版本为 2.11.0 或更新；原版客户端先执行 `/enb pack status`，必须看到 `SUCCESSFULLY_LOADED (MIDI 0-127 listener enabled)`。可用同一乐器依次试听 **0 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120**。若拒绝或未成功加载组合包，插件只会播放原版音符盒回退，低音区仍受原版限制。MIDI 0–15 的物理频率低于或接近人耳与普通扬声器下限，即使技术映射正确，也可能几乎听不到。
 
 ### 启动出现 IllegalClassLoadError
 

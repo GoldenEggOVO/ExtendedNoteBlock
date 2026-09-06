@@ -31,7 +31,7 @@ ENB 物品通过 Bukkit PDC 的 `enb_type` 识别逻辑类型，CustomModelData 
 
 Paper Client 内置包、独立 Visuals ZIP 与自动下发的 Server Resources 复用同源视觉资源。资源包本身不能读取服务端 PDC 或坐标，因此 Paper Server 会对成功加载组合包、且没有安装 Paper Client 的玩家发送坐标级假方块状态；世界存档中的真实载体仍为 `minecraft:note_block`。
 
-无 Mod 客户端的 ENB 使用两个预留的 Note Block 状态：OFF 模型六面统一引用 `a_top.png`，ON 模型六面统一引用 `a_top_on.png` 并以模型级 15 亮度渲染。组合包完整列出 Note Block 的 1350 个状态，除这两个预留状态外全部显式回退 `minecraft:block/note_block`。这不会生成 `BlockDisplay`、改变世界方块或占用红石灯状态；模型满亮也不会在世界中产生真实光照。
+无 Mod 客户端的 ENB 使用两个预留的 Note Block 状态：OFF 模型六面统一引用 `a_top.png`，ON 模型六面统一引用 `a_top_on.png` 并以模型级 15 亮度渲染。组合包完整列出 Note Block 的 1350 个状态，除这两个预留状态外全部显式回退 `minecraft:block/note_block`。这不会生成 `BlockDisplay`、改变世界方块或占用红石灯状态；模型满亮也不会在世界中产生真实光照。原版资源包的状态覆盖是全局的，因此普通音符盒若极少见地自然落在同一个 `custom_head + note 24` 状态，也会显示该模型，但其数据和逻辑不变。
 
 服务器按玩家已收到的区块维护 ENB 坐标索引，并用 multi-block change 按区块 section 批量刷新。资源包加载成功、区块发送、切换世界、ENB 放置 / 删除与通电状态变化都会同步；资源包撤销时恢复该玩家看到的真实方块状态。
 
