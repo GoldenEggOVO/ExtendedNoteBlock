@@ -348,6 +348,12 @@ def convert_oggs(tasks: list[RenderTask], wav_dir: Path, ogg_dir: Path) -> None:
         raise SystemExit("ffmpeg and ffprobe with libvorbis are required to build the listener pack")
     peaks = {task: listener_channel_peak_pcm16(wav_dir / task.wav_name) for task in tasks}
     sources = {task: choose_source(task, tasks, peaks) for task in tasks}
+    for task, (source, factor) in sources.items():
+        if source != task:
+            print(
+                f"Fallback source {task.stem} <- {source.stem} "
+                f"(factor={factor:.9f}, source_peak={peaks[source]})"
+            )
 
     workers = min(8, max(1, os.cpu_count() or 1))
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
@@ -380,9 +386,11 @@ def convert_oggs(tasks: list[RenderTask], wav_dir: Path, ogg_dir: Path) -> None:
         for future in concurrent.futures.as_completed(encoded_peaks):
             peak = future.result()
             if peak < MIN_ENCODED_PEAK:
+                source, factor = sources[encoded_peaks[future]]
                 raise RuntimeError(
                     f"Encoded OGG is effectively inaudible: {encoded_peaks[future].ogg_name} "
-                    f"(PCM peak {peak})"
+                    f"(PCM peak {peak}; source={source.stem}; "
+                    f"source_peak={peaks[source]}; factor={factor:.9f})"
                 )
             if peak > MAX_ENCODED_PEAK:
                 raise RuntimeError(
