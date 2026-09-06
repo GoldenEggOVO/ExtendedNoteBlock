@@ -51,8 +51,10 @@ if "import org.bukkit.block.data.BlockData;" not in text:
 # ---------------------------------------------------------------------------
 field_anchor = "    private Component listenerPackPrompt;\n"
 field_block = field_anchor + r'''    private final Map<UUID, Map<Long, Set<String>>> vanillaEnbChunks = new HashMap<>();
+    private final Set<BlockRef> pendingVanillaEnbUpdates = new HashSet<>();
     private BlockData vanillaEnbOffState;
     private BlockData vanillaEnbOnState;
+    private BukkitTask vanillaEnbFlushTask;
 '''
 if "vanillaEnbChunks" not in text:
     if field_anchor not in text:
@@ -71,11 +73,14 @@ if "vanillaEnbOffState = createVanillaEnbState(false)" not in text:
     text = text.replace(enable_anchor, enable_replacement, 1)
 
 disable_anchor = "        projectionStopTasks.values().forEach(BukkitTask::cancel);\n"
-disable_replacement = disable_anchor + r'''        // Undo client-only substitutions while the plugin can still read the
+disable_replacement = disable_anchor + r'''        if (vanillaEnbFlushTask != null) vanillaEnbFlushTask.cancel();
+        vanillaEnbFlushTask = null;
+        pendingVanillaEnbUpdates.clear();
+        // Undo client-only substitutions while the plugin can still read the
         // authoritative world state. No world block is changed by this operation.
         for (Player player : Bukkit.getOnlinePlayers()) restoreVanillaEnbVisuals(player);
 '''
-if "for (Player player : Bukkit.getOnlinePlayers()) restoreVanillaEnbVisuals(player);" not in text:
+if "pendingVanillaEnbUpdates.clear();\n        // Undo client-only substitutions" not in text:
     if disable_anchor not in text:
         raise SystemExit("Could not find onDisable task anchor")
     text = text.replace(disable_anchor, disable_replacement, 1)
@@ -289,27 +294,52 @@ helper_block = r'''    // ------------------------------------------------------
     }
 
     private void broadcastVanillaEnbVisual(BlockRef ref, boolean powered) {
-        World world = Bukkit.getWorld(ref.worldId());
-        if (world == null || !world.isChunkLoaded(ref.x() >> 4, ref.z() >> 4)) return;
-        long chunkKey = Chunk.getChunkKey(ref.x() >> 4, ref.z() >> 4);
-        Location location = new Location(world, ref.x(), ref.y(), ref.z());
-        BlockData state = powered ? vanillaEnbOnState : vanillaEnbOffState;
-        for (Player player : world.getPlayers()) {
-            if (isVanillaEnbViewer(player) && player.isChunkSent(chunkKey)) {
-                player.sendBlockChange(location, state);
-            }
-        }
+        queueVanillaEnbUpdate(ref);
     }
 
     private void broadcastVanillaEnbRestore(BlockRef ref) {
-        World world = Bukkit.getWorld(ref.worldId());
-        if (world == null || !world.isChunkLoaded(ref.x() >> 4, ref.z() >> 4)
-                || ref.y() < world.getMinHeight() || ref.y() >= world.getMaxHeight()) return;
-        long chunkKey = Chunk.getChunkKey(ref.x() >> 4, ref.z() >> 4);
-        Block block = world.getBlockAt(ref.x(), ref.y(), ref.z());
-        for (Player player : world.getPlayers()) {
-            if (isVanillaEnbViewer(player) && player.isChunkSent(chunkKey)) {
-                player.sendBlockChange(block.getLocation(), block.getBlockData());
+        queueVanillaEnbUpdate(ref);
+    }
+
+    private void queueVanillaEnbUpdate(BlockRef ref) {
+        pendingVanillaEnbUpdates.add(ref);
+        if (vanillaEnbFlushTask != null) return;
+        vanillaEnbFlushTask = Bukkit.getScheduler().runTask(this, () -> {
+            vanillaEnbFlushTask = null;
+            flushVanillaEnbUpdates();
+        });
+    }
+
+    private void flushVanillaEnbUpdates() {
+        if (pendingVanillaEnbUpdates.isEmpty()) return;
+        Map<UUID, List<BlockRef>> updatesByWorld = new HashMap<>();
+        for (BlockRef ref : pendingVanillaEnbUpdates) {
+            updatesByWorld.computeIfAbsent(ref.worldId(), ignored -> new ArrayList<>()).add(ref);
+        }
+        pendingVanillaEnbUpdates.clear();
+
+        for (Map.Entry<UUID, List<BlockRef>> update : updatesByWorld.entrySet()) {
+            World world = Bukkit.getWorld(update.getKey());
+            if (world == null) continue;
+            for (Player player : world.getPlayers()) {
+                if (!isVanillaEnbViewer(player)) continue;
+                List<BlockState> states = new ArrayList<>(update.getValue().size());
+                for (BlockRef ref : update.getValue()) {
+                    if (ref.y() < world.getMinHeight() || ref.y() >= world.getMaxHeight()) continue;
+                    long chunkKey = Chunk.getChunkKey(ref.x() >> 4, ref.z() >> 4);
+                    if (!player.isChunkSent(chunkKey)
+                            || !world.isChunkLoaded(ref.x() >> 4, ref.z() >> 4)) continue;
+
+                    Block block = world.getBlockAt(ref.x(), ref.y(), ref.z());
+                    BlockState state = block.getState();
+                    if (objects.get(key(block)) == BridgeItemType.EXTENDED_NOTE_BLOCK
+                            && block.getType() == Material.NOTE_BLOCK) {
+                        state.setBlockData((block.getBlockPower() > 0
+                                ? vanillaEnbOnState : vanillaEnbOffState).clone());
+                    }
+                    states.add(state);
+                }
+                if (!states.isEmpty()) player.sendBlockChanges(states);
             }
         }
     }
