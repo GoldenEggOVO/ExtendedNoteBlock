@@ -1,9 +1,11 @@
 import importlib.util
 import json
 import re
+import struct
 import sys
 import tempfile
 import unittest
+import wave
 import zipfile
 from pathlib import Path
 
@@ -91,6 +93,16 @@ class ServerResourcePackTest(unittest.TestCase):
         self.assertEqual(0.5, module.normalization_gain(module.TARGET_SOURCE_PEAK * 2))
         with self.assertRaises(ValueError):
             module.normalization_gain(0)
+
+    def test_listener_peak_uses_centered_main_channel_without_phase_cancellation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            wav = Path(temporary) / "opposite-phase.wav"
+            with wave.open(str(wav), "wb") as output:
+                output.setnchannels(2)
+                output.setsampwidth(2)
+                output.setframerate(44_100)
+                output.writeframes(struct.pack("<hhhh", 1_000, -1_000, -750, 750))
+            self.assertEqual(1_000, module.listener_channel_peak_pcm16(wav))
 
     def test_transient_only_edge_anchor_uses_nearest_healthy_octave(self):
         low = module.RenderTask(0, 0, 0, "low")

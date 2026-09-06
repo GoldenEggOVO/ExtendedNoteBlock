@@ -192,11 +192,14 @@ def render_wavs(tasks: list[RenderTask], wav_dir: Path, plan: Path, classes: Pat
     )
 
 
-def peak_pcm16(path: Path) -> int:
+def listener_channel_peak_pcm16(path: Path) -> int:
+    """Measure the same left channel later used for Minecraft's mono sound."""
     peak = 0
     with wave.open(str(path), "rb") as source:
         if source.getsampwidth() != 2:
             raise ValueError(f"Expected 16-bit PCM WAV: {path}")
+        if source.getnchannels() != 2:
+            raise ValueError(f"Expected stereo renderer WAV: {path}")
         while True:
             raw = source.readframes(65_536)
             if not raw:
@@ -206,7 +209,7 @@ def peak_pcm16(path: Path) -> int:
             if sys.byteorder != "little":
                 samples.byteswap()
             if samples:
-                peak = max(peak, max(abs(sample) for sample in samples))
+                peak = max(peak, max(abs(sample) for sample in samples[::2]))
     return peak
 
 
@@ -247,7 +250,11 @@ def convert_one(
                 "-hide_banner", "-loglevel", "error", "-nostdin",
                 "-i", str(source),
                 "-af",
-                pitch_filter + "pan=mono|c0=0.5*c0+0.5*c1,"
+                # The synth is explicitly centered. Use its left main channel
+                # for positional mono instead of averaging the stereo effects;
+                # some extreme SoundFont notes have opposite-phase tails that
+                # nearly cancel when L/R are summed.
+                pitch_filter + "pan=mono|c0=c0,"
                 f"volume={gain:.9f},"
                 "areverse,silenceremove=start_periods=1:start_duration=0:start_threshold=-65dB,"
                 "afade=t=in:d=0.02,areverse,apad=pad_dur=0.08",
@@ -324,7 +331,7 @@ def convert_oggs(tasks: list[RenderTask], wav_dir: Path, ogg_dir: Path) -> None:
     ffprobe = shutil.which("ffprobe")
     if not ffmpeg or not ffprobe:
         raise SystemExit("ffmpeg and ffprobe with libvorbis are required to build the listener pack")
-    peaks = {task: peak_pcm16(wav_dir / task.wav_name) for task in tasks}
+    peaks = {task: listener_channel_peak_pcm16(wav_dir / task.wav_name) for task in tasks}
     sources = {task: choose_source(task, tasks, peaks) for task in tasks}
 
     workers = min(8, max(1, os.cpu_count() or 1))
@@ -395,6 +402,7 @@ def metadata(smoke: bool) -> dict:
         "maximum_rendered_hold_seconds": HOLD_SECONDS,
         "ogg_vorbis_quality": OGG_QUALITY,
         "maximum_pack_bytes": MAX_PACK_BYTES,
+        "mono_source_channel": "left (renderer is centered)",
         "sample_peak_normalization": {
             "minimum_preferred_source_pcm16": MIN_PREFERRED_SOURCE_PEAK,
             "target_pcm16": TARGET_SOURCE_PEAK,
