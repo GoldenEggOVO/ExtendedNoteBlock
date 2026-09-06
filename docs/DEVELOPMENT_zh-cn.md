@@ -1,6 +1,6 @@
 # 开发指南 · Minecraft 26.2
 
-[返回首页](../README.md) · [English](DEVELOPMENT.md) · [日本語](DEVELOPMENT_ja-jp.md)
+[返回首页](../README.md) · [文档中心](README.md) · [English](DEVELOPMENT.md) · [日本語](DEVELOPMENT_ja-jp.md)
 
 当前分支只构建 Minecraft **26.2**，产出 Full Fabric、Paper Client、Paper Server 三个程序版本，以及自动下发的物品 + 声音资源包。Full Fabric 与 Paper Client 不可同时装在客户端。
 

@@ -1,6 +1,6 @@
 # 開発ガイド · Minecraft 26.2
 
-[ホーム（简体中文）](../README.md) · [English](DEVELOPMENT.md) · [简体中文](DEVELOPMENT_zh-cn.md)
+[ホーム（简体中文）](../README.md) · [ドキュメント一覧](README.md) · [English](DEVELOPMENT.md) · [简体中文](DEVELOPMENT_zh-cn.md)
 
 このブランチの対象は Minecraft **26.2** です。JDK **25**、Gradle Wrapper **9.5.1**、Loom **1.17.20**、Fabric Loader **0.19.5**、Fabric API **0.159.0+26.2**、Python 3 を使用します。
 

@@ -1,6 +1,6 @@
 # Paper / Purpur 架构
 
-[返回首页](../README.md) · [开发指南](DEVELOPMENT_zh-cn.md) · [当前待办](ROADMAP.md)
+[返回首页](../README.md) · [文档中心](README.md) · [功能展示](FEATURES.md) · [开发指南](DEVELOPMENT_zh-cn.md) · [当前待办](ROADMAP.md)
 
 ## 三个程序版本
 
@@ -52,7 +52,7 @@ Paper Server 在玩家加入 40 ticks 后发送带固定 UUID、HTTPS URL 与 SH
 
 ## Litematic 导出与导入边界
 
-| 输出模式 | Palette 内容 | 2.8.0 行为 |
+| 输出模式 | Palette 内容 | 当前行为 |
 | --- | --- | --- |
 | Full Fabric | 真实 `extendednoteblock:*` 方块 | 使用 Full 方块与对应数据 |
 | Paper Client | Note Block、红色混凝土、紫色混凝土 | 避免未知 Registry ID 被解析为空气 |
@@ -68,7 +68,6 @@ Paper Server 0.9.0 校验 OP / 导入权限、世界、玩家与定位点距离�
 2.8.x 元数据没有淡入 / 淡出字段时沿用导出器原值 0 / 0。新导出文件显式保留这两个字段。导入的 Pitch Cents 会保存到普通 ENB 音符配置，后续 GUI / 指挥棒编辑其他参数时继续保留。
 
 **恢复需要手动点击；尚未自动监听 Litematica 放置事件，也尚未实现 Workshop → Receiver 直接上传。** 仅支持包含 ENB 根元数据的原始 Paper Projection 文件。
-
 
 ## 无线红石
 

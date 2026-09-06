@@ -1,5 +1,7 @@
 # Changelog
 
+[Documentation](docs/README.md) · [Detailed release notes](docs/releases/README.md) · [Latest release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.12.0-mc26.2)
+
 ## Unreleased — Minecraft 26.2
 
 ## 2.12.0 — Minecraft 26.2

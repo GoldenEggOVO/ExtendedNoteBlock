@@ -1,40 +1,50 @@
 # Extended Note Block · Minecraft 26.2
 
-[简体中文](../README.md) · **日本語** · [開発ガイド](DEVELOPMENT_ja-jp.md)
+[简体中文](../README.md) · **日本語** · [ドキュメント一覧](README.md) · [開発ガイド](DEVELOPMENT_ja-jp.md)
 
 ![Extended Note Block Banner](assets/ENB-Banner.png)
 
-Extended Note Block は、拡張音符ブロック、指揮棒、ワイヤレスレッドストーン、NBS / MIDI / 音声ファイルの読み込みと音楽構造の書き出しを提供します。
+Extended Note Block は、MIDI 0–127 に対応する拡張音符ブロック、指揮棒、ワイヤレスレッドストーン、NBS 音楽ワークショップを Minecraft に追加します。NBS / MIDI / 一般的な音声ファイルの読み込み、試聴、音楽構造の書き出しにも対応します。
 
-現在のリリースは Full Fabric / Paper Client **2.12.0**、Paper Server **0.12.0** です。[ダウンロード](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.12.0-mc26.2)
+現在のリリースは **Full Fabric / Paper Client 2.12.0**、**Paper Server 0.12.0** です。Minecraft **26.2** と Java **25** を対象としています。
+
+[2.12.0 をダウンロード](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.12.0-mc26.2) · [機能紹介](FEATURES.md) · [インストールガイド（中文）](INSTALLATION.md)
 
 ## エディションの選択
 
-**Full Fabric と Paper Client を同じクライアントに同時導入しないでください。**
+| 用途 | 導入するもの |
+| --- | --- |
+| シングルプレイ | Full Fabric + Fabric API |
+| Fabric サーバー | サーバーとクライアントに Full Fabric + Fabric API |
+| Paper / Purpur サーバー | サーバーに Paper Server プラグイン |
+| Paper のバニラクライアント | Mod 不要。サーバーリソースパックを読み込む |
+| Paper の編集用クライアント | Paper Client + Fabric API |
 
-| エディション | 用途 | 導入先 |
-| --- | --- | --- |
-| Full Fabric | シングルプレイ / 同じ Mod を導入した Fabric サーバー | `mods/` |
-| Paper Client | ENB Bridge を導入した Paper / Purpur への接続 | Fabric クライアントの `mods/` |
-| Paper Server | Paper / Purpur サーバープラグイン | サーバーの `plugins/` |
-| Server Resources | バニラクライアント向けのアイテム・試聴用パック | 接続時に自動配信 |
+> [!IMPORTANT]
+> **Full Fabric と Paper Client を同じクライアントに同時導入しないでください。**
 
-対象は Minecraft **26.2**、Java **25**。Fabric 側の構築基準は Loader **0.19.5** と Fabric API **0.159.0+26.2** です。Fabric サーバーで遊ぶ場合はサーバーにも Full Fabric と Fabric API を導入します。
+## Paper / Purpur
 
-Paper Client はアイテムリソースを内蔵しています。サーバーリソースパックの読み込み後、Mod を導入しないプレイヤーも MIDI 0–127 の ENB 音楽を聞き、ENB アイテムの外観を表示できます。ワールド内のブロックはバニラキャリアのままで、偽ブロックや表示エンティティは使いません。Paper Client は従来どおり音程別の完全なモデルを使用します。
+Paper Server は Note Block や Concrete などのバニラブロックをキャリアとして使用します。
 
-## 使用方法と現在の制限
+- Mod なしのプレイヤーは、サーバーリソースパックで ENB の音楽とアイテム外観を利用できます。
+- ワールド内のブロックはバニラの外観を保ち、偽ブロックや Display Entity は使用しません。
+- Paper Client を導入したプレイヤーは、編集 GUI、128 種類の音色、位置ごとの完全なブロックモデル、高度な音声制御を利用できます。
+- 貼り付けた Paper Projection は、NBS Workshop の **Restore ENB** から元の `.litematic` メタデータを復元できます。
 
-- デフォルトの **N** キーで NBS Workshop を開きます。
-- Paper では OP が `/enb give all` で ENB アイテムを取得できます。
-- 2.8.1 は Paper Client 起動時の `IllegalClassLoadError` を修正します。Paper Server 0.8.2 は GUI 保存時の権限・距離・パケット長を検証します。
-- 2.8.x には GM 楽器選択と 128 鍵ピアノを備えた Paper 編集画面、低音域の pitch clamp 修正、バニラキャリアを使う Paper Litematic 出力が含まれます。
-- 2.9.0 では貼り付け後に N → Restore ENB から元の ENB Litematic を読み込み、赤い送信機の座標と回転・反転を指定してパラメーターを復元できます。Paper Server 0.9.0 と OP / import 権限が必要です。
-- 2.12.0 では偽ブロック表示と独立 Visuals ZIP を削除し、Server Resources を音声 + アイテムに整理しました。半オクターブごとの 22 アンカー、高品質 OGG、高精度リサンプルでバニラクライアントの音質を改善します。
-- CI は成功していますが、低音域などの実際の Purpur ゲーム内検証は引き続き必要です。
+デフォルトキー **N** で NBS Workshop を開きます。Paper の OP は `/enb give all` でテスト用アイテムを取得できます。
 
-詳細は[インストールガイド（中文）](INSTALLATION.md)、[2.12.0 変更内容（中文）](releases/2.12.0.md)、[開発ガイド](DEVELOPMENT_ja-jp.md)を参照してください。
+## ドキュメント
 
-## 原作者とライセンス
+- [ドキュメント一覧](README.md)
+- [機能紹介とスクリーンショット](FEATURES.md)
+- [インストール・コマンド・トラブルシューティング（中文）](INSTALLATION.md)
+- [Paper アーキテクチャ（中文）](ARCHITECTURE.md)
+- [開発ガイド](DEVELOPMENT_ja-jp.md)
+- [2.12.0 リリースノート（中文）](releases/2.12.0.md)
 
-原作者は [Atemukesu](https://github.com/atemukesu/ExtendedNoteBlock)、26.1.1 移植と Workshop 拡張は [BF_skt](https://github.com/BianFuuuu/ExtendedNoteBlock)、26.2 / Paper Bridge の保守は **GoldenEggOVO** です。[MIT License](../LICENSE) と元の著作権表記を維持しています。
+## Credits / License
+
+Original project: [Atemukesu/ExtendedNoteBlock](https://github.com/atemukesu/ExtendedNoteBlock). The 26.1.1 port and Workshop expansion were developed by [BianFuuuu/ExtendedNoteBlock](https://github.com/BianFuuuu/ExtendedNoteBlock). Minecraft 26.2 and Paper Bridge are maintained by **GoldenEggOVO**.
+
+This project remains available under the [MIT License](../LICENSE) with the original copyright notices preserved.

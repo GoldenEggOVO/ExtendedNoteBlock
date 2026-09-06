@@ -1,6 +1,6 @@
 # 待办与验证 · 2.12.0 基线
 
-[返回首页](../README.md) · [2.12.0 更新说明](releases/2.12.0.md)
+[返回首页](../README.md) · [文档中心](README.md) · [2.12.0 更新说明](releases/2.12.0.md)
 
 当前基线为 Full Fabric / Paper Client **2.12.0** 与 Paper Server **0.12.0**。
 

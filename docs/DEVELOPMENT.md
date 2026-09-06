@@ -1,6 +1,6 @@
 # Development Guide · Minecraft 26.2
 
-[Home](../README.md) · [简体中文](DEVELOPMENT_zh-cn.md) · [日本語](DEVELOPMENT_ja-jp.md)
+[Home](../README.md) · [Documentation](README.md) · [简体中文](DEVELOPMENT_zh-cn.md) · [日本語](DEVELOPMENT_ja-jp.md)
 
 This branch targets Minecraft **26.2**. It builds three program editions: Full Fabric, a registry-safe Paper Client, and a Paper / Purpur server plugin. The Paper Client and Full Fabric must not be installed together.
 

@@ -1,6 +1,6 @@
 # 安装与使用 · Minecraft 26.2
 
-[返回首页](../README.md) · [Paper 架构](ARCHITECTURE.md) · [待办与验证](ROADMAP.md)
+[返回首页](../README.md) · [文档中心](README.md) · [功能展示](FEATURES.md) · [Paper 架构](ARCHITECTURE.md)
 
 ## 下载与依赖
 
@@ -38,6 +38,8 @@ Full Fabric 注册真正的 ENB 方块和物品。连接纯 Paper / Purpur 服�
 3. 普通客户端进服时加载 ENB 服务器资源包；无需安装 Mod 即可听音乐并看到 ENB 物品材质。
 4. 需要编辑、精确世界方块模型与完整表现力时，再安装 Fabric Loader、Fabric API 和 Paper Client JAR；Full Fabric 与 Paper Client 二选一。
 5. OP 在游戏内运行 `/enb give all`，放置 ENB 物品后右键测试编辑界面。
+
+### Paper 服务器资源包
 
 官方 Paper Server JAR 已写入同版本 `Server-Resources` 的 HTTPS 地址与 SHA-1。默认 `resource-pack.enabled: true`、`required: true`、`use-official-release: true`；即使保留了旧版 `config.yml`，插件也会采用当前 JAR 内嵌的正式资源包地址。若客户端对该服务器设置为“启用”，资源包会静默下载而不弹确认框；设为“提示”才会显示确认框。插件会在聊天与控制台显示请求及最终状态，可用 `/enb pack status` 检查、`/enb pack resend` 重发。
 
@@ -119,3 +121,10 @@ Paper Client 2.8.0 的 Mixin 配置错误地覆盖了普通入口类所在的包
 ### 编辑界面提示没有权限
 
 Paper Server 0.8.2 开始，GUI 保存与 `/enb` 命令统一检查 `extendednoteblockbridge.use`，默认仅 OP。服主可以通过权限插件将此权限授予需要编辑的玩家。原有 `objects.yml`、`notes.yml`、`projections.yml` 格式保持兼容。
+
+## 相关文档
+
+- [功能展示](FEATURES.md)
+- [Paper / Purpur 架构](ARCHITECTURE.md)
+- [路线图与验证](ROADMAP.md)
+- [2.12.0 发布说明](releases/2.12.0.md)
