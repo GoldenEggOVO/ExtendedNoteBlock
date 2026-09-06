@@ -4,6 +4,8 @@ package com.goldenegggovo.extendednoteblock.bridge;
 final class ListenerSoundResolver {
     static final String NAMESPACE = "extendednoteblock_listener";
     static final int VOICE_ALIASES = 8;
+    static final int ANCHOR_STEP = 6;
+    static final int HIGHEST_ANCHOR = 126;
     static final int LOWEST_DRUM = 35;
     static final int HIGHEST_DRUM = 81;
 
@@ -24,7 +26,7 @@ final class ListenerSoundResolver {
 
         int note = clamp(midiNote, 0, 127);
         double effectiveNote = note + pitchCents / 100.0;
-        int anchor = clamp((int) Math.round(effectiveNote / 12.0) * 12, 0, 120);
+        int anchor = clamp((int) Math.round(effectiveNote / ANCHOR_STEP) * ANCHOR_STEP, 0, HIGHEST_ANCHOR);
         float pitch = (float) Math.pow(2.0, (effectiveNote - anchor) / 12.0);
         // Pitch cents can intentionally move beyond MIDI 0-127. Vanilla cannot
         // represent those last edge cases, so keep the packet inside its limit.

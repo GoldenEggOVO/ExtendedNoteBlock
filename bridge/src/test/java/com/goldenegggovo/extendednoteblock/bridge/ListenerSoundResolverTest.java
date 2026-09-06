@@ -9,7 +9,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ListenerSoundResolverTest {
     @Test void everyGmProgramAndMidiNoteUsesAnIncludedAnchorAndVanillaPitch() {
-        Set<Integer> anchors = Set.of(0, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120);
+        Set<Integer> anchors = Set.of(0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60,
+                66, 72, 78, 84, 90, 96, 102, 108, 114, 120, 126);
         for (int instrument = 0; instrument < 128; instrument++) {
             for (int note = 0; note < 128; note++) {
                 ListenerSoundResolver.Resolved resolved = ListenerSoundResolver.resolve(instrument, note, 0, 0);

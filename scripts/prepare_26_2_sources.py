@@ -4,7 +4,7 @@ import re
 import json
 import zipfile
 
-from make_visual_resource_pack import RESOURCE_PACK_FORMAT
+from resource_pack_assets import RESOURCE_PACK_FORMAT
 
 ROOT = Path(__file__).resolve().parents[1]
 CLIENT = ROOT / "src" / "client" / "java"

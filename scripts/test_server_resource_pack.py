@@ -25,19 +25,19 @@ class ServerResourcePackTest(unittest.TestCase):
             self.assertLessEqual(representative, program)
             self.assertLess(program - representative, 4)
 
-    def test_octave_anchors_keep_full_midi_range_inside_vanilla_pitch_limit(self):
+    def test_half_octave_anchors_keep_full_midi_range_with_small_pitch_shifts(self):
         for note in range(128):
             anchor = min(module.MELODIC_ANCHORS, key=lambda value: abs(value - note))
             pitch = 2.0 ** ((note - anchor) / 12.0)
-            self.assertGreaterEqual(pitch, 0.5)
-            self.assertLessEqual(pitch, 2.0)
+            self.assertGreaterEqual(pitch, 2.0 ** (-3.0 / 12.0))
+            self.assertLessEqual(pitch, 2.0 ** (3.0 / 12.0))
 
     def test_sound_events_cover_all_programs_anchors_drums_and_voices(self):
         events = module.sound_events()
         expected = (128 * len(module.MELODIC_ANCHORS) + len(module.DRUM_NOTES)) * module.VOICE_ALIASES
         self.assertEqual(expected, len(events))
         self.assertIn("notes.0.0.v0", events)
-        self.assertIn("notes.127.120.v7", events)
+        self.assertIn("notes.127.126.v7", events)
         self.assertIn("notes.128.35.v0", events)
         self.assertIn("notes.128.81.v7", events)
         # Program 7 shares physical program 4 without duplicating the OGG.
@@ -61,44 +61,12 @@ class ServerResourcePackTest(unittest.TestCase):
         self.assertEqual(module.RESOURCE_PACK_FORMAT, meta["pack"]["min_format"])
         self.assertEqual(module.RESOURCE_PACK_FORMAT, meta["pack"]["max_format"])
         self.assertEqual("26.2", module.metadata(False)["minecraft"])
+        self.assertEqual(6, module.metadata(False)["anchor_step_semitones"])
+        self.assertEqual(5, module.metadata(False)["ogg_vorbis_quality"])
+        self.assertEqual(50_000_000, module.metadata(False)["maximum_pack_bytes"])
+        self.assertEqual(30_000, module.metadata(False)["sample_peak_normalization"]["maximum_encoded_pcm16"])
 
-    def test_only_two_reserved_note_block_states_select_enb_models(self):
-        blockstate = json.loads(module.listener_note_blockstate())
-        variants = blockstate["variants"]
-        self.assertEqual(len(module.NOTE_BLOCK_INSTRUMENTS) * 25 * 2, len(variants))
-
-        custom = {
-            key: value["model"] for key, value in variants.items()
-            if value["model"] != "minecraft:block/note_block"
-        }
-        self.assertEqual({
-            module.note_block_variant_key(module.VANILLA_ENB_INSTRUMENT, module.VANILLA_ENB_NOTE, False):
-                module.VANILLA_ENB_OFF_MODEL,
-            module.note_block_variant_key(module.VANILLA_ENB_INSTRUMENT, module.VANILLA_ENB_NOTE, True):
-                module.VANILLA_ENB_ON_MODEL,
-        }, custom)
-        self.assertEqual(
-            {"model": "minecraft:block/note_block"},
-            variants[module.note_block_variant_key("harp", 0, False)],
-        )
-
-    def test_vanilla_enb_models_use_a_top_on_all_six_faces(self):
-        for texture, emissive in (
-            ("extendednoteblock:block/a_top", False),
-            ("extendednoteblock:block/a_top_on", True),
-        ):
-            model = json.loads(module.listener_enb_model(texture, emissive=emissive))
-            self.assertEqual(texture, model["textures"]["all"])
-            element = model["elements"][0]
-            self.assertEqual({"down", "up", "north", "south", "west", "east"}, set(element["faces"]))
-            self.assertTrue(all(face["texture"] == "#all" for face in element["faces"].values()))
-            if emissive:
-                self.assertEqual(15, element["light_emission"])
-                self.assertFalse(element["shade"])
-            else:
-                self.assertNotIn("light_emission", element)
-
-    def test_built_server_pack_contains_entity_free_placed_visual_entries(self):
+    def test_built_server_pack_keeps_world_blocks_unmodified(self):
         tasks = module.render_tasks(smoke=True)
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -112,15 +80,10 @@ class ServerResourcePackTest(unittest.TestCase):
 
             with zipfile.ZipFile(output) as pack:
                 names = set(pack.namelist())
-                self.assertIn("assets/minecraft/blockstates/note_block.json", names)
-                self.assertIn(
-                    f"assets/{module.NAMESPACE}/models/block/enb.json", names
-                )
-                self.assertIn(
-                    f"assets/{module.NAMESPACE}/models/block/enb_on.json", names
-                )
-                self.assertIn("assets/extendednoteblock/textures/block/a_top.png", names)
-                self.assertIn("assets/extendednoteblock/textures/block/a_top_on.png", names)
+                self.assertNotIn("assets/minecraft/blockstates/note_block.json", names)
+                self.assertNotIn(f"assets/{module.NAMESPACE}/models/block/enb.json", names)
+                self.assertNotIn(f"assets/{module.NAMESPACE}/models/block/enb_on.json", names)
+                self.assertIn("assets/minecraft/items/note_block.json", names)
 
     def test_quiet_edge_samples_receive_bounded_normalization(self):
         self.assertEqual(module.MAX_NORMALIZATION_GAIN, module.normalization_gain(1))

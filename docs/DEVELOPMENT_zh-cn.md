@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [English](DEVELOPMENT.md) · [日本語](DEVELOPMENT_ja-jp.md)
 
-当前分支只构建 Minecraft **26.2**，产出 Full Fabric、Paper Client、Paper Server 三个程序版本，以及 Visuals 与自动下发的组合资源包。Full Fabric 与 Paper Client 不可同时装在客户端。
+当前分支只构建 Minecraft **26.2**，产出 Full Fabric、Paper Client、Paper Server 三个程序版本，以及自动下发的物品 + 声音资源包。Full Fabric 与 Paper Client 不可同时装在客户端。
 
 ## 环境与目录
 
@@ -50,11 +50,10 @@ python3 scripts/prepare_26_2_sources.py
 chmod +x gradlew
 ./gradlew clean test build --stacktrace
 python3 scripts/make_paper_bridge_client_jar.py
-python3 scripts/make_visual_resource_pack.py
 python3 scripts/make_server_resource_pack.py
 ```
 
-Paper Client 从 Full 构建输出中按严格白名单提取客户端类，并内置同源资源包。不能直接重命名 Full JAR 来代替 Paper Client。
+Paper Client 从 Full 构建输出中按严格白名单提取客户端类，并内置物品模型资源包。不能直接重命名 Full JAR 来代替 Paper Client。
 
 ## Paper Server
 
@@ -76,11 +75,10 @@ Windows 下可将 `python3` 换成指向 Python 3 的 `python`，将 `./gradlew`
 | --- | --- |
 | `build/libs/` | Full Fabric 运行 JAR 与 sources JAR |
 | `build/paper-bridge-client/` | Paper Client JAR |
-| `build/visual-resource-pack/` | Visuals ZIP |
-| `build/server-resource-pack/` | 自动下发的视觉 + 聆听音色组合 ZIP |
+| `build/server-resource-pack/` | 自动下发的物品材质 + 聆听音色组合 ZIP |
 | `bridge/build/libs/` | Paper Server JAR |
 
-组合资源包需要 JDK 25 与 FFmpeg。脚本会核对 GeneralUser GS SoundFont 的固定 SHA-256，渲染并归一化 399 个实际采样，再逐个解码排除过轻输出；源 `.sf2` 不会进入 ZIP。CI 发布时将最终资源包 URL 与 SHA-1 同时写入 `config.yml` 和仅随 JAR 分发的 `enb-release-pack.properties`，防止旧服务器配置覆盖正式升级，最后统一生成 `SHA256SUMS.txt`。
+组合资源包需要 JDK 25 与 FFmpeg。脚本会核对 GeneralUser GS SoundFont 的固定 SHA-256，渲染并归一化 751 个实际采样，以 OGG quality 5 编码并逐个解码排除过轻输出；源 `.sf2` 不会进入 ZIP。构建还会强制资源包小于 50,000,000 bytes。CI 发布时将最终资源包 URL 与 SHA-1 同时写入 `config.yml` 和仅随 JAR 分发的 `enb-release-pack.properties`，防止旧服务器配置覆盖正式升级，最后统一生成 `SHA256SUMS.txt`。
 
 ## 分支与发布
 
@@ -93,7 +91,7 @@ Windows 下可将 `python3` 换成指向 Python 3 的 `python`，将 `./gradlew`
 
 当前[工作流](../.github/workflows/build-26.2.yml)检查 `port/26.2` / `release/26.2` 的 push，以及目标为 `main` 的 PR。只有推送到 `port/26.2`、最新提交信息以 `release:` 开头、两个构建任务都成功，才执行发布任务。
 
-文档和整理使用 `docs:` / `chore:` 提交。分支可以在发布后继续前进；正式 Tag 保持指向产物实际使用的提交。Full / Client / Visuals / Server Resources 使用 `gradle.properties` 中的 `mod_version`；Paper Server 使用 `bridge/build.gradle` 中的独立版本号。
+文档和整理使用 `docs:` / `chore:` 提交。分支可以在发布后继续前进；正式 Tag 保持指向产物实际使用的提交。Full / Client / Server Resources 使用 `gradle.properties` 中的 `mod_version`；Paper Server 使用 `bridge/build.gradle` 中的独立版本号。
 
 ## 验证范围
 
@@ -103,6 +101,6 @@ CI 验证现有测试、Full 运行内容、Paper Client 的 Registry 安全与�
 
 ### Paper Client 启动回归测试
 
-构建并运行 Paper Client 打包脚本后，执行 `./gradlew runPaperClientSmoke`。Linux 需要 Xvfb 和可用的 OpenGL 驱动，CI 使用软件渲染。测试使用独立的 `src/paperClientSmoke/` 模块，等待资源加载后检查内置 Visuals 是否启用、原版载体物品选择器、音符盒 GUI、原版 Block/Item Registry、MIDI 0–127 的 SoundEngine pitch，以及原版声音行为。测试模块不会进入正式 JAR。
+构建并运行 Paper Client 打包脚本后，执行 `./gradlew runPaperClientSmoke`。Linux 需要 Xvfb 和可用的 OpenGL 驱动，CI 使用软件渲染。测试使用独立的 `src/paperClientSmoke/` 模块，等待资源加载后检查内置物品包是否启用、原版载体物品选择器、音符盒 GUI、原版 Block/Item Registry、MIDI 0–127 的 SoundEngine pitch，以及原版声音行为。测试模块不会进入正式 JAR。
 
 Mixin 包范围回归检查：`python3 -m unittest discover -s scripts -p 'test_*.py' -v`。Paper 保存数据测试：`./gradlew -p bridge test`。Release 工作流检查启动成功标记，并从 `docs/releases/<mod_version>.md` 读取当前版本说明。

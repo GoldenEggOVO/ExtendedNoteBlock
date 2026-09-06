@@ -3,8 +3,9 @@
 
 The pack combines the existing Paper visual assets with a compact General MIDI
 listener bank. All 128 GM program numbers remain addressable, but each group of
-four related programs shares one physical SoundFont rendering. Eleven octave
-anchors keep every MIDI note inside vanilla's 0.5x-2.0x pitch range.
+four related programs shares one physical SoundFont timbre. Half-octave anchors
+keep normal playback within roughly +/-3 semitones of a rendered sample, which
+reduces audible pitch-shift artifacts while staying below a 50 MB pack budget.
 
 Eight logical voice aliases point to each physical sample. The Paper plugin can
 therefore stop overlapping notes independently without copying audio files.
@@ -26,12 +27,12 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from make_visual_resource_pack import (
+from resource_pack_assets import (
     ASSET_ROOT,
     CARRIER_ITEMS,
     RESOURCE_PACK_FORMAT,
     carrier_selector,
-    iter_visual_files,
+    iter_item_asset_files,
     pack_metadata,
     read_properties,
 )
@@ -45,34 +46,22 @@ OUT_DIR = ROOT / "build" / "server-resource-pack"
 WORK_DIR = ROOT / "build" / "server-resource-pack-work"
 
 NAMESPACE = "extendednoteblock_listener"
-# Two deliberately reserved Note Block states are used only in client-side
-# block-change packets sent by the Paper plugin.  The world itself remains a
-# normal Note Block, while an unmodified client with this pack can render an
-# ENB without any display entities.  Every other vanilla Note Block state maps
-# straight back to the original model.
-NOTE_BLOCK_INSTRUMENTS = (
-    "harp", "basedrum", "snare", "hat", "bass", "flute", "bell", "guitar",
-    "chime", "xylophone", "iron_xylophone", "cow_bell", "didgeridoo", "bit",
-    "banjo", "pling", "trumpet", "trumpet_exposed", "trumpet_weathered",
-    "trumpet_oxidized", "zombie", "skeleton", "creeper", "dragon",
-    "wither_skeleton", "piglin", "custom_head",
-)
-VANILLA_ENB_INSTRUMENT = "custom_head"
-VANILLA_ENB_NOTE = 24
-VANILLA_ENB_OFF_MODEL = f"{NAMESPACE}:block/enb"
-VANILLA_ENB_ON_MODEL = f"{NAMESPACE}:block/enb_on"
 REPRESENTATIVE_PROGRAMS = tuple(range(0, 128, 4))
-MELODIC_ANCHORS = tuple(range(0, 121, 12))
+ANCHOR_STEP = 6
+MELODIC_ANCHORS = tuple(range(0, 127, ANCHOR_STEP))
 DRUM_NOTES = tuple(range(35, 82))
 VOICE_ALIASES = 8
 ATTENUATION_DISTANCE = 64
-ENCODE_CACHE_VERSION = 6
+ENCODE_CACHE_VERSION = 7
+OGG_QUALITY = 5
+MAX_PACK_BYTES = 50_000_000
 HOLD_SECONDS = 10.0
 TAIL_SECONDS = 2.0
 MIN_PREFERRED_SOURCE_PEAK = 512
 TARGET_SOURCE_PEAK = 16_384
 MAX_NORMALIZATION_GAIN = 128.0
 MIN_ENCODED_PEAK = 256
+MAX_ENCODED_PEAK = 30_000
 
 
 @dataclass(frozen=True)
@@ -246,7 +235,10 @@ def convert_one(
         temporary.unlink()
     pitch_filter = ""
     if abs(pitch_factor - 1.0) > 0.000_001:
-        pitch_filter = f"asetrate=44100*{pitch_factor:.9f},aresample=44100,"
+        pitch_filter = (
+            f"asetrate=44100*{pitch_factor:.9f},"
+            "aresample=44100:resampler=soxr:precision=28,"
+        )
     try:
         gain = normalization_gain(source_peak)
         subprocess.run(
@@ -258,8 +250,8 @@ def convert_one(
                 pitch_filter + "pan=mono|c0=0.5*c0+0.5*c1,"
                 f"volume={gain:.9f},"
                 "areverse,silenceremove=start_periods=1:start_duration=0:start_threshold=-65dB,"
-                "areverse,apad=pad_dur=0.08",
-                "-c:a", "libvorbis", "-q:a", "3", "-y", str(temporary),
+                "afade=t=in:d=0.02,areverse,apad=pad_dur=0.08",
+                "-c:a", "libvorbis", "-q:a", str(OGG_QUALITY), "-y", str(temporary),
             ],
             check=True,
         )
@@ -370,6 +362,11 @@ def convert_oggs(tasks: list[RenderTask], wav_dir: Path, ogg_dir: Path) -> None:
                     f"Encoded OGG is effectively inaudible: {encoded_peaks[future].ogg_name} "
                     f"(PCM peak {peak})"
                 )
+            if peak > MAX_ENCODED_PEAK:
+                raise RuntimeError(
+                    f"Encoded OGG is too close to clipping: {encoded_peaks[future].ogg_name} "
+                    f"(PCM peak {peak})"
+                )
 
 
 def zip_info(name: str, compressed: bool = True) -> zipfile.ZipInfo:
@@ -391,72 +388,28 @@ def metadata(smoke: bool) -> dict:
         "representative_programs": list((0,) if smoke else REPRESENTATIVE_PROGRAMS),
         "program_group_size": 4,
         "melodic_anchors": list((60,) if smoke else MELODIC_ANCHORS),
+        "anchor_step_semitones": ANCHOR_STEP,
         "drum_notes": list((35,) if smoke else DRUM_NOTES),
         "voice_aliases": VOICE_ALIASES,
         "attenuation_distance": ATTENUATION_DISTANCE,
-        "vanilla_enb_visual": {
-            "carrier": "minecraft:note_block",
-            "reserved_instrument": VANILLA_ENB_INSTRUMENT,
-            "reserved_note": VANILLA_ENB_NOTE,
-            "off_texture": "extendednoteblock:block/a_top",
-            "on_texture": "extendednoteblock:block/a_top_on",
-        },
         "maximum_rendered_hold_seconds": HOLD_SECONDS,
+        "ogg_vorbis_quality": OGG_QUALITY,
+        "maximum_pack_bytes": MAX_PACK_BYTES,
         "sample_peak_normalization": {
             "minimum_preferred_source_pcm16": MIN_PREFERRED_SOURCE_PEAK,
             "target_pcm16": TARGET_SOURCE_PEAK,
             "minimum_encoded_pcm16": MIN_ENCODED_PEAK,
+            "maximum_encoded_pcm16": MAX_ENCODED_PEAK,
         },
         "soundfont": "GeneralUser GS 2.0.2",
         "soundfont_sha256": SOUNDFONT_SHA256,
     }
 
 
-def note_block_variant_key(instrument: str, note: int, powered: bool) -> str:
-    return f"instrument={instrument},note={note},powered={'true' if powered else 'false'}"
-
-
-def listener_note_blockstate() -> bytes:
-    """Keep vanilla Note Blocks vanilla except for the two reserved fake states."""
-    variants: dict[str, dict[str, str]] = {}
-    for instrument in NOTE_BLOCK_INSTRUMENTS:
-        for note in range(25):
-            for powered in (False, True):
-                model = "minecraft:block/note_block"
-                if instrument == VANILLA_ENB_INSTRUMENT and note == VANILLA_ENB_NOTE:
-                    model = VANILLA_ENB_ON_MODEL if powered else VANILLA_ENB_OFF_MODEL
-                variants[note_block_variant_key(instrument, note, powered)] = {"model": model}
-    return (json.dumps({"variants": variants}, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
-
-
-def listener_enb_model(texture: str, *, emissive: bool) -> bytes:
-    """Build a full cube whose six faces all use the requested ENB texture."""
-    faces = {
-        face: {"texture": "#all", "cullface": face}
-        for face in ("down", "up", "north", "south", "west", "east")
-    }
-    element: dict[str, object] = {
-        "from": [0, 0, 0],
-        "to": [16, 16, 16],
-        "shade": not emissive,
-        "faces": faces,
-    }
-    if emissive:
-        # Model emission makes the active texture render at full brightness;
-        # it does not mutate the real world's light or redstone state.
-        element["light_emission"] = 15
-    model = {
-        "ambientocclusion": not emissive,
-        "textures": {"all": texture, "particle": texture},
-        "elements": [element],
-    }
-    return (json.dumps(model, ensure_ascii=False, indent=2) + "\n").encode()
-
-
 def build_zip(tasks: list[RenderTask], ogg_dir: Path, output: Path, smoke: bool) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     events = sound_events(smoke)
-    description = "ExtendedNoteBlock server visuals + compact listener sounds (Minecraft 26.2)"
+    description = "ExtendedNoteBlock items + listener sounds (Minecraft 26.2)"
     readme = f"""ExtendedNoteBlock Server Resources - Minecraft 26.2
 
 This combined pack is sent automatically by ExtendedNoteBlockBridge.
@@ -467,16 +420,13 @@ use the mod protocol for full fades, moving sound sources and pitch curves.
 Audio layout
 ------------
 - 128 GM program numbers mapped to {len(REPRESENTATIVE_PROGRAMS)} representative timbres
-- {len(MELODIC_ANCHORS)} octave anchors spanning MIDI 0-127
+- {len(MELODIC_ANCHORS)} half-octave anchors spanning MIDI 0-127
 - {len(DRUM_NOTES)} General MIDI percussion notes
 - {VOICE_ALIASES} logical aliases per sample for overlapping-note stop control
 
-Placed Paper bridge blocks remain vanilla registry carriers. Custom inventory
-items use safe CustomModelData selectors. For players without Paper Client, the
-plugin sends coordinate-local fake Note Block states: every face uses a_top.png,
-or a_top_on.png at full brightness while powered. The real block remains a Note
-Block, no display entity is spawned, and ordinary blocks retain vanilla models.
-Paper Client users keep the original pitch-specific position-aware models.
+Placed Paper bridge blocks remain ordinary vanilla carriers. Custom inventory
+items use safe CustomModelData selectors; the pack does not replace or fake any
+world block. Paper Client users keep the original position-aware models.
 """
 
     entries: list[tuple[str, bytes, bool]] = [
@@ -490,18 +440,11 @@ Paper Client users keep the original pitch-specific position-aware models.
     icon = ASSET_ROOT / "icon.png"
     if icon.is_file():
         entries.append(("pack.png", icon.read_bytes(), True))
-    for path in iter_visual_files():
+    for path in iter_item_asset_files():
         rel = path.relative_to(ASSET_ROOT)
         entries.append(((Path("assets") / "extendednoteblock" / rel).as_posix(), path.read_bytes(), True))
     for carrier, (logical_id, vanilla_model) in CARRIER_ITEMS.items():
         entries.append((f"assets/minecraft/items/{carrier}.json", carrier_selector(logical_id, vanilla_model), True))
-    entries.extend((
-        ("assets/minecraft/blockstates/note_block.json", listener_note_blockstate(), True),
-        (f"assets/{NAMESPACE}/models/block/enb.json",
-         listener_enb_model("extendednoteblock:block/a_top", emissive=False), True),
-        (f"assets/{NAMESPACE}/models/block/enb_on.json",
-         listener_enb_model("extendednoteblock:block/a_top_on", emissive=True), True),
-    ))
     for task in tasks:
         folder = "drums" if task.bank == 128 else "melodic"
         entries.append((f"assets/{NAMESPACE}/sounds/{folder}/{task.ogg_name.split('.', 1)[1]}",
@@ -521,9 +464,6 @@ def validate(output: Path, tasks: list[RenderTask], smoke: bool) -> None:
             "enb_server_pack.json",
             f"assets/{NAMESPACE}/sounds.json",
             "assets/extendednoteblock/items/extended_note_block.json",
-            "assets/minecraft/blockstates/note_block.json",
-            f"assets/{NAMESPACE}/models/block/enb.json",
-            f"assets/{NAMESPACE}/models/block/enb_on.json",
             *(f"assets/minecraft/items/{carrier}.json" for carrier in CARRIER_ITEMS),
         }
         missing = sorted(required - names)
@@ -537,26 +477,15 @@ def validate(output: Path, tasks: list[RenderTask], smoke: bool) -> None:
         audio = [name for name in names if name.endswith(".ogg")]
         if len(audio) != len(tasks):
             raise SystemExit(f"Expected {len(tasks)} physical samples, found {len(audio)}")
-        note_block = json.loads(zf.read("assets/minecraft/blockstates/note_block.json"))
-        variants = note_block.get("variants", {})
-        expected_variants = len(NOTE_BLOCK_INSTRUMENTS) * 25 * 2
-        if len(variants) != expected_variants:
-            raise SystemExit(f"Expected {expected_variants} Note Block variants, found {len(variants)}")
-        custom = {
-            key: value["model"] for key, value in variants.items()
-            if value.get("model") != "minecraft:block/note_block"
-        }
-        expected_custom = {
-            note_block_variant_key(VANILLA_ENB_INSTRUMENT, VANILLA_ENB_NOTE, False): VANILLA_ENB_OFF_MODEL,
-            note_block_variant_key(VANILLA_ENB_INSTRUMENT, VANILLA_ENB_NOTE, True): VANILLA_ENB_ON_MODEL,
-        }
-        if custom != expected_custom:
-            raise SystemExit(f"Unexpected reserved Note Block model mapping: {custom}")
         if not smoke:
             for instrument in range(128):
                 for anchor in MELODIC_ANCHORS:
                     if f"notes.{instrument}.{anchor}.v{VOICE_ALIASES - 1}" not in parsed_events:
                         raise SystemExit(f"Missing listener event for instrument {instrument}, anchor {anchor}")
+    if not smoke and output.stat().st_size >= MAX_PACK_BYTES:
+        raise SystemExit(
+            f"Server resource pack exceeds the 50 MB release budget: {output.stat().st_size} bytes"
+        )
 
 
 def parse_args() -> argparse.Namespace:

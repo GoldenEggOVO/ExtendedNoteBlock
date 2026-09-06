@@ -46,7 +46,6 @@ python3 scripts/prepare_26_2_sources.py
 chmod +x gradlew
 ./gradlew clean test build --stacktrace
 python3 scripts/make_paper_bridge_client_jar.py
-python3 scripts/make_visual_resource_pack.py
 python3 scripts/make_server_resource_pack.py
 ```
 
@@ -72,11 +71,10 @@ On Windows, use `python` if Python 3 is installed under that name, replace `./gr
 | --- | --- |
 | `build/libs/` | Full Fabric runtime JAR and sources JAR |
 | `build/paper-bridge-client/` | Paper Client JAR |
-| `build/visual-resource-pack/` | Visuals ZIP |
-| `build/server-resource-pack/` | Combined auto-download visual + listener ZIP |
+| `build/server-resource-pack/` | Combined auto-download item + listener ZIP |
 | `bridge/build/libs/` | Paper Server JAR |
 
-The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed GeneralUser GS SoundFont checksum, renders and peak-normalizes 399 physical samples, decodes each OGG to reject inaudible output, and does not include the source `.sf2` in the ZIP. Release automation injects the final pack asset URL and SHA-1 into both `config.yml` and the JAR-only `enb-release-pack.properties` before generating `SHA256SUMS.txt`; the latter prevents stale server configs from shadowing an official upgrade.
+The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed GeneralUser GS SoundFont checksum, renders and peak-normalizes 751 physical samples, uses Vorbis quality 5, decodes each OGG to reject inaudible output, enforces a 50,000,000-byte ceiling, and does not include the source `.sf2` in the ZIP. Release automation injects the final pack asset URL and SHA-1 into both `config.yml` and the JAR-only `enb-release-pack.properties` before generating `SHA256SUMS.txt`; the latter prevents stale server configs from shadowing an official upgrade.
 
 ## Branches and releases
 
@@ -89,7 +87,7 @@ The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed Gen
 
 The current [workflow](../.github/workflows/build-26.2.yml) builds pushes to `port/26.2` and `release/26.2`, and pull requests targeting `main`. Its release job runs only for a push to `port/26.2` whose head commit message starts with `release:` and whose build jobs succeed.
 
-Use `docs:` / `chore:` commits for repository maintenance. Branches may advance after a release; keep the published release tag anchored to the source commit that produced its artifacts. Full / Client / Visuals / Server Resources use `mod_version`, while Paper Server has its own version in `bridge/build.gradle`.
+Use `docs:` / `chore:` commits for repository maintenance. Branches may advance after a release; keep the published release tag anchored to the source commit that produced its artifacts. Full / Client / Server Resources use `mod_version`, while Paper Server has its own version in `bridge/build.gradle`.
 
 ## Validation boundaries
 
@@ -99,6 +97,6 @@ The outstanding gameplay checks and planned Paper features are tracked in [ROADM
 
 ## Paper Client startup regression test
 
-After building and packaging the Paper Client, run `./gradlew runPaperClientSmoke`. On Linux this requires Xvfb and an OpenGL-capable driver (CI uses software rendering). The separate `src/paperClientSmoke/` test mod is never packaged in release JARs. The task starts the actual Paper Client JAR with Fabric, waits for resource loading, checks built-in visuals, opens the note editor, verifies vanilla Block/Item registries and checks MIDI 0–127 pitch factors plus vanilla attenuation/pitch behavior. It does not connect to a Paper server or verify audible output.
+After building and packaging the Paper Client, run `./gradlew runPaperClientSmoke`. On Linux this requires Xvfb and an OpenGL-capable driver (CI uses software rendering). The separate `src/paperClientSmoke/` test mod is never packaged in release JARs. The task starts the actual Paper Client JAR with Fabric, waits for resource loading, checks the built-in item pack, opens the note editor, verifies vanilla Block/Item registries and checks MIDI 0–127 pitch factors plus vanilla attenuation/pitch behavior. It does not connect to a Paper server or verify audible output.
 
 `python3 -m unittest discover -s scripts -p 'test_*.py' -v` tests the Mixin package guard. `./gradlew -p bridge test` runs the server payload validation tests. The release workflow requires these checks and the startup success marker, and publishes the matching `docs/releases/<mod_version>.md` file as release notes.

@@ -31,7 +31,7 @@ jobs:
       - run: chmod +x gradlew
       - name: Build Full Fabric mod
         run: ./gradlew clean test build --stacktrace
-      - name: Build Paper-safe client jar with built-in visual pack
+      - name: Build Paper-safe client jar with built-in item pack
         run: python3 scripts/make_paper_bridge_client_jar.py
       - name: Launch packaged Paper Client and check sound mixins
         timeout-minutes: 10
@@ -48,8 +48,6 @@ jobs:
           name: paper-client-startup-logs
           path: build/run/paperClientSmoke/logs/
           if-no-files-found: ignore
-      - name: Build standalone visual resource pack
-        run: python3 scripts/make_visual_resource_pack.py
       - name: Install listener-pack audio tools
         run: |
           sudo apt-get update
@@ -58,6 +56,9 @@ jobs:
         run: |
           ffmpeg -version
           python3 scripts/make_server_resource_pack.py
+          PACK="$(find build/server-resource-pack -maxdepth 1 -type f -name '*.zip' | head -n 1)"
+          test -n "$PACK"
+          test "$(stat -c %s "$PACK")" -lt 50000000
       - name: Verify Full Fabric runtime jar
         shell: bash
         run: |
@@ -66,18 +67,18 @@ jobs:
           test -n "$FULL_JAR"
           jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/ExtendedNoteBlock.class'
           jar tf "$FULL_JAR" | grep -qx 'com/atemukesu/extendednoteblock/item/ConductorWandItem.class'
-      - name: Verify Paper Client visuals and placed rendering
+      - name: Verify Paper Client item models and placed rendering
         shell: bash
         run: |
           set -euo pipefail
           CLIENT_JAR="$(find build/paper-bridge-client -maxdepth 1 -type f -name '*.jar' | head -n 1)"
           test -n "$CLIENT_JAR"
-          jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_visuals/pack.mcmeta'
-          jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_visuals/assets/extendednoteblock/items/conductor_wand.json'
-          jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json'
-          unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'minecraft:custom_model_data'
-          unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'extendednoteblock:conductor_wand'
-          unzip -p "$CLIENT_JAR" resourcepacks/bridge_visuals/assets/minecraft/items/blaze_rod.json | grep -q 'minecraft:item/blaze_rod'
+          jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_items/pack.mcmeta'
+          jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_items/assets/extendednoteblock/items/conductor_wand.json'
+          jar tf "$CLIENT_JAR" | grep -qx 'resourcepacks/bridge_items/assets/minecraft/items/blaze_rod.json'
+          unzip -p "$CLIENT_JAR" resourcepacks/bridge_items/assets/minecraft/items/blaze_rod.json | grep -q 'minecraft:custom_model_data'
+          unzip -p "$CLIENT_JAR" resourcepacks/bridge_items/assets/minecraft/items/blaze_rod.json | grep -q 'extendednoteblock:conductor_wand'
+          unzip -p "$CLIENT_JAR" resourcepacks/bridge_items/assets/minecraft/items/blaze_rod.json | grep -q 'minecraft:item/blaze_rod'
           jar tf "$CLIENT_JAR" | grep -qx 'com/atemukesu/extendednoteblock/bridgeclient/BridgeNoteBlockScreen.class'
           jar tf "$CLIENT_JAR" | grep -qx 'com/atemukesu/extendednoteblock/bridgeclient/BridgeWorldObjects.class'
           jar tf "$CLIENT_JAR" | grep -qx 'com/atemukesu/extendednoteblock/bridgeclient/BridgeBlockRenderModels.class'
@@ -101,12 +102,6 @@ jobs:
         with:
           name: extendednoteblock-paper-client-26.2
           path: build/paper-bridge-client/*.jar
-          if-no-files-found: error
-      - name: Upload visual resource pack
-        uses: actions/upload-artifact@v4
-        with:
-          name: extendednoteblock-visuals-26.2
-          path: build/visual-resource-pack/*.zip
           if-no-files-found: error
       - name: Upload combined server resource pack
         uses: actions/upload-artifact@v4
@@ -141,12 +136,6 @@ jobs:
           GENERATED_SHA256="$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
           python3 ../scripts/prepare_paper_listener_pack.py
           test "$GENERATED_SHA256" = "$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
-      - name: Prepare entity-free resource-pack-only ENB block visuals
-        run: |
-          python3 ../scripts/prepare_paper_vanilla_visuals.py
-          GENERATED_SHA256="$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
-          python3 ../scripts/prepare_paper_vanilla_visuals.py
-          test "$GENERATED_SHA256" = "$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
       - name: Verify vanilla-safe identity, interaction, render and listener bridge
         run: |
           grep -q 'PersistentDataType.STRING' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
@@ -174,18 +163,8 @@ jobs:
           grep -q 'action.equals("test")' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'ListenerSoundResolver.resolve' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'stopListenerSound(soundId)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'PlayerChunkLoadEvent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'state.setInstrument(Instrument.CUSTOM_HEAD)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'state.setNote(new Note(24))' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'vanillaEnbOffState = createVanillaEnbState(false)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'vanillaEnbOnState = createVanillaEnbState(true)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'sendBlockChanges(states)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'flushVanillaEnbUpdates()' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'pendingVanillaEnbUpdates.add(ref)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'sendVanillaEnbChunk(player, worldId, chunkKey)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'player.removeResourcePack(listenerPackId)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          if grep -q 'BlockDisplay' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
-            echo 'Vanilla ENB visuals must not create display entities' >&2
+          if grep -q 'sendBlockChange' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
+            echo 'Server listener mode must not send fake world blocks' >&2
             exit 1
           fi
           if grep -q 'DataComponentTypes.ITEM_MODEL' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java; then
@@ -252,12 +231,6 @@ jobs:
           name: extendednoteblock-paper-server-26.2
           path: artifacts/server
 
-      - name: Download standalone visual pack
-        uses: actions/download-artifact@v4
-        with:
-          name: extendednoteblock-visuals-26.2
-          path: artifacts/visuals
-
       - name: Download combined server resource pack
         uses: actions/download-artifact@v4
         with:
@@ -276,19 +249,16 @@ jobs:
           FULL_JAR="$(find artifacts/full -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           CLIENT_JAR="$(find artifacts/client -maxdepth 1 -type f -name '*.jar' | head -n 1)"
           SERVER_JAR="$(find artifacts/server -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
-          VISUALS_ZIP="$(find artifacts/visuals -maxdepth 1 -type f -name '*.zip' | head -n 1)"
           SERVER_PACK_ZIP="$(find artifacts/server-resources -maxdepth 1 -type f -name '*.zip' | head -n 1)"
 
           test -n "$FULL_JAR"
           test -n "$CLIENT_JAR"
           test -n "$SERVER_JAR"
-          test -n "$VISUALS_ZIP"
           test -n "$SERVER_PACK_ZIP"
 
           cp "$FULL_JAR" "release/ExtendedNoteBlock-Full-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
           cp "$CLIENT_JAR" "release/ExtendedNoteBlock-Paper-Client-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
           cp "$SERVER_JAR" "release/ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar"
-          cp "$VISUALS_ZIP" "release/ExtendedNoteBlock-Visuals-${MOD_VERSION}-mc${MC_VERSION}.zip"
           cp "$SERVER_PACK_ZIP" "release/ExtendedNoteBlock-Server-Resources-${MOD_VERSION}-mc${MC_VERSION}.zip"
 
           PACK_FILE="release/ExtendedNoteBlock-Server-Resources-${MOD_VERSION}-mc${MC_VERSION}.zip"

@@ -2,6 +2,16 @@
 
 ## Unreleased — Minecraft 26.2
 
+## 2.12.0 — Minecraft 26.2
+
+- Removed the resource-pack-only fake world-block renderer and its packet refresh/indexing path; no-Mod players again see the real vanilla Paper carriers.
+- Retained ENB inventory item models and mandatory-by-default listener audio in one automatically delivered Server Resources pack.
+- Removed the redundant standalone Visuals ZIP from builds and releases while keeping Paper Client's built-in item selectors.
+- Doubled melodic sampling density from 11 octave anchors to 22 half-octave anchors, reducing normal vanilla-client pitch shifting to about three semitones.
+- Raised Vorbis quality to 5, added high-precision SoXR fallback resampling and a short trimmed-tail fade, and enforced a 50,000,000-byte release ceiling.
+
+See the [release notes](docs/releases/2.12.0.md).
+
 ## 2.11.0 — Minecraft 26.2
 
 - Added entity-free placed ENB visuals for unmodified clients that accept the automatically delivered server resource pack.

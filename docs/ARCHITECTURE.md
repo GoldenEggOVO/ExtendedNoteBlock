@@ -25,15 +25,11 @@ Full Fabric 与 Paper Client 不应同时安装。Paper 的编辑界面可以复
 
 ENB 物品通过 Bukkit PDC 的 `enb_type` 识别逻辑类型，CustomModelData 的 `strings[0]` 用于视觉选择。放置后的世界对象按坐标登记，并持久化至插件数据文件。
 
-服务器仍然发送原版 ItemStack。Visuals 使用 `minecraft:select` / `minecraft:custom_model_data` 匹配 ENB 字符串；不匹配时明确回退到载体的原版模型。因此普通音符盒、烈焰棒和混凝土保持原版外观。
+服务器仍然发送原版 ItemStack。内置 / 自动资源包使用 `minecraft:select` / `minecraft:custom_model_data` 匹配 ENB 字符串；不匹配时明确回退到载体的原版模型。因此普通音符盒、烈焰棒和混凝土保持原版外观。
 
 ## 物品外观与世界方块外观
 
-Paper Client 内置包、独立 Visuals ZIP 与自动下发的 Server Resources 复用同源视觉资源。资源包本身不能读取服务端 PDC 或坐标，因此 Paper Server 会对成功加载组合包、且没有安装 Paper Client 的玩家发送坐标级假方块状态；世界存档中的真实载体仍为 `minecraft:note_block`。
-
-无 Mod 客户端的 ENB 使用两个预留的 Note Block 状态：OFF 模型六面统一引用 `a_top.png`，ON 模型六面统一引用 `a_top_on.png` 并以模型级 15 亮度渲染。组合包完整列出 Note Block 的 1350 个状态，除这两个预留状态外全部显式回退 `minecraft:block/note_block`。这不会生成 `BlockDisplay`、改变世界方块或占用红石灯状态；模型满亮也不会在世界中产生真实光照。原版资源包的状态覆盖是全局的，因此普通音符盒若极少见地自然落在同一个 `custom_head + note 24` 状态，也会显示该模型，但其数据和逻辑不变。
-
-服务器按玩家已收到的区块维护 ENB 坐标索引，并用 multi-block change 按区块 section 批量刷新。资源包加载成功、区块发送、切换世界、ENB 放置 / 删除与通电状态变化都会同步；资源包撤销时恢复该玩家看到的真实方块状态。
+Paper Client 内置物品包与自动下发的 Server Resources 复用同源物品模型。纯资源包不能读取服务端 PDC 或坐标，所以 Paper Server 不再尝试为无 Mod 玩家伪造世界方块：组合包不覆盖 `minecraft:blockstates`，插件也不发送 `sendBlockChange(s)`。这些玩家始终看到真实的音符盒 / 混凝土载体，不产生任何额外实体或方块刷新负担。
 
 Paper Server 向 Paper Client 同步维度内已登记对象的坐标、类型、ON/OFF 状态和音高类别。客户端只替换这些坐标的 baked model：
 
@@ -42,7 +38,7 @@ Paper Server 向 Paper Client 同步维度内已登记对象的坐标、类型�
 - Receiver ON 在服务端仍是真实 `redstone_block`，提供原版强度 15 的红石输出。
 - 非 ENB 管理坐标保持原版渲染。
 
-登录、切换世界和频道注册时同步快照；对象变化时增量更新。检测到 Paper Client 插件频道后，服务器不再下发（或移除已下发的）原版聆听组合包，并恢复任何客户端假状态；Mod 客户端继续看到原本的按音高模型和 `_on` 变体。
+登录、切换世界和频道注册时同步快照；对象变化时增量更新。检测到 Paper Client 插件频道后，声音改走 Bridge 协议，避免重复播放；Mod 客户端继续看到原本的按音高模型和 `_on` 变体。
 
 ## 声音
 
@@ -50,7 +46,7 @@ Paper Server 保存 MIDI Note、Instrument、Velocity、Sustain、Delay、Fade I
 
 Paper Client 从最近的采样音符计算 `2^(半音差 / 12)`。2.8.0 添加专用、Registry-safe 的 SoundEngine Mixin，对 `extendednoteblock` 声音绕过 Minecraft 的最终 pitch clamp；2.8.1 修复 Mixin 包冲突，并将 48 格衰减限定到 ENB 声音。
 
-2.10.1 为没有 Paper Client 的玩家提供组合资源包。128 个 GM program 每四个映射到一种代表音色，共 32 种；每种预渲染 MIDI 0、12、…、120 共 11 个锚点，运行时只在原版允许的 0.5–2.0 倍范围内做小幅变调，因此覆盖 MIDI 0–127。另有 MIDI 35–81 共 47 个独立打击乐采样。每个事件提供 8 个逻辑别名，让服务端能独立停止常见的同音重叠而不复制 OGG。物理采样会做有上限的峰值归一化，构建时再解码检查，避免极端音区只有事件却几乎无声。
+2.12.0 的组合资源包为 128 个 GM program 每四个映射一种代表音色，共 32 种；每种预渲染 MIDI 0、6、…、126 共 22 个锚点，将常规实时变调压缩到约 ±3 半音，同时覆盖 MIDI 0–127。另有 MIDI 35–81 共 47 个独立打击乐采样。每个事件提供 8 个逻辑别名，让服务端能独立停止常见的同音重叠而不复制 OGG。物理采样采用 OGG quality 5、高精度 SoXR 离线重采样、尾部淡出和有上限的峰值归一化；构建会逐个解码检查并拒绝达到 50,000,000 bytes 的包。
 
 Paper Server 在玩家加入 40 ticks 后发送带固定 UUID、HTTPS URL 与 SHA-1 的资源包请求，并只在收到 `SUCCESSFULLY_LOADED` 后向该玩家发送 `extendednoteblock_listener:*` 声音。正式 URL / SHA-1 来自 JAR 内独立 metadata，默认不受旧磁盘配置覆盖；`/enb pack status|resend` 提供诊断和重发。加载中、拒绝或失败时保留 Note Block fallback；检测到 Paper Client 插件频道的玩家继续走 Bridge 声音协议，避免重复播放。原版模式不实时还原高级音量曲线、连续弯音或表达式声源移动。
 

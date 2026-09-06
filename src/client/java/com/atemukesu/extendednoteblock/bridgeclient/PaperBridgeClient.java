@@ -37,7 +37,7 @@ public final class PaperBridgeClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        registerBuiltInVisualPack();
+        registerBuiltInItemPack();
         BridgeBlockRenderModels.register();
         ConfigManager.initialize();
 
@@ -104,18 +104,18 @@ public final class PaperBridgeClient implements ClientModInitializer {
             }
         });
 
-        LOGGER.info("ExtendedNoteBlock Paper Client loaded (registry-safe mode, built-in visuals, placed-block rendering, NBS workshop and note editor).");
+        LOGGER.info("ExtendedNoteBlock Paper Client loaded (registry-safe mode, built-in item models, placed-block rendering, NBS workshop and note editor).");
     }
 
-    private static void registerBuiltInVisualPack() {
+    private static void registerBuiltInItemPack() {
         FabricLoader.getInstance().getModContainer(MOD_ID).ifPresent(container -> {
             boolean registered = ResourceLoader.registerBuiltinPack(
-                    Identifier.fromNamespaceAndPath(MOD_ID, "bridge_visuals"),
+                    Identifier.fromNamespaceAndPath(MOD_ID, "bridge_items"),
                     container,
-                    Component.literal("ExtendedNoteBlock Paper Client Visuals"),
+                    Component.literal("ExtendedNoteBlock Paper Client Items"),
                     PackActivationType.ALWAYS_ENABLED);
             if (!registered) {
-                LOGGER.warn("Could not register the built-in ExtendedNoteBlock visual resource pack; root assets remain available as fallback.");
+                LOGGER.warn("Could not register the built-in ExtendedNoteBlock item resource pack; root assets remain available as fallback.");
             }
         });
     }

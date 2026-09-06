@@ -104,7 +104,7 @@ join_replacement = r'''    @EventHandler
             event.getPlayer().sendMessage("ENB 资源包已接受，正在下载。");
         } else if (status.equals("DOWNLOADED")) {
             getLogger().info("ENB listener resource pack downloaded by " + event.getPlayer().getName());
-            event.getPlayer().sendMessage("ENB 资源包已下载，正在加载声音与材质。");
+            event.getPlayer().sendMessage("ENB 资源包已下载，正在加载声音与物品材质。");
         } else if (status.equals("DECLINED") || status.startsWith("FAILED")
                 || status.equals("INVALID_URL") || status.equals("DISCARDED")) {
             listenerPackReady.remove(event.getPlayer().getUniqueId());
@@ -247,7 +247,7 @@ helper_block = r'''    // ------------------------------------------------------
         String configuredId = getConfig().getString("resource-pack.id", "");
         String configuredSha1 = getConfig().getString("resource-pack.sha1", "");
         String prompt = getConfig().getString("resource-pack.prompt",
-                "ExtendedNoteBlock requires its visual and listener sound pack.");
+                "ExtendedNoteBlock requires its item and listener sound pack.");
         listenerPackPrompt = Component.text(prompt);
         listenerPackId = null;
         listenerPackUrl = "";
@@ -281,7 +281,7 @@ helper_block = r'''    // ------------------------------------------------------
         listenerPackReady.remove(player.getUniqueId());
         listenerPackStates.put(player.getUniqueId(), "REQUESTED");
         if (announce) {
-            player.sendMessage("ENB 正在下发材质与音乐资源包；若服务器资源包设为‘启用’，客户端会静默下载。");
+            player.sendMessage("ENB 正在下发物品材质与音乐资源包；若服务器资源包设为‘启用’，客户端会静默下载。");
         }
         player.setResourcePack(listenerPackId, listenerPackUrl, listenerPackSha1,
                 listenerPackPrompt, listenerPackRequired);

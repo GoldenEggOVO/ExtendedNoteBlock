@@ -9,9 +9,9 @@
 
 Extended Note Block 为 Minecraft 提供扩展音符盒、指挥棒、无线红石和 NBS 音乐工坊，支持 MIDI、NBS 与常见音频导入、试听和音乐结构导出。
 
-**当前正式版：Full Fabric / Paper Client 2.11.0，Paper Server 0.11.0，目标 Minecraft 26.2。**
+**当前正式版：Full Fabric / Paper Client 2.12.0，Paper Server 0.12.0，目标 Minecraft 26.2。**
 
-[下载正式版](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.11.0-mc26.2) · [2.11.0 更新说明](docs/releases/2.11.0.md) · [安装指南](docs/INSTALLATION.md) · [日本語](docs/README_ja-jp.md)
+[下载正式版](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.12.0-mc26.2) · [2.12.0 更新说明](docs/releases/2.12.0.md) · [安装指南](docs/INSTALLATION.md) · [日本語](docs/README_ja-jp.md)
 
 ## 选择安装版本
 
@@ -22,23 +22,22 @@ Extended Note Block 为 Minecraft 提供扩展音符盒、指挥棒、无线红�
 | **Full Fabric** | 单人模式，或服务端也安装 Full Mod 的 Fabric 服务器 | 客户端 `mods/`；Fabric 服务端也安装同版 Full Mod |
 | **Paper Client** | 连接安装 ENB Bridge 的 Paper / Purpur 服务器 | Fabric 客户端 `mods/` |
 | **Paper Server** | Paper / Purpur 服务端桥接插件 | 服务端 `plugins/` |
-| **Visuals** | 可选独立资源包，提供 ENB 标记物品的外观 | 客户端 `resourcepacks/` |
-| **Server Resources** | 方块 / 物品资源与原版客户端聆听音色；由插件自动下发 | 玩家进服时接受服务器资源包 |
+| **Server Resources** | ENB 物品材质与原版客户端聆听音色；由插件自动下发 | 玩家进服时自动加载 |
 
-Paper Client 已经内置同源 Visuals 资源，通常不需要再装独立 ZIP。Paper Server 会可靠下发并明确显示组合资源包状态；成功加载后，没有客户端 Mod 的玩家既能听到覆盖 MIDI 0–127 的 ENB 音乐，也能看到已放置 ENB 的轻量方块外观。拒绝或加载失败时仍使用原版音符盒回退。
+Paper Client 已内置 ENB 物品资源，不需要独立 Visuals ZIP。Paper Server 默认强制下发组合资源包；成功加载后，没有客户端 Mod 的玩家能看到 ENB 背包物品外观并听到覆盖 MIDI 0–127 的音乐。世界中的 Paper 载体始终保持原版方块外观，不再发送假方块。
 
 ## 快速安装
 
 ### 单人模式 / Fabric 服务器
 
 1. 准备 Minecraft **26.2**、Java **25**、Fabric Loader **0.19.5** 和 Fabric API **0.159.0+26.2**。
-2. 将 `ExtendedNoteBlock-Full-Fabric-2.11.0-mc26.2.jar` 放入客户端 `mods/`。
+2. 将 `ExtendedNoteBlock-Full-Fabric-2.12.0-mc26.2.jar` 放入客户端 `mods/`。
 3. Fabric 多人服务器还需安装同版 Full Fabric 和 Fabric API。
 
 ### Paper / Purpur 服务器
 
-1. 将 `ExtendedNoteBlock-Paper-Server-0.11.0-mc26.2.jar` 放入服务器 `plugins/`，重启服务器；正式 JAR 已内置匹配资源包的下载地址与校验值。
-2. 普通玩家直接进服并接受资源包即可聆听、看到轻量 ENB 方块外观。需要全部 128 种独立音色、编辑界面和世界方块精确外观的玩家，在 Fabric 26.2 客户端安装 Fabric API 与 `ExtendedNoteBlock-Paper-Client-Fabric-2.11.0-mc26.2.jar`。
+1. 将 `ExtendedNoteBlock-Paper-Server-0.12.0-mc26.2.jar` 放入服务器 `plugins/`，重启服务器；正式 JAR 已内置匹配资源包的下载地址与校验值。
+2. 普通玩家进服后加载资源包即可聆听并看到 ENB 物品材质。需要全部 128 种独立音色、编辑界面和世界方块精确外观的玩家，在 Fabric 26.2 客户端安装 Fabric API 与 `ExtendedNoteBlock-Paper-Client-Fabric-2.12.0-mc26.2.jar`。
 3. OP 在游戏内运行 `/enb give all` 获取测试物品。
 
 默认按 **N** 打开 NBS 音乐工坊；右键已登记的 ENB 音符盒打开编辑界面。升级、目录和常见问题见[安装指南](docs/INSTALLATION.md)。
@@ -55,12 +54,12 @@ Paper Client 已经内置同源 Visuals 资源，通常不需要再装独立 ZIP
 | NBS / MIDI / 音频导入与本地试听 | 支持 | 支持 |
 | Litematic、结构 NBT、数据包导出 | 支持 | 支持；Projection Litematic 使用原版载体 |
 | 粘贴后恢复 ENB 参数 | 使用真实 ENB 方块数据 | N 键工坊 → 恢复 ENB；读取原始投影文件恢复参数 |
-| 无 Mod 玩家聆听 | 需要 Full Fabric | 接受自动资源包；32 种代表音色映射 128 个 GM 编号，完整覆盖 MIDI 0–127 |
-| 无 Mod 玩家世界方块外观 | 需要 Full Fabric | 接受自动资源包；ENB 六面统一 A 材质，通电时使用满亮 A-on 材质；无实体 |
+| 无 Mod 玩家聆听 | 需要 Full Fabric | 自动资源包；32 种代表音色、每半八度采样，完整覆盖 MIDI 0–127 |
+| 无 Mod 玩家世界方块外观 | 需要 Full Fabric | 保持 Paper 的原版载体外观；不发送假方块或展示实体 |
 
 音乐工坊支持 `.nbs`、`.mid`、`.midi`、WAV、MP3、OGG、AIFF / AIF 和 AU。音频分析属于音高检测转换，不保证完整还原原曲的全部声部。
 
-**2.11.0 为只装自动资源包的玩家增加无实体、坐标级的 ENB 方块外观，需更新 Paper Server 0.11.0。** 关闭时六面使用 A 材质，通电时六面使用满亮 A-on 材质；Paper Client 仍显示原本的按音高模型。2.9.0 的 Litematic 参数恢复流程保持兼容。[完整步骤与限制](docs/INSTALLATION.md#paper-litematic-恢复-enb)。
+**2.12.0 移除无 Mod 客户端的假方块外观并提升监听音频质量，需更新 Paper Server 0.12.0。** 组合包保留物品材质与声音，22 个半八度锚点把常规实时移调压缩到约 ±3 半音；Paper Client 仍显示原本的按音高世界模型。2.9.0 的 Litematic 参数恢复流程保持兼容。[完整步骤与限制](docs/INSTALLATION.md#paper-litematic-恢复-enb)。
 
 CI 包含实际客户端启动和模拟 Paper 插件导入测试；实际 Purpur 多人游戏中的新恢复流程仍需验证。
 

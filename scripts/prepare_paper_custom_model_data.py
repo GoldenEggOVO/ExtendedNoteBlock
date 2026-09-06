@@ -3,7 +3,7 @@
 
 PDC remains the authoritative server-side identity. CustomModelData is visual-only:
 clients without the ENB resource pack ignore it and still render the vanilla carrier.
-Clients with the Visuals pack / Paper Client use the string to select the original
+Clients with the server item pack / Paper Client use the string to select the original
 ExtendedNoteBlock model.
 """
 from pathlib import Path

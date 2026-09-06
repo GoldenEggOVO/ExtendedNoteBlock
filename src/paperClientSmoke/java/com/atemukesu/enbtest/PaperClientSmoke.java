@@ -51,11 +51,11 @@ public final class PaperClientSmoke implements ClientModInitializer {
                     throw new AssertionError("Custom ENB registry IDs exist in Paper Client");
                 }
 
-                String visuals = "extendednoteblock_bridge_client:bridge_visuals";
+                String visuals = "extendednoteblock_bridge_client:bridge_items";
                 var repository = client.getResourcePackRepository();
                 if (!repository.getSelectedIds().contains(visuals)
                         || !repository.getPack(visuals).getCompatibility().isCompatible()) {
-                    throw new AssertionError("Built-in Paper visuals are disabled or incompatible");
+                    throw new AssertionError("Built-in Paper item pack is disabled or incompatible");
                 }
                 var selector = Identifier.fromNamespaceAndPath("minecraft", "items/blaze_rod.json");
                 try (var reader = client.getResourceManager().getResourceOrThrow(selector).openAsReader()) {

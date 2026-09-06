@@ -6,8 +6,8 @@ custom blocks/items. That is correct for single-player/Fabric servers, but unsaf
 against a vanilla-registry Paper/Purpur server.
 
 This script starts from Loom's remapped JAR and emits a strict whitelist JAR.
-It also embeds the same CustomModelData-driven visual pack that is published as
-a standalone resource pack under resourcepacks/bridge_visuals/.
+It also embeds the CustomModelData-driven item selectors used by Paper bridge
+items under resourcepacks/bridge_items/.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ import json
 import zipfile
 from pathlib import Path
 
-from make_visual_resource_pack import CARRIER_ITEMS, carrier_selector, custom_model_key, pack_metadata
+from resource_pack_assets import CARRIER_ITEMS, carrier_selector, custom_model_key, pack_metadata
 from verify_mixin_packages import verify_mixin_packages
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,7 +54,7 @@ def find_runtime_jar() -> Path:
 
 def built_in_pack_metadata() -> bytes:
     return json.dumps(
-        pack_metadata("ExtendedNoteBlock Paper Client built-in visuals"),
+        pack_metadata("ExtendedNoteBlock Paper Client items"),
         ensure_ascii=False,
         indent=2,
     ).encode("utf-8")
@@ -182,19 +182,18 @@ with zipfile.ZipFile(source_jar, "r") as zin, zipfile.ZipFile(
         zout.writestr(info, data)
 
         if is_visual_asset(info.filename):
-            zout.writestr("resourcepacks/bridge_visuals/" + info.filename, data)
+            zout.writestr("resourcepacks/bridge_items/" + info.filename, data)
 
-    # Same CustomModelData selectors as the standalone Visuals ZIP.
     # Every selector has a vanilla fallback, so ordinary carrier items never change.
     for carrier, (logical_id, vanilla_model) in CARRIER_ITEMS.items():
         zout.writestr(
-            f"resourcepacks/bridge_visuals/assets/minecraft/items/{carrier}.json",
+            f"resourcepacks/bridge_items/assets/minecraft/items/{carrier}.json",
             carrier_selector(logical_id, vanilla_model),
         )
 
     if pack_icon is not None:
-        zout.writestr("resourcepacks/bridge_visuals/pack.png", pack_icon)
-    zout.writestr("resourcepacks/bridge_visuals/pack.mcmeta", built_in_pack_metadata())
+        zout.writestr("resourcepacks/bridge_items/pack.png", pack_icon)
+    zout.writestr("resourcepacks/bridge_items/pack.mcmeta", built_in_pack_metadata())
     zout.writestr(BRIDGE_MIXIN_CONFIG, bridge_mixin_metadata())
     zout.writestr(
         "fabric.mod.json",
@@ -230,13 +229,13 @@ with zipfile.ZipFile(out_jar, "r") as check:
         CLASS_PREFIX + "nbs/NbsReader.class",
         CLASS_PREFIX + "nbs/MidiToNbsConverter.class",
         CLASS_PREFIX + "nbs/vanilla/VanillaStructureGenerator.class",
-        "resourcepacks/bridge_visuals/pack.mcmeta",
-        "resourcepacks/bridge_visuals/assets/extendednoteblock/items/conductor_wand.json",
+        "resourcepacks/bridge_items/pack.mcmeta",
+        "resourcepacks/bridge_items/assets/extendednoteblock/items/conductor_wand.json",
         BRIDGE_MIXIN_CONFIG,
         "fabric.mod.json",
     ]
     required.extend(
-        f"resourcepacks/bridge_visuals/assets/minecraft/items/{carrier}.json"
+        f"resourcepacks/bridge_items/assets/minecraft/items/{carrier}.json"
         for carrier in CARRIER_ITEMS
     )
     for entry in required:
@@ -272,7 +271,7 @@ with zipfile.ZipFile(out_jar, "r") as check:
         raise SystemExit(f"Registry/server bytecode references leaked into Paper Client: {bad_refs[:20]}")
 
     for carrier, (logical_id, vanilla_model) in CARRIER_ITEMS.items():
-        entry = f"resourcepacks/bridge_visuals/assets/minecraft/items/{carrier}.json"
+        entry = f"resourcepacks/bridge_items/assets/minecraft/items/{carrier}.json"
         raw = check.read(entry).decode("utf-8")
         if '"property": "minecraft:custom_model_data"' not in raw:
             raise SystemExit(f"Paper Client selector {carrier} is not CustomModelData-driven")
