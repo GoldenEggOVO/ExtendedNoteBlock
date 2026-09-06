@@ -104,7 +104,7 @@ class ServerResourcePackTest(unittest.TestCase):
                 output.writeframes(struct.pack("<hhhh", 1_000, -1_000, -750, 750))
             self.assertEqual(1_000, module.listener_channel_peak_pcm16(wav))
 
-    def test_transient_only_edge_anchor_uses_nearest_healthy_octave(self):
+    def test_out_of_window_edge_anchor_uses_nearest_healthy_source(self):
         low = module.RenderTask(0, 0, 0, "low")
         low_healthy = module.RenderTask(0, 0, 12, "low-healthy")
         high_healthy = module.RenderTask(0, 0, 108, "high-healthy")
@@ -116,8 +116,8 @@ class ServerResourcePackTest(unittest.TestCase):
         self.assertEqual(low_healthy, source)
         self.assertEqual(0.5, factor)
         source, factor = module.choose_source(high, tasks, peaks)
-        self.assertEqual(high_healthy, source)
-        self.assertEqual(2.0, factor)
+        self.assertEqual(high, source)
+        self.assertEqual(1.0, factor)
 
     def test_extreme_anchors_are_generated_from_the_healthy_source_window(self):
         low = module.RenderTask(0, 20, 0, "low")
@@ -143,6 +143,18 @@ class ServerResourcePackTest(unittest.TestCase):
         selected, factor = module.choose_source(edge, tasks, peaks)
 
         self.assertEqual(source, selected)
+        self.assertAlmostEqual(2.0 ** 0.5, factor)
+
+    def test_nearest_quiet_source_beats_distant_preferred_peak(self):
+        distant = module.RenderTask(0, 20, 78, "distant")
+        nearby = module.RenderTask(0, 20, 120, "nearby")
+        edge = module.RenderTask(0, 20, 126, "edge")
+        tasks = [distant, nearby, edge]
+        peaks = {distant: 521, nearby: 128, edge: 20_000}
+
+        selected, factor = module.choose_source(edge, tasks, peaks)
+
+        self.assertEqual(nearby, selected)
         self.assertAlmostEqual(2.0 ** 0.5, factor)
 
 

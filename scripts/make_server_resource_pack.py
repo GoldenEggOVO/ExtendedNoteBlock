@@ -57,7 +57,7 @@ OGG_QUALITY = 5
 MAX_PACK_BYTES = 50_000_000
 HOLD_SECONDS = 10.0
 TAIL_SECONDS = 2.0
-MIN_PREFERRED_SOURCE_PEAK = 512
+MIN_SOURCE_PEAK = 8
 HEALTHY_SOURCE_NOTE_MIN = 12
 HEALTHY_SOURCE_NOTE_MAX = 120
 TARGET_SOURCE_PEAK = 16_384
@@ -303,34 +303,29 @@ def probe_encoded_peak(path: Path, ffmpeg: str) -> int:
 
 def choose_source(task: RenderTask, tasks: list[RenderTask], peaks: dict[RenderTask, int]) -> tuple[RenderTask, float]:
     if task.bank == 128:
-        if peaks[task] < 8:
+        if peaks[task] < MIN_SOURCE_PEAK:
             raise RuntimeError(f"SoundFont rendered an inaudible percussion sample: {task.stem}")
         return task, 1.0
     if (HEALTHY_SOURCE_NOTE_MIN <= task.note <= HEALTHY_SOURCE_NOTE_MAX
-            and peaks[task] >= MIN_PREFERRED_SOURCE_PEAK):
+            and peaks[task] >= MIN_SOURCE_PEAK):
         return task, 1.0
 
     healthy_candidates = [
         candidate for candidate in tasks
         if candidate.bank == task.bank and candidate.program == task.program
         and HEALTHY_SOURCE_NOTE_MIN <= candidate.note <= HEALTHY_SOURCE_NOTE_MAX
-        and peaks[candidate] >= 8
+        and peaks[candidate] >= MIN_SOURCE_PEAK
     ]
-    preferred_candidates = [
-        candidate for candidate in healthy_candidates
-        if peaks[candidate] >= MIN_PREFERRED_SOURCE_PEAK
-    ]
-    if preferred_candidates:
-        candidates = preferred_candidates
-    elif healthy_candidates:
-        # Keep naturally quiet instruments inside the healthy note window.
-        # An edge render can have a loud transient but no audible body, so its
-        # raw PCM peak is not sufficient evidence that it is a useful source.
+    if healthy_candidates:
+        # Pitch distance takes priority over raw peak. Quiet samples can be
+        # normalized, while choosing a slightly louder source several octaves
+        # away creates severe repitch artifacts and may erase its audible body.
         candidates = healthy_candidates
     else:
         candidates = [
             candidate for candidate in tasks
-            if candidate.bank == task.bank and candidate.program == task.program and peaks[candidate] >= 8
+            if candidate.bank == task.bank and candidate.program == task.program
+            and peaks[candidate] >= MIN_SOURCE_PEAK
         ]
     if not candidates:
         raise RuntimeError(f"SoundFont rendered no audible samples for GM program {task.program}")
@@ -427,7 +422,7 @@ def metadata(smoke: bool) -> dict:
         "maximum_pack_bytes": MAX_PACK_BYTES,
         "mono_source_channel": "left (renderer is centered)",
         "sample_peak_normalization": {
-            "minimum_preferred_source_pcm16": MIN_PREFERRED_SOURCE_PEAK,
+            "minimum_source_pcm16": MIN_SOURCE_PEAK,
             "healthy_source_note_min": HEALTHY_SOURCE_NOTE_MIN,
             "healthy_source_note_max": HEALTHY_SOURCE_NOTE_MAX,
             "target_pcm16": TARGET_SOURCE_PEAK,
