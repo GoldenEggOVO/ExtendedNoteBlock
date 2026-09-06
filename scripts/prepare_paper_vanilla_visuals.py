@@ -30,6 +30,12 @@ if "import io.papermc.paper.event.packet.PlayerChunkLoadEvent;" not in text:
 if "import org.bukkit.Chunk;" not in text:
     text = text.replace("import org.bukkit.Bukkit;\n", "import org.bukkit.Bukkit;\nimport org.bukkit.Chunk;\n", 1)
 
+if "import org.bukkit.Instrument;" not in text:
+    text = text.replace("import org.bukkit.GameMode;\n", "import org.bukkit.GameMode;\nimport org.bukkit.Instrument;\n", 1)
+
+if "import org.bukkit.Note;" not in text:
+    text = text.replace("import org.bukkit.NamespacedKey;\n", "import org.bukkit.NamespacedKey;\nimport org.bukkit.Note;\n", 1)
+
 if "import org.bukkit.block.BlockState;" not in text:
     text = text.replace("import org.bukkit.block.Block;\n", "import org.bukkit.block.Block;\nimport org.bukkit.block.BlockState;\n", 1)
 
@@ -56,12 +62,10 @@ if "vanillaEnbChunks" not in text:
 enable_anchor = "        bridgeTypeKey = new NamespacedKey(this, \"enb_type\");\n"
 enable_replacement = enable_anchor + r'''        // These states are never written into the world. They are reserved by
         // the combined resource pack for coordinate-local, entity-free ENB visuals.
-        vanillaEnbOffState = Bukkit.createBlockData(
-                "minecraft:note_block[instrument=custom_head,note=24,powered=false]");
-        vanillaEnbOnState = Bukkit.createBlockData(
-                "minecraft:note_block[instrument=custom_head,note=24,powered=true]");
+        vanillaEnbOffState = createVanillaEnbState(false);
+        vanillaEnbOnState = createVanillaEnbState(true);
 '''
-if "vanillaEnbOffState = Bukkit.createBlockData" not in text:
+if "vanillaEnbOffState = createVanillaEnbState(false)" not in text:
     if enable_anchor not in text:
         raise SystemExit("Could not find onEnable bridge key anchor")
     text = text.replace(enable_anchor, enable_replacement, 1)
@@ -211,6 +215,15 @@ helper_anchor = r'''    // -----------------------------------------------------
 helper_block = r'''    // -------------------------------------------------------------------------
     // Resource-pack-only placed ENB rendering (no display entities)
     // -------------------------------------------------------------------------
+
+    private BlockData createVanillaEnbState(boolean powered) {
+        org.bukkit.block.data.type.NoteBlock state =
+                (org.bukkit.block.data.type.NoteBlock) Material.NOTE_BLOCK.createBlockData();
+        state.setInstrument(Instrument.CUSTOM_HEAD);
+        state.setNote(new Note(24));
+        state.setPowered(powered);
+        return state;
+    }
 
     private boolean isPaperClient(Player player) {
         Set<String> channels = player.getListeningPluginChannels();
