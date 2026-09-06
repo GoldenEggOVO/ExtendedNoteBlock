@@ -11,6 +11,7 @@
 - Raised Vorbis quality to 5, added high-precision SoXR fallback resampling and a short trimmed-tail fade, and enforced a 50,000,000-byte release ceiling.
 - Avoided destructive stereo phase cancellation by deriving positional mono audio and normalization from the centered renderer's left main channel.
 - Generated edge anchors outside MIDI 12-120 from the nearest healthy SoundFont source instead of trusting transient-only extreme presets.
+- Kept naturally quiet timbres inside that healthy source range instead of falling back to a misleading edge-note transient.
 
 See the [release notes](docs/releases/2.12.0.md).
 

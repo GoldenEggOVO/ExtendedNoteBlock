@@ -52,7 +52,7 @@ MELODIC_ANCHORS = tuple(range(0, 127, ANCHOR_STEP))
 DRUM_NOTES = tuple(range(35, 82))
 VOICE_ALIASES = 8
 ATTENUATION_DISTANCE = 64
-ENCODE_CACHE_VERSION = 7
+ENCODE_CACHE_VERSION = 8
 OGG_QUALITY = 5
 MAX_PACK_BYTES = 50_000_000
 HOLD_SECONDS = 10.0
@@ -310,13 +310,24 @@ def choose_source(task: RenderTask, tasks: list[RenderTask], peaks: dict[RenderT
             and peaks[task] >= MIN_PREFERRED_SOURCE_PEAK):
         return task, 1.0
 
-    candidates = [
+    healthy_candidates = [
         candidate for candidate in tasks
         if candidate.bank == task.bank and candidate.program == task.program
         and HEALTHY_SOURCE_NOTE_MIN <= candidate.note <= HEALTHY_SOURCE_NOTE_MAX
-        and peaks[candidate] >= MIN_PREFERRED_SOURCE_PEAK
+        and peaks[candidate] >= 8
     ]
-    if not candidates:
+    preferred_candidates = [
+        candidate for candidate in healthy_candidates
+        if peaks[candidate] >= MIN_PREFERRED_SOURCE_PEAK
+    ]
+    if preferred_candidates:
+        candidates = preferred_candidates
+    elif healthy_candidates:
+        # Keep naturally quiet instruments inside the healthy note window.
+        # An edge render can have a loud transient but no audible body, so its
+        # raw PCM peak is not sufficient evidence that it is a useful source.
+        candidates = healthy_candidates
+    else:
         candidates = [
             candidate for candidate in tasks
             if candidate.bank == task.bank and candidate.program == task.program and peaks[candidate] >= 8

@@ -134,6 +134,17 @@ class ServerResourcePackTest(unittest.TestCase):
         self.assertEqual(high_source, source)
         self.assertAlmostEqual(2.0 ** 0.5, factor)
 
+    def test_quiet_healthy_source_beats_loud_edge_transient(self):
+        source = module.RenderTask(0, 20, 120, "source")
+        edge = module.RenderTask(0, 20, 126, "edge")
+        tasks = [source, edge]
+        peaks = {source: 128, edge: 20_000}
+
+        selected, factor = module.choose_source(edge, tasks, peaks)
+
+        self.assertEqual(source, selected)
+        self.assertAlmostEqual(2.0 ** 0.5, factor)
+
 
 if __name__ == "__main__":
     unittest.main()
