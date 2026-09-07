@@ -445,6 +445,10 @@ reload_replacement = r'''            case "reload" -> {
                 loadListenerResourcePackSettings();
                 loadNotes();
 '''
+if "flushPendingSaves()" in text:
+    # Preserve the durable flush before re-reading either config or edit data.
+    reload_anchor = "                loadNotes();\n"
+    reload_replacement = "                reloadConfig();\n                loadListenerResourcePackSettings();\n                startTickers();\n" + reload_anchor
 if "                reloadConfig();\n                loadListenerResourcePackSettings();" not in text:
     if reload_anchor not in text:
         raise SystemExit("Could not find /enb reload anchor")

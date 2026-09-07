@@ -416,6 +416,7 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
             }
         }
 
+        // PREPARE_RENDER_SYNC: generated Paper Client synchronization belongs here.
     }
 
     private void updateReceivers(UUID worldId, boolean powered) {

@@ -211,6 +211,9 @@ if "private void sendRenderSnapshot" not in text:
 # reflected in client chunk meshes on the next tick.
 tick_anchor = "        tickProjectionSessions();\n    }\n"
 tick_replacement = "        tickProjectionSessions();\n        syncChangedRenderStates();\n    }\n"
+if "void startTickers()" in text:
+    tick_anchor = "        // PREPARE_RENDER_SYNC: generated Paper Client synchronization belongs here.\n"
+    tick_replacement = "        syncChangedRenderStates();\n"
 if "        syncChangedRenderStates();" not in text:
     if tick_anchor not in text:
         raise SystemExit("Could not find tickBridgeLogic tail")
