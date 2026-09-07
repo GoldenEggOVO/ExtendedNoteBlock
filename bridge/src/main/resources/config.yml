@@ -25,8 +25,14 @@ wand:
   max-selection-volume: 262144
 
 wireless-redstone:
-  # 1 tick matches normal redstone responsiveness.
+  # 1 tick matches normal redstone responsiveness. Music always ticks independently at 1 tick.
   poll-period-ticks: 1
+
+persistence:
+  # Coalesce ordinary block/command edits, avoiding a full YAML rewrite per block.
+  # Normal disable/reload flushes pending changes; abrupt termination may lose this window.
+  # Projection imports still synchronously save before acknowledging completion.
+  batch-delay-ticks: 10
 
 litematic-import:
   # Restores already placed vanilla carriers; does not place or generate blocks.
