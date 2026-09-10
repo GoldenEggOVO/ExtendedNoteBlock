@@ -96,7 +96,7 @@ ENB 官方聆听包提供物品与音频，CraftEngine 生成的包提供 ENB �
 
 1. 在 Litematica 中选择含 ENB 方块的区域，正常保存 `.litematic`。
 2. 客户端先读取服务器的 ENB 参数快照，再将数据连同各子区域写入文件。等待保存完成；权限或网络错误会明确提示。
-3. 加载文件、设置目标原点与旋转/镜像，用 Litematica 的命令粘贴功能完整粘贴。选择 **Replace All**，关闭 **changed-block-only**；带 ENB 参数时不支持其他替换模式，客户端会在发送命令前提示并取消。
+3. 加载文件、设置目标原点与旋转/镜像，用 Litematica 的命令粘贴功能完整粘贴。将 `pasteReplaceBehavior` 设为 **All**，关闭 **changed-block-only**。如果服务器装有 LitematicaFolia / Servux，还需将 `pasteUsingServux` 设为 **false**，以使用本版本接入的命令粘贴通道。带 ENB 参数时不支持其他替换模式，客户端会在发送命令前提示并取消。
 4. 粘贴完成后 ENB 自动提交参数。等待 ENB 成功消息，再右键音符盒检查参数或触发接收器试听。
 
 ### 粘贴音乐工坊投影
@@ -109,7 +109,7 @@ ENB 官方聆听包提供物品与音频，CraftEngine 生成的包提供 ENB �
 
 - 复制/导入权限 `extendednoteblockbridge.import` 默认仅 OP；目标区块必须已加载，服务端校验范围、数据大小和方块类型。
 - 保存时仅将 ENB 坐标转换为稳定的原版载体并附带参数，粘贴后由服务端还原为 CraftEngine 方块；不修改选区中的普通方块。
-- 自动导入接入命令粘贴的完成事件；Easy Place 逐块搭建、WorldEdit 独立命令或其他插件的独立粘贴不会触发该事件。
+- 自动导入接入命令粘贴的完成事件；Servux Direct Paste、Easy Place 逐块搭建、WorldEdit 独立命令或其他插件的独立粘贴不会触发该事件。
 - Easy Place 搭建工坊投影后，可按 **N → 恢复 ENB**，选择原始投影文件，填入发射器坐标及旋转/镜像，手动恢复。此入口保留兼容用途。
 - 未包含 ENB 参数的旧建筑投影、Full Fabric 自定义方块投影，不能从载体外观推算音乐参数。使用新客户端重新保存原建筑。
 - 第三方工具重新保存文件时可能删除 ENB 扩展字段。保留原始 `.litematic`，不要把外观相同当作参数完整。

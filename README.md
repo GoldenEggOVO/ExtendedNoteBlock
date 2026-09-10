@@ -49,7 +49,7 @@ Paper Server 使用 **CraftEngine 26.8.2** 注册 ENB 方块与物品；ENB 保�
 - **建筑复制：** 客户端安装 Litematica **0.28.8** 和 MaLiLib **0.29.6**，普通保存会附带服务器 ENB 参数，完整粘贴后自动导入。音乐工坊导出的 Paper 投影也支持自动导入。
 - **数据保留：** MIDI、乐器、力度、延音、延迟、淡入淡出、Pitch Cents 和接收器时间轴随结构保留。旋转、镜像和子区域位置用于转换坐标。
 
-复制权限默认仅 OP。当前自动导入接入 Litematica 的命令粘贴流程；Easy Place 逐块搭建仍使用手动恢复入口。详细安装、升级与兼容边界见[安装指南](docs/INSTALLATION.md)。
+复制权限默认仅 OP。自动导入使用 Litematica 命令粘贴：选择 Replace All、关闭 changed-block-only，并在装有 Servux / LitematicaFolia 时关闭 `pasteUsingServux`。Easy Place 逐块搭建仍使用手动恢复入口。详细安装、升级与兼容边界见[安装指南](docs/INSTALLATION.md)。
 
 ## 快速开始
 
