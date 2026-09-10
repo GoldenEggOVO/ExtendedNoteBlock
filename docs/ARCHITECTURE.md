@@ -12,33 +12,17 @@
 
 Full Fabric 与 Paper Client 不应同时安装。Paper 的编辑界面可以复制 Full 的视觉和交互，但不能直接继承依赖 Full Menu Registry 的容器界面；保存使用独立 Bridge Payload。
 
-## 原版载体与身份
+## CraftEngine 方块与 ENB 数据
 
-| ENB 对象 | Paper 实际载体 | 物品 CustomModelData string |
-| --- | --- | --- |
-| Extended Note Block | `minecraft:note_block` | `extendednoteblock:extended_note_block` |
-| Conductor Wand | `minecraft:blaze_rod` | `extendednoteblock:conductor_wand` |
-| Global Redstone Transmitter | `minecraft:red_concrete` | `extendednoteblock:global_redstone_transmitter` |
-| Global Redstone Receiver OFF | `minecraft:green_concrete` | `extendednoteblock:global_redstone_receiver` |
-| Global Redstone Receiver ON | `minecraft:redstone_block` | 世界方块状态，不是另一种背包载体 |
-| NBS Projection Receiver | `minecraft:purple_concrete` | `extendednoteblock:nbs_projection_receiver` |
+Paper Server 0.14.0 必须安装 CraftEngine 26.8.2。CraftEngine 注册 `enb:extended_note_block`、`enb:global_redstone_transmitter`、`enb:global_redstone_receiver`、`enb:nbs_projection_receiver` 与指挥棒物品，管理世界方块身份和资源包模型。ENB 的 `objects.yml`、`notes.yml`、`projections.yml` 继续保存完整音乐行为；注册方块状态本身不能代表这些参数。
 
-ENB 物品通过 Bukkit PDC 的 `enb_type` 识别逻辑类型，CustomModelData 的 `strings[0]` 用于视觉选择。放置后的世界对象按坐标登记，并持久化至插件数据文件。
-
-服务器仍然发送原版 ItemStack。内置 / 自动资源包使用 `minecraft:select` / `minecraft:custom_model_data` 匹配 ENB 字符串；不匹配时明确回退到载体的原版模型。因此普通音符盒、烈焰棒和混凝土保持原版外观。
+旧版原版载体根据已有 ENB 登记按每tick预算迁移，先备份数据并记录原始方块状态。普通世界方块不会因材质相同而被扫描转换。复制导入只能处理同型 ENB 或允许的原版载体，不能覆写其他 CraftEngine 自定义方块身份。
 
 ## 物品外观与世界方块外观
 
-Paper Client 内置物品包与自动下发的 Server Resources 复用同源物品模型。纯资源包不能读取服务端 PDC 或坐标，所以 Paper Server 不再尝试为无 Mod 玩家伪造世界方块：组合包不覆盖 `minecraft:blockstates`，插件也不发送 `sendBlockChange(s)`。这些玩家始终看到真实的音符盒 / 混凝土载体，不产生任何额外实体或方块刷新负担。
+服主将 Release 中 ENB CraftEngine 注册资源安装后，由 CraftEngine 根据该服务器的映射生成和下发最终资源包。原版玩家因此也可看到 ENB 世界方块。ENB 官方音色包使用可叠加的 `addResourcePack` 请求，避免替换服务器已下发的 CraftEngine 包。可选合并包需要服主提供真实生成文件和公开URL。
 
-Paper Server 向 Paper Client 同步维度内已登记对象的坐标、类型、ON/OFF 状态和音高类别。客户端只替换这些坐标的 baked model：
-
-- Extended Note Block 使用 `note % 12` 对应的 C / C# / D / … / B 模型，以及 powered `_on` 变体。
-- Transmitter、Receiver、Projection Receiver 使用对应的 Full Fabric OFF/ON 模型。
-- Receiver ON 在服务端仍是真实 `redstone_block`，提供原版强度 15 的红石输出。
-- 非 ENB 管理坐标保持原版渲染。
-
-登录、切换世界和频道注册时同步快照；对象变化时增量更新。检测到 Paper Client 插件频道后，声音改走 Bridge 协议，避免重复播放；Mod 客户端继续看到原本的按音高模型和 `_on` 变体。
+Paper Client 保持原版 Registry，同时保留 ENB 模型和音频协议。登录、切换世界和频道注册时同步对象快照；对象变化时增量更新。声音按有无 Paper Client 分流，避免重复播放。
 
 ## 声音
 
@@ -59,15 +43,13 @@ Paper Server 在玩家加入 40 ticks 后发送带固定 UUID、HTTPS URL 与 SH
 
 Paper Projection `.litematic` 根 NBT 额外保存 `ExtendedNoteBlockBridge`：相对坐标、MIDI、GM 乐器、力度、延音、延迟、pitch cents 与 Projection Timeline。
 
-Litematica 放置原版载体不会让 Paper 自动知道这些 ENB 参数。2.9.0 的 Paper Client 提供「恢复 ENB」界面，以已粘贴的红色发射器为定位点，读取元数据并应用平移、先镜像后旋转的坐标变换。
+Paper Client 2.13.0 的可选 Litematica 0.28.8 兼容层在保存前获取服务器权威快照，按子区域保存 ENB 扩展元数据。在命令粘贴成功结束后，将区域启用状态、原点、子区域位置、旋转、镜像和层范围应用到坐标，再上传完整数据。工坊投影原有 `ExtendedNoteBlockBridge` 根字段继续兼容；普通建筑使用独立的 `ExtendedNoteBlockSchematic` 根字段。
 
-客户端通过 `extendednoteblock:bridge_import` 上传 Begin / Batch / Finish / Cancel；服务端通过 `extendednoteblock:bridge_import_status` 回报接收、校验和持久化结果。协议仅含数字、坐标、UUID 与字符串，不引用自定义 Registry。每批最多 128 个音符，收到确认后再上传下一批；总数受客户端和服务端上限约束。
+新协议通过 `extendednoteblock:schematic` 请求快照或上传分片，通过 `extendednoteblock:schematic_result` 返回数据及结果。UUID绑定会话，长度、条目和时间轴有上限；跨世界、超时、错误顺序和截断均拒绝。服务端校验导入权限、范围、区块、方块类型和位置唯一性，全部目标预检通过后才修改。CraftEngine 转换中途失败会回滚原始物理方块，再开始任何 ENB 登记修改。
 
-Paper Server 0.9.0 校验 OP / 导入权限、世界、玩家与定位点距离、世界边界、已加载区块、全部载体和坐标唯一性，在最终提交前重新核对目标。提交恢复发射器、接收器、音符配置和投影曲目，并分别写入 `objects.yml`、`notes.yml`、`projections.yml`；正常坐标同步随后刷新模型。每个 YAML 文件先写临时文件再替换，保存失败时明确报告数据已应用但未成功落盘。
+数据写回现有 YAML，成功消息以保存结果为准。每个文件使用临时文件替换；这不是跨三个文件的数据库事务。磁盘保存失败会报告失败，服主应修复磁盘问题后重试。
 
-2.8.x 元数据没有淡入 / 淡出字段时沿用导出器原值 0 / 0。新导出文件显式保留这两个字段。导入的 Pitch Cents 会保存到普通 ENB 音符配置，后续 GUI / 指挥棒编辑其他参数时继续保留。
-
-**恢复需要手动点击；尚未自动监听 Litematica 放置事件，也尚未实现 Workshop → Receiver 直接上传。** 仅支持包含 ENB 根元数据的原始 Paper Projection 文件。
+旧的 `bridge_import` / `bridge_import_status` 手动恢复协议保留，用于 Easy Place 搭建的原始 Paper 工坊投影。自动流程不监听逐块 Easy Place，不接管其他插件的独立粘贴，也不能恢复已经丢失的 ENB 元数据。
 
 ## 无线红石
 

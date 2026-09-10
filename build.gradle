@@ -102,3 +102,26 @@ publishing {
         }
     }
 }
+
+repositories { maven { url = 'https://api.modrinth.com/maven' } }
+dependencies {
+    compileOnly project.hasProperty('litematicaJar') ? files(project.property('litematicaJar')) : 'maven.modrinth:litematica:0.28.8'
+    compileOnly project.hasProperty('malilibJar') ? files(project.property('malilibJar')) : 'maven.modrinth:malilib:0.29.6'
+    testImplementation sourceSets.client.output
+    testImplementation project.hasProperty('litematicaJar') ? files(project.property('litematicaJar')) : 'maven.modrinth:litematica:0.28.8'
+    testImplementation project.hasProperty('malilibJar') ? files(project.property('malilibJar')) : 'maven.modrinth:malilib:0.29.6'
+}
+
+configurations { litematicaSmokeMods }
+dependencies {
+    litematicaSmokeMods project.hasProperty('litematicaJar') ? files(project.property('litematicaJar')) : 'maven.modrinth:litematica:0.28.8'
+    litematicaSmokeMods project.hasProperty('malilibJar') ? files(project.property('malilibJar')) : 'maven.modrinth:malilib:0.29.6'
+}
+tasks.register('runPaperClientLitematicaSmoke', net.fabricmc.loom.task.prod.ClientProductionRunTask) {
+    dependsOn tasks.named('paperClientSmokeJar')
+    mods.setFrom(configurations.productionRuntimeMods, configurations.litematicaSmokeMods, tasks.named('paperClientSmokeJar'),
+            layout.buildDirectory.file("paper-bridge-client/ExtendedNoteBlock-Paper-Client-Fabric-${project.mod_version}-mc${project.minecraft_version}.jar"))
+    runDir = layout.buildDirectory.dir('run/paperClientLitematicaSmoke')
+    useXVFB = true
+    jvmArgs.addAll('-Xmx2G', '-Dorg.lwjgl.glfw.checkThread0=false', '-Denb.litematicaSmoke=true')
+}

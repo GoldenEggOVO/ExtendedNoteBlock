@@ -36,9 +36,12 @@ public final class LitematicImportReader {
         if (!Files.isRegularFile(path) || Files.size(path) > 64L * 1024 * 1024) {
             throw new IOException("Choose a .litematic file smaller than 64 MiB");
         }
+        CompoundTag root = NbtIo.readCompressed(path, NbtAccounter.create(128L * 1024 * 1024));
+        return readMetadata(compound(root, "ExtendedNoteBlockBridge"));
+    }
+
+    public static Source readMetadata(CompoundTag metadata) throws IOException {
         try {
-            CompoundTag root = NbtIo.readCompressed(path, NbtAccounter.create(128L * 1024 * 1024));
-            CompoundTag metadata = compound(root, "ExtendedNoteBlockBridge");
             if (integer(metadata, "FormatVersion") != 1
                     || !metadata.getString("Mode").orElse("").equals("paper-safe-carriers")) {
                 throw new IOException("Unsupported ENB metadata; export again from Paper Client's NBS Workshop");

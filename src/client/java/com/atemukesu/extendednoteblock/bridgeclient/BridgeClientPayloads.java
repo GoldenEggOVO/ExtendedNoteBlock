@@ -19,6 +19,9 @@ public final class BridgeClientPayloads {
     }
 
     public static void registerTypes() {
+        PayloadTypeRegistry.serverboundPlay().register(SchematicPayload.ID, SchematicPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(SchematicPayload.ID, SchematicPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(SchematicResultPayload.ID, SchematicResultPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(StartSoundPayload.ID, StartSoundPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(UpdateVolumePayload.ID, UpdateVolumePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(StopSoundPayload.ID, StopSoundPayload.CODEC);
@@ -252,6 +255,25 @@ public final class BridgeClientPayloads {
         public static final StreamCodec<FriendlyByteBuf, ImportStatusPayload> CODEC = StreamCodec.ofMember(
                 (payload, buf) -> buf.writeBytes(payload.bytes), buf -> new ImportStatusPayload(readImportBytes(buf)));
         @Override public Type<? extends CustomPacketPayload> type() { return ID; }
+    }
+
+    public record SchematicPayload(byte[] bytes) implements CustomPacketPayload {
+        public static final Type<SchematicPayload> ID = new Type<>(Identifier.parse("extendednoteblock:schematic"));
+        public static final StreamCodec<FriendlyByteBuf, SchematicPayload> CODEC = StreamCodec.ofMember(
+                (payload, buf) -> buf.writeBytes(payload.bytes), buf -> new SchematicPayload(readSchematicBytes(buf)));
+        @Override public Type<? extends CustomPacketPayload> type() { return ID; }
+    }
+    public record SchematicResultPayload(byte[] bytes) implements CustomPacketPayload {
+        public static final Type<SchematicResultPayload> ID = new Type<>(Identifier.parse("extendednoteblock:schematic_result"));
+        public static final StreamCodec<FriendlyByteBuf, SchematicResultPayload> CODEC = StreamCodec.ofMember(
+                (payload, buf) -> buf.writeBytes(payload.bytes), buf -> new SchematicResultPayload(readSchematicBytes(buf)));
+        @Override public Type<? extends CustomPacketPayload> type() { return ID; }
+    }
+    private static byte[] readSchematicBytes(FriendlyByteBuf buf) {
+        if (buf.readableBytes() > com.atemukesu.extendednoteblock.bridgeprotocol.SchematicTransfer.PART_SIZE + 1024) {
+            throw new IllegalArgumentException("Schematic payload too large");
+        }
+        byte[] bytes = new byte[buf.readableBytes()]; buf.readBytes(bytes); return bytes;
     }
 
     private static byte[] readImportBytes(FriendlyByteBuf buf) {

@@ -18,9 +18,9 @@ original = text
 # ---------------------------------------------------------------------------
 if "import net.kyori.adventure.text.Component;" not in text:
     text = text.replace(
-        "import com.atemukesu.extendednoteblock.bridgeprotocol.ProjectionImport;\n\n",
-        "import com.atemukesu.extendednoteblock.bridgeprotocol.ProjectionImport;\n\n"
-        "import net.kyori.adventure.text.Component;\n\n",
+        "import com.atemukesu.extendednoteblock.bridgeprotocol.ProjectionImport;\n",
+        "import com.atemukesu.extendednoteblock.bridgeprotocol.ProjectionImport;\n"
+        "import net.kyori.adventure.text.Component;\n",
         1,
     )
 

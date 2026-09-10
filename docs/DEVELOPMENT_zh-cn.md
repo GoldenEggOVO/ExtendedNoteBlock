@@ -65,6 +65,8 @@ python3 scripts/prepare_paper_custom_model_data.py
 python3 scripts/prepare_paper_interactions.py
 python3 scripts/prepare_paper_render_sync.py
 python3 scripts/prepare_paper_listener_pack.py
+python3 scripts/prepare_paper_craftengine.py
+python3 scripts/prepare_paper_schematic.py
 ./gradlew -p bridge clean build --stacktrace
 ```
 
@@ -105,3 +107,9 @@ CI 验证现有测试、Full 运行内容、Paper Client 的 Registry 安全与�
 构建并运行 Paper Client 打包脚本后，执行 `./gradlew runPaperClientSmoke`。Linux 需要 Xvfb 和可用的 OpenGL 驱动，CI 使用软件渲染。测试使用独立的 `src/paperClientSmoke/` 模块，等待资源加载后检查内置物品包是否启用、原版载体物品选择器、音符盒 GUI、原版 Block/Item Registry、MIDI 0–127 的 SoundEngine pitch，以及原版声音行为。测试模块不会进入正式 JAR。
 
 文档链接、版本号、图片引用与第三方声明检查：`python3 scripts/check_documentation.py`。完整 Python 回归检查：`python3 -m unittest discover -s scripts -p 'test_*.py' -v`。Paper 保存数据测试：`./gradlew -p bridge test`。Release 工作流检查启动成功标记，并从 `docs/releases/<mod_version>.md` 读取当前版本说明。
+
+## 2.13.0 构建补充
+
+Paper Server 0.14.0 使用公开 Maven 的 CraftEngine core/bukkit 26.8.2 API（运行时不内嵌），必须在原有 Paper 准备步骤后依次运行 `prepare_paper_craftengine.py`、`prepare_paper_schematic.py`。生成源码只用于构建；权威集成源在 `craftengine/integration/` 与 `scripts/templates/`。
+
+客户端编译兼容 Litematica 0.28.8 / MaLiLib 0.29.6，运行时可选。发布检查包含无 Litematica 与有 Litematica 两次 Paper Client 启动。CraftEngine 安装资源由 `scripts/make_craftengine_pack.py --resource-pack <server-resources.zip> --output <output.zip> --version 2.13.0` 生成；其中不含 CraftEngine 插件二进制或服务器私有配置。

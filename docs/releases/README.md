@@ -1,5 +1,7 @@
 # 历史发布文章
 
+- [2.13.0：CraftEngine 与 Litematica 自动复制](2.13.0.md)
+
 [文档中心](../README.md) · [CHANGELOG](../../CHANGELOG.md) · [当前 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.12.0-mc26.2)
 
 这些文章记录各版本发布时的功能、限制和安装变化。旧文章中的下载链接、Visuals ZIP 或实现细节可能已经过时；安装与排错请始终参考[当前安装指南](../INSTALLATION.md)。

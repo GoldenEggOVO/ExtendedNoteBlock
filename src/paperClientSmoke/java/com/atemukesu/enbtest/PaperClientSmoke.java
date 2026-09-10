@@ -91,6 +91,16 @@ public final class PaperClientSmoke implements ClientModInitializer {
                     throw new AssertionError("Paper note editor did not open");
                 }
                 checkLitematicImport();
+                if (Boolean.getBoolean("enb.litematicaSmoke")) {
+                    Class<?> schematic = Class.forName("fi.dy.masa.litematica.schematic.LitematicaSchematic");
+                    if (!com.atemukesu.extendednoteblock.bridgeclient.litematica.SchematicDataHolder.class.isAssignableFrom(schematic)) {
+                        throw new AssertionError("ENB schematic mixin did not apply");
+                    }
+                    Class.forName("fi.dy.masa.litematica.scheduler.tasks.TaskSaveSchematic");
+                    LitematicaIntegrationSmoke.check();
+                    Class.forName("fi.dy.masa.litematica.scheduler.tasks.TaskPasteSchematicPerChunkCommand");
+                    System.out.println("ENB_LITEMATICA_SMOKE_OK: optional integration loaded and all three targets transformed");
+                }
                 client.gui.setScreen(new NbsWorkshopScreen(null));
                 String importLabel = net.minecraft.network.chat.Component.translatable("gui.extendednoteblock.import.title").getString();
                 if (client.gui.screen().children().stream().noneMatch(child -> child instanceof net.minecraft.client.gui.components.Button button

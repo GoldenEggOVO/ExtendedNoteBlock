@@ -1,0 +1,561 @@
+{
+  "items": {
+    "enb:extended_note_block": {
+      "material": "paper",
+      "data": {
+        "item_name": "<!i><aqua>扩展音符盒"
+      },
+      "model": "extendednoteblock:item/extended_note_block",
+      "behavior": {
+        "type": "block_item",
+        "block": "enb:extended_note_block"
+      }
+    },
+    "enb:global_redstone_transmitter": {
+      "material": "paper",
+      "data": {
+        "item_name": "<!i><aqua>全局红石发射器"
+      },
+      "model": "extendednoteblock:item/global_redstone_transmitter",
+      "behavior": {
+        "type": "block_item",
+        "block": "enb:global_redstone_transmitter"
+      }
+    },
+    "enb:global_redstone_receiver": {
+      "material": "paper",
+      "data": {
+        "item_name": "<!i><aqua>全局红石接收器"
+      },
+      "model": "extendednoteblock:item/global_redstone_receiver",
+      "behavior": {
+        "type": "block_item",
+        "block": "enb:global_redstone_receiver"
+      }
+    },
+    "enb:nbs_projection_receiver": {
+      "material": "paper",
+      "data": {
+        "item_name": "<!i><aqua>NBS 投影接收器"
+      },
+      "model": "extendednoteblock:item/nbs_projection_receiver",
+      "behavior": {
+        "type": "block_item",
+        "block": "enb:nbs_projection_receiver"
+      }
+    },
+    "enb:conductor_wand": {
+      "material": "blaze_rod",
+      "data": {
+        "item_name": "<!i><aqua>指挥棒"
+      },
+      "model": "extendednoteblock:item/conductor_wand"
+    }
+  },
+  "blocks": {
+    "enb:extended_note_block": {
+      "settings": {
+        "item": "enb:extended_note_block",
+        "hardness": 0.8,
+        "resistance": 0.8,
+        "push_reaction": "block",
+        "is_redstone_conductor": true,
+        "sounds": {
+          "break": "minecraft:block.wood.break",
+          "place": "minecraft:block.wood.place",
+          "hit": "minecraft:block.wood.hit",
+          "step": "minecraft:block.wood.step",
+          "fall": "minecraft:block.wood.fall"
+        }
+      },
+      "states": {
+        "properties": {
+          "powered": {
+            "type": "boolean",
+            "default": false
+          },
+          "pitch": {
+            "type": "int",
+            "range": "0~11",
+            "default": 0
+          }
+        },
+        "appearances": {
+          "0_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/c"
+          },
+          "0_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/c_on"
+          },
+          "1_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/cs"
+          },
+          "1_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/cs_on"
+          },
+          "2_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/d"
+          },
+          "2_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/d_on"
+          },
+          "3_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/ds"
+          },
+          "3_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/ds_on"
+          },
+          "4_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/e"
+          },
+          "4_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/e_on"
+          },
+          "5_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/f"
+          },
+          "5_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/f_on"
+          },
+          "6_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/fs"
+          },
+          "6_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/fs_on"
+          },
+          "7_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/g"
+          },
+          "7_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/g_on"
+          },
+          "8_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/gs"
+          },
+          "8_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/gs_on"
+          },
+          "9_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/a"
+          },
+          "9_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/a_on"
+          },
+          "10_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/as"
+          },
+          "10_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/as_on"
+          },
+          "11_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/b"
+          },
+          "11_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/b_on"
+          }
+        },
+        "variants": {
+          "pitch=0,powered=false": {
+            "appearance": "0_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=0,powered=true": {
+            "appearance": "0_true",
+            "settings": {
+              "luminance": 15
+            }
+          },
+          "pitch=1,powered=false": {
+            "appearance": "1_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=1,powered=true": {
+            "appearance": "1_true",
+            "settings": {
+              "luminance": 15
+            }
+          },
+          "pitch=2,powered=false": {
+            "appearance": "2_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=2,powered=true": {
+            "appearance": "2_true",
+            "settings": {
+              "luminance": 15
+            }
+          },
+          "pitch=3,powered=false": {
+            "appearance": "3_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=3,powered=true": {
+            "appearance": "3_true",
+            "settings": {
+              "luminance": 15
+            }
+          },
+          "pitch=4,powered=false": {
+            "appearance": "4_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=4,powered=true": {
+            "appearance": "4_true",
+            "settings": {
+              "luminance": 15
+            }
+          },
+          "pitch=5,powered=false": {
+            "appearance": "5_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=5,powered=true": {
+            "appearance": "5_true",
+            "settings": {
+              "luminance": 15
+            }
+          },
+          "pitch=6,powered=false": {
+            "appearance": "6_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=6,powered=true": {
+            "appearance": "6_true",
+            "settings": {
+              "luminance": 15
+            }
+          },
+          "pitch=7,powered=false": {
+            "appearance": "7_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=7,powered=true": {
+            "appearance": "7_true",
+            "settings": {
+              "luminance": 15
+            }
+          },
+          "pitch=8,powered=false": {
+            "appearance": "8_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=8,powered=true": {
+            "appearance": "8_true",
+            "settings": {
+              "luminance": 15
+            }
+          },
+          "pitch=9,powered=false": {
+            "appearance": "9_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=9,powered=true": {
+            "appearance": "9_true",
+            "settings": {
+              "luminance": 15
+            }
+          },
+          "pitch=10,powered=false": {
+            "appearance": "10_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=10,powered=true": {
+            "appearance": "10_true",
+            "settings": {
+              "luminance": 15
+            }
+          },
+          "pitch=11,powered=false": {
+            "appearance": "11_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "pitch=11,powered=true": {
+            "appearance": "11_true",
+            "settings": {
+              "luminance": 15
+            }
+          }
+        }
+      },
+      "loot": {
+        "pools": [
+          {
+            "rolls": 1,
+            "entries": [
+              {
+                "type": "item",
+                "item": "enb:extended_note_block"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "enb:global_redstone_transmitter": {
+      "settings": {
+        "item": "enb:global_redstone_transmitter",
+        "hardness": 1.5,
+        "resistance": 6.0,
+        "push_reaction": "block",
+        "is_redstone_conductor": true,
+        "sounds": {
+          "break": "minecraft:block.stone.break",
+          "place": "minecraft:block.stone.place",
+          "hit": "minecraft:block.stone.hit",
+          "step": "minecraft:block.stone.step",
+          "fall": "minecraft:block.stone.fall"
+        }
+      },
+      "states": {
+        "properties": {
+          "powered": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "appearances": {
+          "0_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/global_redstone_transmitter"
+          },
+          "0_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/global_redstone_transmitter_on"
+          }
+        },
+        "variants": {
+          "powered=false": {
+            "appearance": "0_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "powered=true": {
+            "appearance": "0_true",
+            "settings": {
+              "luminance": 0
+            }
+          }
+        }
+      },
+      "loot": {
+        "pools": [
+          {
+            "rolls": 1,
+            "entries": [
+              {
+                "type": "item",
+                "item": "enb:global_redstone_transmitter"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "enb:global_redstone_receiver": {
+      "settings": {
+        "item": "enb:global_redstone_receiver",
+        "hardness": 1.5,
+        "resistance": 6.0,
+        "push_reaction": "block",
+        "is_redstone_conductor": true,
+        "sounds": {
+          "break": "minecraft:block.stone.break",
+          "place": "minecraft:block.stone.place",
+          "hit": "minecraft:block.stone.hit",
+          "step": "minecraft:block.stone.step",
+          "fall": "minecraft:block.stone.fall"
+        }
+      },
+      "states": {
+        "properties": {
+          "powered": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "appearances": {
+          "0_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/global_redstone_receiver"
+          },
+          "0_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/global_redstone_receiver_on"
+          }
+        },
+        "variants": {
+          "powered=false": {
+            "appearance": "0_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "powered=true": {
+            "appearance": "0_true",
+            "settings": {
+              "luminance": 15
+            }
+          }
+        }
+      },
+      "loot": {
+        "pools": [
+          {
+            "rolls": 1,
+            "entries": [
+              {
+                "type": "item",
+                "item": "enb:global_redstone_receiver"
+              }
+            ]
+          }
+        ]
+      },
+      "behavior": {
+        "type": "enb:receiver"
+      }
+    },
+    "enb:nbs_projection_receiver": {
+      "settings": {
+        "item": "enb:nbs_projection_receiver",
+        "hardness": 1.5,
+        "resistance": 6.0,
+        "push_reaction": "block",
+        "is_redstone_conductor": true,
+        "sounds": {
+          "break": "minecraft:block.stone.break",
+          "place": "minecraft:block.stone.place",
+          "hit": "minecraft:block.stone.hit",
+          "step": "minecraft:block.stone.step",
+          "fall": "minecraft:block.stone.fall"
+        }
+      },
+      "states": {
+        "properties": {
+          "powered": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "appearances": {
+          "0_false": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/nbs_projection_receiver"
+          },
+          "0_true": {
+            "auto_state": "solid",
+            "model": "extendednoteblock:block/nbs_projection_receiver_on"
+          }
+        },
+        "variants": {
+          "powered=false": {
+            "appearance": "0_false",
+            "settings": {
+              "luminance": 0
+            }
+          },
+          "powered=true": {
+            "appearance": "0_true",
+            "settings": {
+              "luminance": 15
+            }
+          }
+        }
+      },
+      "loot": {
+        "pools": [
+          {
+            "rolls": 1,
+            "entries": [
+              {
+                "type": "item",
+                "item": "enb:nbs_projection_receiver"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "block_state_mappings": {
+    "note_block[instrument=basedrum,note=0,powered=false]": "note_block[instrument=harp,note=0,powered=false]",
+    "note_block[instrument=basedrum,note=0,powered=true]": "note_block[instrument=harp,note=0,powered=true]",
+    "note_block[instrument=basedrum,note=1,powered=false]": "note_block[instrument=harp,note=1,powered=false]",
+    "note_block[instrument=basedrum,note=1,powered=true]": "note_block[instrument=harp,note=1,powered=true]",
+    "note_block[instrument=basedrum,note=2,powered=false]": "note_block[instrument=harp,note=2,powered=false]",
+    "note_block[instrument=basedrum,note=2,powered=true]": "note_block[instrument=harp,note=2,powered=true]",
+    "note_block[instrument=basedrum,note=3,powered=false]": "note_block[instrument=harp,note=3,powered=false]",
+    "note_block[instrument=basedrum,note=3,powered=true]": "note_block[instrument=harp,note=3,powered=true]",
+    "note_block[instrument=basedrum,note=4,powered=false]": "note_block[instrument=harp,note=4,powered=false]",
+    "note_block[instrument=basedrum,note=4,powered=true]": "note_block[instrument=harp,note=4,powered=true]",
+    "note_block[instrument=basedrum,note=5,powered=false]": "note_block[instrument=harp,note=5,powered=false]",
+    "note_block[instrument=basedrum,note=5,powered=true]": "note_block[instrument=harp,note=5,powered=true]",
+    "note_block[instrument=basedrum,note=6,powered=false]": "note_block[instrument=harp,note=6,powered=false]",
+    "note_block[instrument=basedrum,note=6,powered=true]": "note_block[instrument=harp,note=6,powered=true]",
+    "note_block[instrument=basedrum,note=7,powered=false]": "note_block[instrument=harp,note=7,powered=false]",
+    "note_block[instrument=basedrum,note=7,powered=true]": "note_block[instrument=harp,note=7,powered=true]",
+    "note_block[instrument=basedrum,note=8,powered=false]": "note_block[instrument=harp,note=8,powered=false]",
+    "note_block[instrument=basedrum,note=8,powered=true]": "note_block[instrument=harp,note=8,powered=true]",
+    "note_block[instrument=basedrum,note=9,powered=false]": "note_block[instrument=harp,note=9,powered=false]",
+    "note_block[instrument=basedrum,note=9,powered=true]": "note_block[instrument=harp,note=9,powered=true]",
+    "note_block[instrument=basedrum,note=10,powered=false]": "note_block[instrument=harp,note=10,powered=false]",
+    "note_block[instrument=basedrum,note=10,powered=true]": "note_block[instrument=harp,note=10,powered=true]",
+    "note_block[instrument=basedrum,note=11,powered=false]": "note_block[instrument=harp,note=11,powered=false]",
+    "note_block[instrument=basedrum,note=11,powered=true]": "note_block[instrument=harp,note=11,powered=true]",
+    "note_block[instrument=basedrum,note=12,powered=false]": "note_block[instrument=harp,note=12,powered=false]",
+    "note_block[instrument=basedrum,note=12,powered=true]": "note_block[instrument=harp,note=12,powered=true]",
+    "note_block[instrument=basedrum,note=13,powered=false]": "note_block[instrument=harp,note=13,powered=false]",
+    "note_block[instrument=basedrum,note=13,powered=true]": "note_block[instrument=harp,note=13,powered=true]",
+    "note_block[instrument=basedrum,note=14,powered=false]": "note_block[instrument=harp,note=14,powered=false]",
+    "note_block[instrument=basedrum,note=14,powered=true]": "note_block[instrument=harp,note=14,powered=true]"
+  }
+}

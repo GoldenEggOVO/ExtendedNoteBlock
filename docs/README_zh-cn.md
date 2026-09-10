@@ -1,8 +1,10 @@
 # Extended Note Block · 简体中文
 
+> Paper Server 0.14.0 必须安装 **CraftEngine 26.8.2** 和 ENB 注册资源。自动建筑复制需要客户端 **Litematica 0.28.8 / MaLiLib 0.29.6**。Full Fabric 不需要 CraftEngine。
+
 [项目首页](../README.md) · [文档中心](README.md) · [日本語](README_ja-jp.md)
 
-本仓库以简体中文维护主要用户文档。当前正式版为 **Full Fabric / Paper Client 2.12.0**、**Paper Server 0.12.0**，适用于 Minecraft **26.2**。
+本仓库以简体中文维护主要用户文档。当前正式版为 **Full Fabric / Paper Client 2.13.0**、**Paper Server 0.14.0**，适用于 Minecraft **26.2**。
 
 > [!IMPORTANT]
 > Full Fabric 与 Paper Client 不可同时安装。Paper / Purpur 服主安装 Paper Server；普通玩家可以使用原版客户端并加载服务器资源包。
@@ -17,4 +19,4 @@
 | [路线图](ROADMAP.md) | 贡献者 | 实机验证项与后续开发方向 |
 | [历史发布文章](releases/README.md) | 所有人 | 各版本详细更新说明 |
 
-[下载当前正式版](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.12.0-mc26.2) · [MIT License](../LICENSE)
+[下载当前正式版](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.0-mc26.2) · [MIT License](../LICENSE)

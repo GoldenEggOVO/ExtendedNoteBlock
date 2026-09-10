@@ -61,6 +61,8 @@ python3 scripts/prepare_paper_custom_model_data.py
 python3 scripts/prepare_paper_interactions.py
 python3 scripts/prepare_paper_render_sync.py
 python3 scripts/prepare_paper_listener_pack.py
+python3 scripts/prepare_paper_craftengine.py
+python3 scripts/prepare_paper_schematic.py
 ./gradlew -p bridge clean build --stacktrace
 ```
 
@@ -101,3 +103,9 @@ The outstanding gameplay checks and planned Paper features are tracked in [ROADM
 After building and packaging the Paper Client, run `./gradlew runPaperClientSmoke`. On Linux this requires Xvfb and an OpenGL-capable driver (CI uses software rendering). The separate `src/paperClientSmoke/` test mod is never packaged in release JARs. The task starts the actual Paper Client JAR with Fabric, waits for resource loading, checks the built-in item pack, opens the note editor, verifies vanilla Block/Item registries and checks MIDI 0–127 pitch factors plus vanilla attenuation/pitch behavior. It does not connect to a Paper server or verify audible output.
 
 `python3 scripts/check_documentation.py` validates local links, headings, screenshot references, current version markers, release-note indexes and third-party notices. `python3 -m unittest discover -s scripts -p 'test_*.py' -v` includes that integration check and the Mixin package guard. `./gradlew -p bridge test` runs the server payload validation tests. The release workflow requires these checks and the startup success marker, and publishes the matching `docs/releases/<mod_version>.md` file as release notes.
+
+## 2.13.0 构建补充
+
+Paper Server 0.14.0 使用公开 Maven 的 CraftEngine core/bukkit 26.8.2 API（运行时不内嵌），必须在原有 Paper 准备步骤后依次运行 `prepare_paper_craftengine.py`、`prepare_paper_schematic.py`。生成源码只用于构建；权威集成源在 `craftengine/integration/` 与 `scripts/templates/`。
+
+客户端编译兼容 Litematica 0.28.8 / MaLiLib 0.29.6，运行时可选。发布检查包含无 Litematica 与有 Litematica 两次 Paper Client 启动。CraftEngine 安装资源由 `scripts/make_craftengine_pack.py --resource-pack <server-resources.zip> --output <output.zip> --version 2.13.0` 生成；其中不含 CraftEngine 插件二进制或服务器私有配置。

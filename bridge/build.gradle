@@ -3,16 +3,30 @@ plugins {
 }
 
 group = 'com.goldenegggovo.extendednoteblock.bridge'
-version = '0.12.0'
+version = '0.14.0'
 def paperApiVersion = '26.2.build.119-stable'
 
 repositories {
     mavenCentral()
+    maven { url = 'https://repo.momirealms.net/releases/' }
     maven { url = 'https://repo.papermc.io/repository/maven-public/' }
 }
 
+// An explicit local development override; CI resolves the public API artifacts.
+def craftEngineJar = providers.gradleProperty('craftEngineJar')
+
 dependencies {
+    if (craftEngineJar.isPresent()) {
+        compileOnly files(craftEngineJar.get())
+        testImplementation files(craftEngineJar.get())
+    } else {
+        compileOnly 'net.momirealms:craft-engine-core:26.8.2'
+        compileOnly 'net.momirealms:craft-engine-bukkit:26.8.2'
+        testImplementation 'net.momirealms:craft-engine-core:26.8.2'
+        testImplementation 'net.momirealms:craft-engine-bukkit:26.8.2'
+    }
     compileOnly "io.papermc.paper:paper-api:${paperApiVersion}"
+    testImplementation 'org.mockito:mockito-core:5.20.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
     testImplementation 'org.mockbukkit.mockbukkit:mockbukkit-v26.2:4.116.1'
     testImplementation "io.papermc.paper:paper-api:${paperApiVersion}"
@@ -23,6 +37,8 @@ dependencies {
 sourceSets.main.java.srcDir('../src/main/java/com/atemukesu/extendednoteblock/bridgeprotocol')
 
 test {
+    systemProperty 'java.io.tmpdir', file('build/test-tmp').absolutePath
+    doFirst { file('build/test-tmp').mkdirs() }
     useJUnitPlatform()
     testLogging { exceptionFormat = 'full' }
     afterSuite { descriptor, result ->
