@@ -1,8 +1,8 @@
-# 待办与验证 · 2.12.0 基线
+# 待办与验证 · 2.13.0 基线
 
-[返回首页](../README.md) · [文档中心](README.md) · [2.12.0 更新说明](releases/2.12.0.md)
+[返回首页](../README.md) · [文档中心](README.md) · [2.13.0 更新说明](releases/2.13.0.md)
 
-当前基线为 Full Fabric / Paper Client **2.12.0** 与 Paper Server **0.12.0**。
+当前基线为 Full Fabric / Paper Client **2.13.0** 与 Paper Server **0.14.0**。
 
 ## 原版客户端自动资源包
 
@@ -11,15 +11,15 @@
 - [x] Paper Client 与原版聆听分流，避免重复发声；为同音重叠提供 8 个可分别停止的别名。
 - [x] 修复旧配置覆盖正式资源包、进服请求过早和状态不可见；增加 `/enb pack status|resend`。
 - [x] 对极端音区采样做峰值归一化，并在构建中拒绝实际解码后过轻的 OGG。
-- [x] 移除无 Mod 客户端假方块状态与独立 Visuals ZIP；世界方块稳定保持真实原版载体。
+- [x] ENB 不再自行发送坐标级假方块；世界方块身份与模型交由 CraftEngine 管理。
 - [x] OGG quality 4、高精度重采样和尾音淡出，并以 CI 强制包体小于 50,000,000 bytes。
 - [ ] 实际 Purpur 中验证首次下载、缓存、拒绝 / 下载失败、重连和 `/enb reload`。
-- [ ] 实际 Purpur 中确认无 Mod 玩家在放置、右键、区块重载后始终看到原版载体，Paper Client 仍显示完整模型。
+- [ ] 实际 Purpur 中确认 CraftEngine 资源包加载后，无 Mod 玩家在放置、右键、区块重载后看到正确 ENB 模型。
 - [ ] 真人试听不同乐器组、极低 / 极高音、密集和弦、长延音与投影停止行为。
 
 ## 已收到的游戏反馈
 
-用户已确认 Paper Client 的 GUI、音高与资源加载正常，自动资源包也能加载物品材质并正常聆听。2.12.0 针对已反馈的部分失真增加采样密度和编码质量；仍需真人试听不同音色与极端音区，记录具体 GM program / MIDI 后再做逐音色微调。
+此前用户已确认 Paper Client 的 GUI、音高与资源加载正常，自动资源包也能加载物品材质并正常聆听。2.12.0 针对已反馈的部分失真增加采样密度和编码质量；新复制流程仍需真人试听不同音色与极端音区。
 
 ## Paper Litematic 恢复
 
@@ -29,9 +29,9 @@
 - [x] 恢复对象、音符参数、Pitch Cents 和投影曲目，测试 YAML 重载持久化。
 - [ ] 实际 Purpur + Litematica 中验证「N → 恢复 ENB」、模型更新、右键参数及拉杆播放。
 - [ ] 实际服务器重启后确认对象、音符和投影仍可用。
-- [ ] 可选 Litematica 放置事件集成，实现免手动点击恢复。
+- [x] 可选 Litematica 命令粘贴完成事件集成，实现免手动点击恢复。
 
-当前恢复面向 ENB 原始 Paper Projection 文件，普通 Litematic 不包含可还原的 ENB 音乐数据。
+手动恢复面向 ENB 原始 Paper Projection 文件；新版本保存的建筑通过扩展元数据自动导入。没有 ENB 元数据的旧文件不能推算原始参数。
 
 ## 自动化验证
 
@@ -49,3 +49,10 @@ CI 启动实际 Paper Client JAR，等待资源加载，检查内置物品包、
 | 无线红石 | 按世界隔离、真实红石源、dedicated route 边沿控制 | 完整区块加载维持方案 |
 
 持续保持 Paper 的原版 Registry 安全，并保留 Full Fabric 的真实方块与原有导出路径。
+
+## CraftEngine 与自动复制
+
+- [x] Paper Server 必需 CraftEngine 26.8.2，发布 ENB 注册资源与可复现生成脚本。
+- [x] Litematica 保存建筑 ENB 元数据，命令粘贴建筑和工坊投影后自动导入。
+- [ ] 实机验收：原版客户端模型、多人复制后MIDI/时间轴试听，以及大建筑粘贴过程。
+- [ ] Easy Place 每块放置的参数自动应用；当前保留工坊投影手动恢复。

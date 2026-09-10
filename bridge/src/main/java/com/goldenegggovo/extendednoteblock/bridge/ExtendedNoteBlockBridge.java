@@ -54,6 +54,9 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
     private final Set<String> transmitterKeys = new HashSet<>();
     private final Set<String> receiverKeys = new HashSet<>();
     private final Set<String> projectionReceiverKeys = new HashSet<>();
+    private final Map<String, BlockRef> blockRefs = new HashMap<>();
+    private final Map<UUID, Set<String>> receiversByWorld = new HashMap<>();
+    private final Set<String> pendingSaves = new HashSet<>();
 
     private final Map<String, UUID> activeSounds = new HashMap<>();
     private final Map<String, BukkitTask> activeTasks = new HashMap<>();
@@ -71,6 +74,8 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
 
     private NamespacedKey bridgeTypeKey;
     private BukkitTask logicTask;
+    private BukkitTask projectionTask;
+    private BukkitTask saveTask;
     private BridgeProjectionImporter projectionImporter;
 
     @Override
@@ -96,8 +101,7 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
             getServer().getMessenger().registerOutgoingPluginChannel(this, channel);
         }
 
-        long pollPeriod = Math.max(1L, getConfig().getLong("wireless-redstone.poll-period-ticks", 1L));
-        logicTask = Bukkit.getScheduler().runTaskTimer(this, this::tickBridgeLogic, 1L, pollPeriod);
+        startTickers();
         projectionImporter = new BridgeProjectionImporter(this, new BridgeProjectionImporter.Target() {
             @Override public boolean accepts(World world, ProjectionImport.Pos pos, int type) {
                 BridgeItemType existing = objects.get(importKey(world, pos));
@@ -116,6 +120,8 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
     public void onDisable() {
         if (projectionImporter != null) projectionImporter.close();
         if (logicTask != null) logicTask.cancel();
+        if (projectionTask != null) projectionTask.cancel();
+        if (saveTask != null) saveTask.cancel();
         activeTasks.values().forEach(BukkitTask::cancel);
         projectionStopTasks.values().forEach(BukkitTask::cancel);
         activeTasks.clear();
@@ -126,6 +132,7 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
         saveNotes();
         saveObjects();
         saveProjections();
+        pendingSaves.clear();
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -141,15 +148,15 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
         indexObject(key, type);
         if (type == BridgeItemType.EXTENDED_NOTE_BLOCK) {
             notes.putIfAbsent(key, defaultNoteConfig());
-            saveNotes();
+            requestSave("notes");
         } else if (type == BridgeItemType.NBS_PROJECTION_RECEIVER) {
             projectionNotes.putIfAbsent(key, new ArrayList<>());
-            saveProjections();
+            requestSave("projections");
         } else if (type == BridgeItemType.GLOBAL_REDSTONE_RECEIVER) {
             Bukkit.getScheduler().runTask(this,
                     () -> setReceiverPowered(block, globalPower.getOrDefault(block.getWorld().getUID(), false)));
         }
-        saveObjects();
+        requestSave("objects");
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -166,13 +173,13 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
         if (type == BridgeItemType.EXTENDED_NOTE_BLOCK) {
             notes.remove(key);
             stopActive(key);
-            saveNotes();
+            requestSave("notes");
         } else if (type == BridgeItemType.NBS_PROJECTION_RECEIVER) {
             stopProjection(key);
             projectionNotes.remove(key);
-            saveProjections();
+            requestSave("projections");
         }
-        saveObjects();
+        requestSave("objects");
 
         if (event.getPlayer().getGameMode() != GameMode.CREATIVE) {
             event.setDropItems(false);
@@ -340,16 +347,21 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
     // Wireless redstone + dedicated projection routing
     // -------------------------------------------------------------------------
 
-    private void tickBridgeLogic() {
+    void startTickers() {
+        if (logicTask != null) logicTask.cancel();
+        if (projectionTask != null) projectionTask.cancel();
+        long period = Math.max(1L, getConfig().getLong("wireless-redstone.poll-period-ticks", 1L));
+        logicTask = Bukkit.getScheduler().runTaskTimer(this, this::tickBridgeLogic, 1L, period);
+        projectionTask = Bukkit.getScheduler().runTaskTimer(this, this::tickProjectionSessions, 1L, 1L);
+    }
+
+    void tickBridgeLogic() {
         Map<UUID, Boolean> poweredByWorld = new HashMap<>();
         Set<UUID> knownWorlds = new HashSet<>(globalPower.keySet());
 
         // Receiver worlds must also be evaluated at least once after startup so
         // an ON-state REDSTONE_BLOCK left by a previous shutdown cannot linger.
-        for (String receiverKey : receiverKeys) {
-            BlockRef receiverRef = parseKey(receiverKey);
-            if (receiverRef != null) knownWorlds.add(receiverRef.worldId());
-        }
+        knownWorlds.addAll(receiversByWorld.keySet());
 
         for (String transmitterKey : List.copyOf(transmitterKeys)) {
             BlockRef ref = parseKey(transmitterKey);
@@ -404,13 +416,11 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
             }
         }
 
-        tickProjectionSessions();
+        // PREPARE_RENDER_SYNC: generated Paper Client synchronization belongs here.
     }
 
     private void updateReceivers(UUID worldId, boolean powered) {
-        for (String receiverKey : List.copyOf(receiverKeys)) {
-            BlockRef ref = parseKey(receiverKey);
-            if (ref == null || !ref.worldId().equals(worldId)) continue;
+        for (String receiverKey : List.copyOf(receiversByWorld.getOrDefault(worldId, Set.of()))) {
             Block block = getLoadedBlock(receiverKey);
             if (block != null) setReceiverPowered(block, powered);
         }
@@ -463,7 +473,7 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
         }
     }
 
-    private void tickProjectionSessions() {
+    void tickProjectionSessions() {
         long now = System.nanoTime();
         for (Map.Entry<String, ProjectionSession> entry : List.copyOf(projectionSessions.entrySet())) {
             String receiverKey = entry.getKey();
@@ -550,6 +560,11 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
 
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "reload" -> {
+                if (!flushPendingSaves()) {
+                    requestSave(pendingSaves.iterator().next());
+                    sender.sendMessage("Reload aborted: pending changes could not be saved; see the server log.");
+                    return true;
+                }
                 loadNotes();
                 loadObjects();
                 loadProjections();
@@ -625,8 +640,8 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
             indexObject(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
             notes.put(key, new NoteConfig(note, instrument, velocity, sustain, delay, fadeIn, fadeOut,
                     notes.getOrDefault(key, defaultNoteConfig()).pitchCents));
-            saveObjects();
-            saveNotes();
+            requestSave("objects");
+            requestSave("notes");
             player.sendMessage("Configured ENB note block: MIDI " + note + ", instrument " + instrument);
         } catch (NumberFormatException e) {
             player.sendMessage("All values must be integers.");
@@ -667,9 +682,9 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
         projectionNotes.remove(key);
         stopActive(key);
         stopProjection(key);
-        saveObjects();
-        saveNotes();
-        saveProjections();
+        requestSave("objects");
+        requestSave("notes");
+        requestSave("projections");
         player.sendMessage(removed == null ? "This block was not managed by ENB." : "Removed ENB identity from this vanilla block.");
     }
 
@@ -722,7 +737,7 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
         try {
             int value = Integer.parseInt(args[3]);
             int changed = bulkSet(selection, args[2].toLowerCase(Locale.ROOT), value);
-            saveNotes();
+            requestSave("notes");
             player.sendMessage("Updated " + changed + " Extended Note Block(s).");
         } catch (IllegalArgumentException e) {
             player.sendMessage(e.getMessage());
@@ -776,7 +791,7 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
             case "clear" -> {
                 stopProjection(receiverKey);
                 projectionNotes.put(receiverKey, new ArrayList<>());
-                saveProjections();
+                requestSave("projections");
                 player.sendMessage("Projection timeline cleared.");
             }
             case "test" -> {
@@ -797,7 +812,7 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
                     int pitchCents = args.length > 7 ? clamp(Integer.parseInt(args[7]), -2400, 2400) : 0;
                     projectionNotes.computeIfAbsent(receiverKey, ignored -> new ArrayList<>())
                             .add(new ProjectionNote(instrument, note, velocity, sustain, pitchCents, delayMs));
-                    saveProjections();
+                    requestSave("projections");
                     player.sendMessage("Added projection note at " + delayMs + "ms.");
                 } catch (NumberFormatException e) {
                     player.sendMessage("Projection values must be integers.");
@@ -882,8 +897,8 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
             objects.put(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
             indexObject(key, BridgeItemType.EXTENDED_NOTE_BLOCK);
             notes.putIfAbsent(key, defaultNoteConfig());
-            saveObjects();
-            saveNotes();
+            requestSave("objects");
+            requestSave("notes");
         }
         return block;
     }
@@ -925,6 +940,8 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
     }
 
     private BlockRef parseKey(String key) {
+        BlockRef cached = blockRefs.get(key);
+        if (cached != null) return cached;
         try {
             String[] parts = key.split(":");
             if (parts.length != 4) return null;
@@ -947,12 +964,20 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
         transmitterKeys.clear();
         receiverKeys.clear();
         projectionReceiverKeys.clear();
+        blockRefs.clear();
+        receiversByWorld.clear();
         for (Map.Entry<String, BridgeItemType> entry : objects.entrySet()) {
             indexObject(entry.getKey(), entry.getValue());
         }
     }
 
     private void indexObject(String key, BridgeItemType type) {
+        BlockRef ref = parseKey(key);
+        if (ref != null) {
+            blockRefs.put(key, ref);
+            if (type == BridgeItemType.GLOBAL_REDSTONE_RECEIVER)
+                receiversByWorld.computeIfAbsent(ref.worldId(), ignored -> new HashSet<>()).add(key);
+        }
         switch (type) {
             case GLOBAL_REDSTONE_TRANSMITTER -> transmitterKeys.add(key);
             case GLOBAL_REDSTONE_RECEIVER -> receiverKeys.add(key);
@@ -963,6 +988,14 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
     }
 
     private void unindexObject(String key, BridgeItemType type) {
+        BlockRef ref = blockRefs.remove(key);
+        if (ref != null && type == BridgeItemType.GLOBAL_REDSTONE_RECEIVER) {
+            Set<String> worldReceivers = receiversByWorld.get(ref.worldId());
+            if (worldReceivers != null) {
+                worldReceivers.remove(key);
+                if (worldReceivers.isEmpty()) receiversByWorld.remove(ref.worldId());
+            }
+        }
         switch (type) {
             case GLOBAL_REDSTONE_TRANSMITTER -> transmitterKeys.remove(key);
             case GLOBAL_REDSTONE_RECEIVER -> receiverKeys.remove(key);
@@ -1066,6 +1099,32 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
             }
         }
         return saveYaml(yml, "projections.yml");
+    }
+
+    private void requestSave(String name) {
+        pendingSaves.add(name);
+        if (saveTask == null && isEnabled()) {
+            long delay = Math.max(1L, Math.min(200L, getConfig().getLong("persistence.batch-delay-ticks", 10L)));
+            saveTask = Bukkit.getScheduler().runTaskLater(this, () -> {
+                saveTask = null;
+                if (!flushPendingSaves() && isEnabled()) requestSave(name);
+            }, delay);
+        }
+    }
+
+    /** Ordinary edits coalesce; import acknowledgements keep their synchronous durable-save path. */
+    private boolean flushPendingSaves() {
+        if (saveTask != null) { saveTask.cancel(); saveTask = null; }
+        for (String name : List.copyOf(pendingSaves)) {
+            boolean saved = switch (name) {
+                case "notes" -> saveNotes();
+                case "objects" -> saveObjects();
+                case "projections" -> saveProjections();
+                default -> throw new IllegalArgumentException("Unknown save: " + name);
+            };
+            if (saved) pendingSaves.remove(name);
+        }
+        return pendingSaves.isEmpty();
     }
 
     private boolean saveYaml(org.bukkit.configuration.file.YamlConfiguration yml, String filename) {

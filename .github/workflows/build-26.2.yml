@@ -116,6 +116,21 @@ jobs:
           name: paper-client-startup-logs
           path: build/run/paperClientSmoke/logs/
           if-no-files-found: ignore
+      - name: Launch Paper Client with supported Litematica
+        timeout-minutes: 10
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 'true'
+          ALSOFT_DRIVERS: 'null'
+        run: |
+          ./gradlew runPaperClientLitematicaSmoke --stacktrace
+          grep -q 'ENB_LITEMATICA_SMOKE_OK' build/run/paperClientLitematicaSmoke/logs/latest.log
+      - name: Preserve Litematica startup logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-client-litematica-startup-logs
+          path: build/run/paperClientLitematicaSmoke/logs/
+          if-no-files-found: ignore
       - name: Install listener-pack audio tools
         run: |
           sudo apt-get update
@@ -127,6 +142,8 @@ jobs:
           PACK="$(find build/server-resource-pack -maxdepth 1 -type f -name '*.zip' | head -n 1)"
           test -n "$PACK"
           test "$(stat -c %s "$PACK")" -lt 50000000
+          MOD_VERSION="$(grep '^mod_version=' gradle.properties | cut -d= -f2)"
+          python3 scripts/make_craftengine_pack.py --resource-pack "$PACK" --output "build/craftengine/ExtendedNoteBlock-CraftEngine-${MOD_VERSION}-mc26.2.zip" --version "$MOD_VERSION"
       - name: Verify Full Fabric runtime jar
         shell: bash
         run: |
@@ -177,6 +194,12 @@ jobs:
           name: extendednoteblock-server-resources-26.2
           path: build/server-resource-pack/*.zip
           if-no-files-found: error
+      - name: Upload ENB CraftEngine registration resources
+        uses: actions/upload-artifact@v4
+        with:
+          name: extendednoteblock-craftengine-26.2
+          path: build/craftengine/*.zip
+          if-no-files-found: error
 
   build-bridge:
     needs: quality-gate
@@ -206,6 +229,10 @@ jobs:
           GENERATED_SHA256="$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
           python3 ../scripts/prepare_paper_listener_pack.py
           test "$GENERATED_SHA256" = "$(sha256sum src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java)"
+      - name: Prepare required CraftEngine and schematic integration
+        run: |
+          python3 ../scripts/prepare_paper_craftengine.py
+          python3 ../scripts/prepare_paper_schematic.py
       - name: Verify vanilla-safe identity, interaction, render and listener bridge
         run: |
           grep -q 'PersistentDataType.STRING' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
@@ -226,7 +253,7 @@ jobs:
           grep -q 'PlayerResourcePackStatusEvent' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'status.equals("ACCEPTED")' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'status.equals("DOWNLOADED")' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'setResourcePack(listenerPackId, listenerPackUrl, listenerPackSha1' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'addResourcePack(listenerPackId, listenerPackUrl, listenerPackSha1' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'ListenerResourcePackConfig.resolve' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'sendListenerResourcePack(event.getPlayer(), true), 40L' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'case "pack" -> handlePackCommand' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
@@ -263,6 +290,9 @@ jobs:
           jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/BridgeProjectionImporter.class'
           jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/ListenerSoundResolver.class'
           jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/ListenerResourcePackConfig.class'
+          jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/EnbCraftEngine.class'
+          jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/BridgeSchematicTransfer.class'
+          unzip -p "$JAR" plugin.yml | grep -Fq 'depend: [CraftEngine]'
           unzip -p "$JAR" config.yml | grep -q '__ENB_RESOURCE_PACK_URL__'
           unzip -p "$JAR" config.yml | grep -q '__ENB_RESOURCE_PACK_SHA1__'
           unzip -p "$JAR" enb-release-pack.properties | grep -q '__ENB_RESOURCE_PACK_URL__'
@@ -309,6 +339,11 @@ jobs:
         with:
           name: extendednoteblock-server-resources-26.2
           path: artifacts/server-resources
+      - name: Download ENB CraftEngine registration resources
+        uses: actions/download-artifact@v4
+        with:
+          name: extendednoteblock-craftengine-26.2
+          path: artifacts/craftengine
 
       - name: Prepare release files
         shell: bash
@@ -333,6 +368,7 @@ jobs:
           cp "$CLIENT_JAR" "release/ExtendedNoteBlock-Paper-Client-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
           cp "$SERVER_JAR" "release/ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar"
           cp "$SERVER_PACK_ZIP" "release/ExtendedNoteBlock-Server-Resources-${MOD_VERSION}-mc${MC_VERSION}.zip"
+          cp artifacts/craftengine/*.zip release/
 
           PACK_FILE="release/ExtendedNoteBlock-Server-Resources-${MOD_VERSION}-mc${MC_VERSION}.zip"
           SERVER_FILE="release/ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar"

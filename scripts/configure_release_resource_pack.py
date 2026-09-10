@@ -51,6 +51,8 @@ def configure_jar(jar: Path, url: str, sha1: str) -> None:
                     data = (configured_resources[info.filename]
                             if info.filename in configured_resources else source.read(info.filename))
                     target.writestr(info, data)
+            # Windows cannot replace the original JAR while its ZipFile handle is open.
+            source.close()
             temporary.replace(jar)
         finally:
             if temporary.exists():

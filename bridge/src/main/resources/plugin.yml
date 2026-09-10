@@ -3,15 +3,18 @@ version: '${version}'
 main: com.goldenegggovo.extendednoteblock.bridge.ExtendedNoteBlockBridge
 api-version: '26.2'
 author: GoldenEggOVO
-description: Paper/Purpur bridge for ExtendedNoteBlock Fabric clients using vanilla item and block carriers.
+description: Paper/Purpur ExtendedNoteBlock integration requiring CraftEngine, with complete Litematica metadata copying.
+depend: [CraftEngine]
 commands:
   enb:
     description: Manage ExtendedNoteBlock bridge objects, conductor selections and NBS projections
     usage: /enb <help|give|set|info|remove|play|wand|projection|pack|list|reload>
     permission: extendednoteblockbridge.use
 permissions:
+  extendednoteblockbridge.admin:
+    default: op
   extendednoteblockbridge.import:
-    description: Restore ENB identities and music data from a pasted Litematic
+    description: Copy and restore ENB identities and complete music data through Litematica
     default: op
   extendednoteblockbridge.use:
     default: op

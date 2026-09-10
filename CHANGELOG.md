@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.13.0 / Paper Server 0.14.0
+
+CraftEngine 成为 Paper Server 必需插件；Litematica 保存建筑完整 ENB 参数，并在命令粘贴建筑及音乐工坊投影后自动导入。[详细说明](docs/releases/2.13.0.md)。
+
 [Documentation](docs/README.md) · [Detailed release notes](docs/releases/README.md) · [Latest release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.12.0-mc26.2)
 
 ## Unreleased — Minecraft 26.2

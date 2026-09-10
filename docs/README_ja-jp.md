@@ -1,14 +1,16 @@
 # Extended Note Block · Minecraft 26.2
 
+> Paper Server 0.14.0 必须安装 **CraftEngine 26.8.2** 和 ENB 注册资源。自动建筑复制需要客户端 **Litematica 0.28.8 / MaLiLib 0.29.6**。Full Fabric 不需要 CraftEngine。
+
 [简体中文](../README.md) · **日本語** · [ドキュメント一覧](README.md) · [開発ガイド](DEVELOPMENT_ja-jp.md)
 
 ![Extended Note Block Banner](assets/ENB-Banner.webp)
 
 Extended Note Block は、MIDI 0–127 に対応する拡張音符ブロック、指揮棒、ワイヤレスレッドストーン、NBS 音楽ワークショップを Minecraft に追加します。NBS / MIDI / 一般的な音声ファイルの読み込み、試聴、音楽構造の書き出しにも対応します。
 
-現在のリリースは **Full Fabric / Paper Client 2.12.0**、**Paper Server 0.12.0** です。Minecraft **26.2** と Java **25** を対象としています。
+現在のリリースは **Full Fabric / Paper Client 2.13.0**、**Paper Server 0.14.0** です。Minecraft **26.2** と Java **25** を対象としています。
 
-[2.12.0 をダウンロード](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.12.0-mc26.2) · [機能紹介](FEATURES.md) · [インストールガイド（中文）](INSTALLATION.md)
+[2.13.0 をダウンロード](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.0-mc26.2) · [機能紹介](FEATURES.md) · [インストールガイド（中文）](INSTALLATION.md)
 
 ## エディションの選択
 
@@ -41,7 +43,7 @@ Paper Server は Note Block や Concrete などのバニラブロックをキャ
 - [インストール・コマンド・トラブルシューティング（中文）](INSTALLATION.md)
 - [Paper アーキテクチャ（中文）](ARCHITECTURE.md)
 - [開発ガイド](DEVELOPMENT_ja-jp.md)
-- [2.12.0 リリースノート（中文）](releases/2.12.0.md)
+- [2.13.0 リリースノート（中文）](releases/2.13.0.md)
 
 ## Credits / License
 

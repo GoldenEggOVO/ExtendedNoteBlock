@@ -38,6 +38,14 @@ public final class PaperBridgeClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         registerBuiltInItemPack();
+        FabricLoader loader = FabricLoader.getInstance();
+        if (loader.isModLoaded("litematica") &&
+                (!loader.getModContainer("litematica").orElseThrow().getMetadata().getVersion().getFriendlyString().equals("0.28.8")
+                || !loader.getModContainer("malilib").map(mod -> mod.getMetadata().getVersion().getFriendlyString().equals("0.29.6")).orElse(false))) {
+            String warning = "ENB: automatic schematic metadata copy is disabled. Use Litematica 0.28.8 and MaLiLib 0.29.6; other versions do not preserve ENB music settings automatically.";
+            LOGGER.warn(warning);
+            ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> client.execute(() -> SchematicTransferClient.message(warning)));
+        }
         BridgeBlockRenderModels.register();
         ConfigManager.initialize();
 
@@ -92,10 +100,16 @@ public final class PaperBridgeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.ImportStatusPayload.ID,
                 (payload, context) -> context.client().execute(() -> BridgeImportManager.receive(payload.bytes())));
 
+        ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.SchematicPayload.ID,
+                (payload, context) -> context.client().execute(() -> SchematicTransferClient.receive(payload.bytes())));
+        ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.SchematicResultPayload.ID,
+                (payload, context) -> context.client().execute(() -> SchematicTransferClient.receive(payload.bytes())));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> SchematicTransferClient.disconnect());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> BridgeWorldObjects.clear());
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             BridgeImportManager.tick(client);
+            SchematicTransferClient.tick(client);
             ClientSoundManager.tickPauseRecovery(client);
             while (openNbsWorkshopKey.consumeClick()) {
                 if (client.gui.screen() == null) {

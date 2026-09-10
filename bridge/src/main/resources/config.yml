@@ -25,17 +25,34 @@ wand:
   max-selection-volume: 262144
 
 wireless-redstone:
-  # 1 tick matches normal redstone responsiveness.
+  # 1 tick matches normal redstone responsiveness. Music always ticks independently at 1 tick.
   poll-period-ticks: 1
 
+persistence:
+  # Coalesce ordinary block/command edits, avoiding a full YAML rewrite per block.
+  # Normal disable/reload flushes pending changes; abrupt termination may lose this window.
+  # Projection imports still synchronously save before acknowledging completion.
+  batch-delay-ticks: 10
+
 litematic-import:
-  # Restores already placed vanilla carriers; does not place or generate blocks.
+  # Legacy workshop restore plus automatic Litematica ENB metadata copying.
   max-notes: 75000
   anchor-range: 64
   checks-per-tick: 512
+  # Every source/target ENB position must be within this distance of the player.
+  # Copying never loads/generates chunks. Hard upper bound: 2048 blocks.
+  schematic-range: 256
 
-# Global Redstone Receiver implementation note:
+# Legacy Global Redstone Receiver carrier/rollback implementation note:
 # its inventory/placement carrier is GREEN_CONCRETE. While the receiver is ON,
 # the plugin temporarily changes the world block to REDSTONE_BLOCK so vanilla
 # redstone components receive a real 15-strength signal. It changes back to
 # GREEN_CONCRETE when the global signal turns off.
+
+# ENB retains its existing identity, note and projection data. Before converting
+# known carriers, the backend backs up those files and journals original states.
+craftengine:
+  enabled: true
+  migrate-known-blocks: true
+  migrations-per-tick: 32
+  rollback: false

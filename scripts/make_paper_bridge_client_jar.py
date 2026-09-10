@@ -25,6 +25,7 @@ OUT_DIR = ROOT / "build" / "paper-bridge-client"
 ASSET_ROOT = ROOT / "src" / "main" / "resources" / "assets" / "extendednoteblock"
 VISUAL_DIRS = ("blockstates/", "items/", "lang/", "models/", "textures/")
 BRIDGE_MIXIN_CONFIG = "extendednoteblock.bridgeclient.mixins.json"
+LITEMATICA_MIXIN_CONFIG = "extendednoteblock.litematica.mixins.json"
 
 
 def read_properties(path: Path) -> dict[str, str]:
@@ -157,7 +158,7 @@ metadata = {
     "entrypoints": {
         "client": ["com.atemukesu.extendednoteblock.bridgeclient.PaperBridgeClient"]
     },
-    "mixins": [BRIDGE_MIXIN_CONFIG],
+    "mixins": [BRIDGE_MIXIN_CONFIG, LITEMATICA_MIXIN_CONFIG],
     "depends": {
         "fabricloader": f">={loader_version}",
         "minecraft": mc_version,
@@ -195,6 +196,14 @@ with zipfile.ZipFile(source_jar, "r") as zin, zipfile.ZipFile(
         zout.writestr("resourcepacks/bridge_items/pack.png", pack_icon)
     zout.writestr("resourcepacks/bridge_items/pack.mcmeta", built_in_pack_metadata())
     zout.writestr(BRIDGE_MIXIN_CONFIG, bridge_mixin_metadata())
+    zout.writestr(LITEMATICA_MIXIN_CONFIG, json.dumps({
+        "required": True,
+        "package": "com.atemukesu.extendednoteblock.bridgeclient.litematica.mixin",
+        "plugin": "com.atemukesu.extendednoteblock.bridgeclient.litematica.LitematicaMixinPlugin",
+        "compatibilityLevel": "JAVA_25",
+        "client": ["SchematicMixin", "SaveSchematicMixin", "PasteSchematicMixin"],
+        "injectors": {"defaultRequire": 1},
+    }))
     zout.writestr(
         "fabric.mod.json",
         json.dumps(metadata, ensure_ascii=False, indent=2).encode("utf-8"),
@@ -221,6 +230,8 @@ with zipfile.ZipFile(out_jar, "r") as check:
         CLASS_PREFIX + "bridgeclient/BridgeImportScreen.class",
         CLASS_PREFIX + "bridgeclient/LitematicImportReader.class",
         CLASS_PREFIX + "bridgeprotocol/ProjectionImport.class",
+        CLASS_PREFIX + "bridgeprotocol/SchematicTransfer.class",
+        LITEMATICA_MIXIN_CONFIG,
         CLASS_PREFIX + "sound/ClientSoundManager.class",
         CLASS_PREFIX + "sound/SoundPackManager.class",
         CLASS_PREFIX + "client/gui/screen/NbsWorkshopScreen.class",

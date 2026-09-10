@@ -43,6 +43,10 @@ if "bridge_note_edit" not in text:
 # ---------------------------------------------------------------------------
 enable_anchor = """        getServer().getPluginManager().registerEvents(this, this);\n        for (String channel : List.of(START_SOUND, UPDATE_VOLUME, STOP_SOUND, START_ADV_SOUND, ADV_UPDATE)) {\n            getServer().getMessenger().registerOutgoingPluginChannel(this, channel);\n        }\n\n        long pollPeriod = Math.max(1L, getConfig().getLong(\"wireless-redstone.poll-period-ticks\", 1L));\n"""
 enable_replacement = """        getServer().getPluginManager().registerEvents(this, this);\n        for (String channel : List.of(START_SOUND, UPDATE_VOLUME, STOP_SOUND, START_ADV_SOUND, ADV_UPDATE, NOTE_EDIT)) {\n            getServer().getMessenger().registerOutgoingPluginChannel(this, channel);\n        }\n        getServer().getMessenger().registerIncomingPluginChannel(this, NOTE_SAVE,\n                (channel, player, message) -> handleNoteSave(player, message));\n\n        long pollPeriod = Math.max(1L, getConfig().getLong(\"wireless-redstone.poll-period-ticks\", 1L));\n"""
+if "void startTickers()" in text:
+    old_timer = '        long pollPeriod = Math.max(1L, getConfig().getLong("wireless-redstone.poll-period-ticks", 1L));\n'
+    enable_anchor = enable_anchor.replace(old_timer, '        startTickers();\n')
+    enable_replacement = enable_replacement.replace(old_timer, '        startTickers();\n')
 if "registerIncomingPluginChannel(this, NOTE_SAVE" not in text:
     if enable_anchor not in text:
         raise SystemExit("Could not find onEnable plugin-messaging anchor")

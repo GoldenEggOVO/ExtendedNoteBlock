@@ -27,6 +27,8 @@ python3 scripts/prepare_paper_custom_model_data.py
 python3 scripts/prepare_paper_interactions.py
 python3 scripts/prepare_paper_render_sync.py
 python3 scripts/prepare_paper_listener_pack.py
+python3 scripts/prepare_paper_craftengine.py
+python3 scripts/prepare_paper_schematic.py
 ./gradlew -p bridge clean build --stacktrace
 ```
 
@@ -46,3 +48,9 @@ Server Resources のビルドは 751 個のサンプルをピーク正規化し�
 詳細は [English の開発ガイド](DEVELOPMENT.md) と [CI 定義](../.github/workflows/build-26.2.yml) を参照してください。CI の成功は実際のゲーム内検証を意味しません。
 
 `python3 scripts/check_documentation.py` はローカルリンク、見出し、画像参照、現在のバージョン、Release 記事索引、第三者表記を確認します。Paper Client のパッケージ作成後、`./gradlew runPaperClientSmoke` で実際の Fabric クライアント起動、リソース読み込み、GUI、音程を検証できます。Linux では Xvfb が必要です。テスト用 Mod はリリース JAR に含まれません。Purpur マルチプレイと実際の音は別途確認が必要です。
+
+## 2.13.0 构建补充
+
+Paper Server 0.14.0 使用公开 Maven 的 CraftEngine core/bukkit 26.8.2 API（运行时不内嵌），必须在原有 Paper 准备步骤后依次运行 `prepare_paper_craftengine.py`、`prepare_paper_schematic.py`。生成源码只用于构建；权威集成源在 `craftengine/integration/` 与 `scripts/templates/`。
+
+客户端编译兼容 Litematica 0.28.8 / MaLiLib 0.29.6，运行时可选。发布检查包含无 Litematica 与有 Litematica 两次 Paper Client 启动。CraftEngine 安装资源由 `scripts/make_craftengine_pack.py --resource-pack <server-resources.zip> --output <output.zip> --version 2.13.0` 生成；其中不含 CraftEngine 插件二进制或服务器私有配置。
