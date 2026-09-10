@@ -293,10 +293,10 @@ jobs:
           jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/EnbCraftEngine.class'
           jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/BridgeSchematicTransfer.class'
           unzip -p "$JAR" plugin.yml | grep -Fq 'depend: [CraftEngine]'
-          unzip -p "$JAR" config.yml | grep -q '__ENB_RESOURCE_PACK_URL__'
-          unzip -p "$JAR" config.yml | grep -q '__ENB_RESOURCE_PACK_SHA1__'
-          unzip -p "$JAR" enb-release-pack.properties | grep -q '__ENB_RESOURCE_PACK_URL__'
-          unzip -p "$JAR" enb-release-pack.properties | grep -q '__ENB_RESOURCE_PACK_SHA1__'
+          if unzip -p "$JAR" config.yml enb-release-pack.properties | grep -Eq '__ENB_RESOURCE_PACK_|releases/download/'; then
+            echo "Independent ENB pack configuration must not be embedded"
+            exit 1
+          fi
       - name: Upload Paper server plugin artifact
         uses: actions/upload-artifact@v4
         with:
