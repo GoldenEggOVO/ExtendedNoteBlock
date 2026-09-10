@@ -254,7 +254,7 @@ jobs:
           grep -q 'status.equals("ACCEPTED")' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'status.equals("DOWNLOADED")' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'addResourcePack(listenerPackId, listenerPackUrl, listenerPackSha1' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'ListenerResourcePackConfig.resolve' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q 'CraftEngine combined pack (waiting for generation and hosting)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'sendListenerResourcePack(event.getPlayer(), true), 40L' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'case "pack" -> handlePackCommand' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'action.equals("test")' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
@@ -334,11 +334,6 @@ jobs:
           name: extendednoteblock-paper-server-26.2
           path: artifacts/server
 
-      - name: Download combined server resource pack
-        uses: actions/download-artifact@v4
-        with:
-          name: extendednoteblock-server-resources-26.2
-          path: artifacts/server-resources
       - name: Download ENB CraftEngine registration resources
         uses: actions/download-artifact@v4
         with:
@@ -357,29 +352,18 @@ jobs:
           FULL_JAR="$(find artifacts/full -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           CLIENT_JAR="$(find artifacts/client -maxdepth 1 -type f -name '*.jar' | head -n 1)"
           SERVER_JAR="$(find artifacts/server -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
-          SERVER_PACK_ZIP="$(find artifacts/server-resources -maxdepth 1 -type f -name '*.zip' | head -n 1)"
 
           test -n "$FULL_JAR"
           test -n "$CLIENT_JAR"
           test -n "$SERVER_JAR"
-          test -n "$SERVER_PACK_ZIP"
 
           cp "$FULL_JAR" "release/ExtendedNoteBlock-Full-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
           cp "$CLIENT_JAR" "release/ExtendedNoteBlock-Paper-Client-Fabric-${MOD_VERSION}-mc${MC_VERSION}.jar"
           cp "$SERVER_JAR" "release/ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar"
-          cp "$SERVER_PACK_ZIP" "release/ExtendedNoteBlock-Server-Resources-${MOD_VERSION}-mc${MC_VERSION}.zip"
           cp artifacts/craftengine/*.zip release/
 
-          PACK_FILE="release/ExtendedNoteBlock-Server-Resources-${MOD_VERSION}-mc${MC_VERSION}.zip"
-          SERVER_FILE="release/ExtendedNoteBlock-Paper-Server-${SERVER_VERSION}-mc${MC_VERSION}.jar"
-          PACK_SHA1="$(sha1sum "$PACK_FILE" | cut -d' ' -f1)"
-          PACK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${MOD_VERSION}-mc${MC_VERSION}/$(basename "$PACK_FILE")"
-          python3 scripts/configure_release_resource_pack.py "$SERVER_FILE" "$PACK_URL" "$PACK_SHA1"
-
-          unzip -p "$SERVER_FILE" config.yml | grep -Fq "$PACK_URL"
-          unzip -p "$SERVER_FILE" config.yml | grep -Fq "$PACK_SHA1"
-          unzip -p "$SERVER_FILE" enb-release-pack.properties | grep -Fq "$PACK_URL"
-          unzip -p "$SERVER_FILE" enb-release-pack.properties | grep -Fq "$PACK_SHA1"
+          # CraftEngine's server-specific output is generated and hosted by each server.
+          # No independent listener ZIP or GitHub pack URL is published or embedded.
           sha256sum release/* > release/SHA256SUMS.txt
 
           echo "MOD_VERSION=$MOD_VERSION" >> "$GITHUB_ENV"

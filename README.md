@@ -3,16 +3,16 @@
 [![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62B47A?style=flat-square)](https://www.minecraft.net/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5-DBD0B4?style=flat-square)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square)](https://adoptium.net/)
-[![Release](https://img.shields.io/badge/Release-2.13.0-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.0-mc26.2)
+[![Release](https://img.shields.io/badge/Release-2.13.1-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2)
 [![License](https://img.shields.io/github/license/GoldenEggOVO/ExtendedNoteBlock?style=flat-square)](LICENSE)
 
 ![Extended Note Block Banner](docs/assets/ENB-Banner.webp)
 
 Extended Note Block 为 Minecraft 带来完整 MIDI 音域的扩展音符盒、指挥棒、无线红石和 NBS 音乐工坊。它支持 MIDI、NBS 与常见音频导入，也可以将歌曲导出为 Minecraft 音乐结构。
 
-当前正式版为 **Full Fabric / Paper Client 2.13.0**、**Paper Server 0.14.0**，适用于 **Minecraft 26.2 / Java 25**。
+当前正式版为 **Full Fabric / Paper Client 2.13.1**、**Paper Server 0.14.1**，适用于 **Minecraft 26.2 / Java 25**。
 
-[下载 2.13.0](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.0-mc26.2) · [安装指南](docs/INSTALLATION.md) · [功能展示](docs/FEATURES.md) · [全部文档](docs/README.md) · [日本語](docs/README_ja-jp.md)
+[下载 2.13.1](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2) · [安装指南](docs/INSTALLATION.md) · [功能展示](docs/FEATURES.md) · [全部文档](docs/README.md) · [日本語](docs/README_ja-jp.md)
 
 ## 我应该安装哪个版本？
 
@@ -44,7 +44,7 @@ Extended Note Block 为 Minecraft 带来完整 MIDI 音域的扩展音符盒、�
 
 Paper Server 使用 **CraftEngine 26.8.2** 注册 ENB 方块与物品；ENB 保存完整音乐参数和投影时间轴。安装时必须同时部署 Release 中的 ENB CraftEngine 注册资源。
 
-- **原版玩家：** 加载 CraftEngine 生成的资源包即可看到 ENB 世界方块；ENB 聆听资源包提供音乐。
+- **原版玩家：** 只加载 CraftEngine 生成的完整资源包，即可看到 ENB 方块并听到音乐；不再下发独立 ENB 包。安装时按指南关闭 CraftEngine 的重复自动发送。
 - **Paper Client 玩家：** 获得编辑界面、完整 128 种音色和高级声音控制。
 - **建筑复制：** 客户端安装 Litematica **0.28.8** 和 MaLiLib **0.29.6**，普通保存会附带服务器 ENB 参数，完整粘贴后自动导入。音乐工坊导出的 Paper 投影也支持自动导入。
 - **数据保留：** MIDI、乐器、力度、延音、延迟、淡入淡出、Pitch Cents 和接收器时间轴随结构保留。旋转、镜像和子区域位置用于转换坐标。
@@ -53,7 +53,7 @@ Paper Server 使用 **CraftEngine 26.8.2** 注册 ENB 方块与物品；ENB 保�
 
 ## 快速开始
 
-1. 从 [Releases](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.0-mc26.2) 下载与你场景匹配的 JAR。
+1. 从 [Releases](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2) 下载与你场景匹配的 JAR。
 2. Fabric 文件放入 `mods/`；Paper Server 与 CraftEngine 文件放入服务端 `plugins/`，解压 ENB CraftEngine 注册资源至服务器根目录。
 3. 完整重启游戏或服务器。Paper 服 OP 可执行 `/enb give all` 获取测试物品。
 4. 默认按 **N** 打开 NBS 音乐工坊；右键已登记的 ENB 音符盒打开编辑界面。

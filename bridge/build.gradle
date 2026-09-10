@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'com.goldenegggovo.extendednoteblock.bridge'
-version = '0.14.0'
+version = '0.14.1'
 def paperApiVersion = '26.2.build.119-stable'
 
 repositories {

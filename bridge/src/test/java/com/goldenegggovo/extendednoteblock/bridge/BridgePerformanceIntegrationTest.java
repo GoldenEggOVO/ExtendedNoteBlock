@@ -80,4 +80,16 @@ class BridgePerformanceIntegrationTest {
         server.getScheduler().performTicks(10);
         assertTrue(Files.isRegularFile(blocked)); assertTrue(this.<Set<String>>field("pendingSaves").isEmpty());
     }
+    @Test void staleIndependentPackConfigNeverReactivatesOldDownloads() throws Exception {
+        plugin.getConfig().set("resource-pack.enabled", true);
+        plugin.getConfig().set("resource-pack.use-official-release", false);
+        plugin.getConfig().set("resource-pack.url", "https://example.com/old-enb.zip");
+        plugin.getConfig().set("resource-pack.sha1", "a".repeat(40));
+        plugin.getConfig().set("resource-pack.combined-file", "old-server-pack.zip");
+        invoke("loadListenerResourcePackSettings", new Class<?>[0]);
+        assertFalse(plugin.listenerPackEnabled);
+        assertEquals("", plugin.listenerPackUrl);
+        assertNull(plugin.listenerPackId);
+        assertTrue(plugin.listenerPackSource.startsWith("CraftEngine combined pack"));
+    }
 }

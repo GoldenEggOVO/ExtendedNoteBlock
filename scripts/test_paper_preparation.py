@@ -30,7 +30,7 @@ class PaperPreparationTest(unittest.TestCase):
             generated = source.read_text(encoding='utf-8')
             for feature in ('class ExtendedNoteBlockBridge', 'record ListenerPlayback', 'record RenderObjectState',
                             'registerIncomingPluginChannel(this, NOTE_SAVE', 'customModelData.setStrings',
-                            'ListenerSoundResolver.resolve', 'ListenerResourcePackConfig.resolve',
+                            'ListenerSoundResolver.resolve', 'CraftEngine combined pack (waiting for generation and hosting)',
                             'syncChangedRenderStates();', 'flushPendingSaves()', 'void startTickers()',
                             'public List<String> onTabComplete'):
                 self.assertIn(feature, generated)

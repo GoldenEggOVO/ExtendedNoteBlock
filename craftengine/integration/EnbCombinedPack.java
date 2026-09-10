@@ -9,27 +9,28 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import net.kyori.adventure.text.Component;
+import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
+import net.momirealms.craftengine.core.plugin.config.Config;
+import net.momirealms.craftengine.core.pack.host.ResourcePackDownloadData;
 
 /** One server pack; checks the atomically published file, never a half-built CE archive. */
 final class EnbCombinedPack implements AutoCloseable {
     private final ExtendedNoteBlockBridge plugin;
-    private final Path file;
-    private final String url, prompt;
+    private final BukkitCraftEngine engine;
+    private final String prompt;
     private final UUID id;
     private final boolean required;
     private final Map<UUID,String> offered = new HashMap<>();
-    private String checked="", observed="";
+    private String checked="", observed="", lastProblem="";
+    private final Map<UUID,Object> pending = new HashMap<>();
     private volatile boolean closed;
     private BukkitTask watcher, offers;
     EnbCombinedPack(ExtendedNoteBlockBridge plugin) {
         this.plugin=plugin;
-        file=Path.of(plugin.getConfig().getString("resource-pack.combined-file"));
-        url=plugin.getConfig().getString("resource-pack.url","");
-        var uri=java.net.URI.create(url);
-        if(!Set.of("http","https").contains(uri.getScheme()) || uri.getHost()==null || uri.getRawQuery()!=null || uri.getRawFragment()!=null)
-            throw new IllegalArgumentException("Combined pack needs an HTTP(S) URL without query or fragment");
-        id=UUID.fromString(plugin.getConfig().getString("resource-pack.id","a452911d-2d41-4db4-8986-d9b2b8f8aeb0"));
-        required=plugin.getConfig().getBoolean("resource-pack.required",false);
+        engine=BukkitCraftEngine.instance();
+        if(engine==null)throw new IllegalStateException("CraftEngine is not ready");
+        id=UUID.fromString("a452911d-2d41-4db4-8986-d9b2b8f8aeb0");
+        required=plugin.getConfig().getBoolean("resource-pack.required",true);
         prompt=plugin.getConfig().getString("resource-pack.prompt","ExtendedNoteBlock resources");
         plugin.listenerPackId=id;
         plugin.listenerPackSource="CraftEngine combined pack (waiting for verified publication)";
@@ -38,25 +39,28 @@ final class EnbCombinedPack implements AutoCloseable {
         watcher=Bukkit.getScheduler().runTaskTimerAsynchronously(plugin,this::poll,20,100);
         offers=Bukkit.getScheduler().runTaskTimer(plugin,()->{
             offered.keySet().removeIf(uuid->Bukkit.getPlayer(uuid)==null);
+            pending.keySet().removeIf(uuid->Bukkit.getPlayer(uuid)==null);
             for(Player p:Bukkit.getOnlinePlayers())offer(p,false);
         },60,100);
     }
     private void poll() {
-        if(closed || !Files.isRegularFile(file))return;
+        if(closed)return;
+        Path file=engine.packManager().resourcePackPath();
+        if(!Files.isRegularFile(file))return;
         try {
-            String signature=Files.size(file)+":"+Files.getLastModifiedTime(file).toMillis();
+            String signature=file.toAbsolutePath()+":"+Files.size(file)+":"+Files.getLastModifiedTime(file).toMillis();
             if(!signature.equals(observed)){observed=signature;return;}
             if(signature.equals(checked))return;
             String hash=verify(file);
-            if(!signature.equals(Files.size(file)+":"+Files.getLastModifiedTime(file).toMillis()))return;
+            if(!signature.equals(file.toAbsolutePath()+":"+Files.size(file)+":"+Files.getLastModifiedTime(file).toMillis()))return;
             checked=signature;
             Bukkit.getScheduler().runTask(plugin,()->{
                 if(closed || hash.equals(plugin.listenerPackSha1Hex))return;
-                plugin.listenerPackId=id; plugin.listenerPackUrl=url+"?v="+hash;
+                plugin.listenerPackId=id; plugin.listenerPackUrl="Resolved from CraftEngine host for each player";
                 plugin.listenerPackSha1=HexFormat.of().parseHex(hash); plugin.listenerPackSha1Hex=hash;
                 plugin.listenerPackRequired=required; plugin.listenerPackPrompt=Component.text(prompt);
                 plugin.listenerPackSource="CraftEngine combined pack"; plugin.listenerPackEnabled=true;
-                plugin.listenerPackReady.clear(); plugin.listenerPackStates.clear(); offered.clear();
+                plugin.listenerPackReady.clear(); plugin.listenerPackStates.clear(); offered.clear(); pending.clear();
                 plugin.getLogger().info("ENB combined pack verified: SHA-1="+hash);
                 for(Player p:Bukkit.getOnlinePlayers())offer(p,false);
             });
@@ -79,13 +83,67 @@ final class EnbCombinedPack implements AutoCloseable {
             return HexFormat.of().formatHex(digest.digest());
         }catch(NoSuchAlgorithmException ex){throw new IllegalStateException(ex);}
     }
+    static ResourcePackDownloadData selectDownload(List<ResourcePackDownloadData> downloads,String hash) {
+        if(downloads==null)return null;
+        for(var data:downloads) {
+            if(data==null || !hash.equalsIgnoreCase(data.sha1()))continue;
+            try {
+                var uri=java.net.URI.create(data.url());
+                if(Set.of("http","https").contains(uri.getScheme()) && uri.getHost()!=null
+                        && uri.getUserInfo()==null && uri.getFragment()==null)return data;
+            }catch(IllegalArgumentException ignored) {}
+        }
+        return null;
+    }
     void offer(Player player,boolean force) {
         if(closed || !plugin.listenerPackEnabled || !eligible(player))return;
-        if(!force && plugin.listenerPackSha1Hex.equals(offered.get(player.getUniqueId())))return;
-        offered.put(player.getUniqueId(),plugin.listenerPackSha1Hex);
-        plugin.listenerPackReady.remove(player.getUniqueId());
-        plugin.listenerPackStates.put(player.getUniqueId(),"REQUESTED");
-        player.addResourcePack(id,plugin.listenerPackUrl,plugin.listenerPackSha1,prompt,required);
+        if(Config.sendPackOnJoin() || Config.sendPackOnUpload()) {
+            problem("Set CraftEngine resource-pack.delivery.send-on-join and resend-on-upload to false; ENB sends the CraftEngine pack and tracks its load status.");
+            if(force)player.sendMessage("ENB: 请关闭 CraftEngine 的 send-on-join / resend-on-upload，避免重复下发资源包。");
+            return;
+        }
+        UUID playerId=player.getUniqueId();
+        String hash=plugin.listenerPackSha1Hex;
+        if(pending.containsKey(playerId) || (!force && hash.equals(offered.get(playerId))))return;
+        var user=engine.networkManager().getOnlineUser(playerId);
+        if(user==null)return;
+        Object request=new Object(); pending.put(playerId,request);
+        try {
+            engine.packManager().resourcePackHost().requestResourcePackDownloadLink(user)
+                    .orTimeout(30,java.util.concurrent.TimeUnit.SECONDS).whenComplete((downloads,error)-> {
+                if(closed)return;
+                Bukkit.getScheduler().runTask(plugin,()-> {
+                    if(closed || pending.get(playerId)!=request)return;
+                    pending.remove(playerId);
+                    if(!eligible(player) || !hash.equals(plugin.listenerPackSha1Hex))return;
+                    var data=error==null ? selectDownload(downloads,hash) : null;
+                    if(data==null) {
+                        problem("CraftEngine host has no download matching the verified ENB pack. Generate/upload the complete CraftEngine pack first.");
+                        if(force)player.sendMessage("ENB: CraftEngine 完整资源包尚未生成或托管校验值不一致，请联系服主。");
+                        return;
+                    }
+                    if(Config.sendPackOnJoin() || Config.sendPackOnUpload())return;
+                    lastProblem="";
+                    offered.put(playerId,hash);
+                    plugin.listenerPackReady.remove(playerId);
+                    plugin.listenerPackStates.put(playerId,"REQUESTED");
+                    // A separate request ID keeps CraftEngine from consuming the Bukkit status event.
+                    // The bytes, URL and hash are exclusively the verified CraftEngine output.
+                    player.addResourcePack(id,data.url(),HexFormat.of().parseHex(hash),prompt,required);
+                });
+            });
+        }catch(RuntimeException ex) {
+            pending.remove(playerId);
+            problem("CraftEngine download lookup failed: " + ex.getMessage());
+        }
+    }
+    private void problem(String message) {
+        if(!message.equals(lastProblem))plugin.getLogger().warning(message);
+        lastProblem=message;
+    }
+    void forget(UUID playerId) {
+        pending.remove(playerId);
+        offered.remove(playerId);
     }
     private boolean eligible(Player p) {
         if(!p.isOnline())return false;

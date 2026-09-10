@@ -21,3 +21,5 @@
 | [2.4.1](2.4.1.md) | Paper Client / Server / Visuals 初期拆分 |
 
 GitHub 目前只保留最新正式 Release 与 tag，旧文章留在源码中用于追溯设计演变。
+
+- [2.13.1：统一 CraftEngine 资源包](2.13.1.md)

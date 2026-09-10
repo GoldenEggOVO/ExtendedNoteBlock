@@ -29,4 +29,20 @@ class EnbCombinedPackTest {
         var path=pack(true);byte[] bytes=Files.readAllBytes(path);Files.write(path,Arrays.copyOf(bytes,bytes.length/2));
         assertThrows(IOException.class,()->EnbCombinedPack.verify(path));
     }
+    @Test void usesOnlyHostedPackMatchingGeneratedBytesAndPreservesSignedUrl() {
+        String hash = "a".repeat(40);
+        var correct = new net.momirealms.craftengine.core.pack.host.ResourcePackDownloadData(
+                "https://packs.example/ce.zip?signature=abc", UUID.randomUUID(), hash);
+        var old = new net.momirealms.craftengine.core.pack.host.ResourcePackDownloadData(
+                "https://packs.example/old.zip", UUID.randomUUID(), "b".repeat(40));
+        assertEquals(correct, EnbCombinedPack.selectDownload(List.of(old, correct), hash));
+        assertNull(EnbCombinedPack.selectDownload(List.of(old), hash));
+        assertNull(EnbCombinedPack.selectDownload(List.of(), hash));
+    }
+    @Test void rejectsInvalidHostedUrlEvenWithMatchingHash() {
+        String hash = "a".repeat(40);
+        var invalid = new net.momirealms.craftengine.core.pack.host.ResourcePackDownloadData(
+                "file:///private/ce.zip", UUID.randomUUID(), hash);
+        assertNull(EnbCombinedPack.selectDownload(List.of(invalid), hash));
+    }
 }

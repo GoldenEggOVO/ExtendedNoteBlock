@@ -85,14 +85,13 @@ if '    EnbCraftEngine craftEngine;' not in s:
     replace('        if (craftEngine != null) craftEngine.close();', '        if (craftEngine != null) craftEngine.close();\n        if (combinedPack != null) combinedPack.close();')
     replace('    private void loadListenerResourcePackSettings() {', '''    private void loadListenerResourcePackSettings() {
             if (combinedPack != null) { combinedPack.close(); combinedPack = null; }
-            if (!getConfig().getString("resource-pack.combined-file", "").isBlank()
-                    && getConfig().getBoolean("resource-pack.enabled", true)) {
+            if (getConfig().getBoolean("resource-pack.enabled", true)) {
                 listenerPackEnabled = false;
                 listenerPackReady.clear(); listenerPackStates.clear();
                 try {
                     combinedPack = new EnbCombinedPack(this);
                     combinedPack.enable();
-                } catch (IllegalArgumentException invalid) {
+                } catch (RuntimeException invalid) {
                     getLogger().severe("Combined pack disabled: " + invalid.getMessage());
                 }
                 return;
@@ -121,6 +120,33 @@ if '    EnbCraftEngine craftEngine;' not in s:
             if (!(sender instanceof Player) && (args.length == 0''')
 
     p.write_text(s, encoding='utf-8')
+# Release pending host callbacks before a new connection can reuse the UUID.
+quit_anchor='    public void onPlayerQuit(PlayerQuitEvent event) {'
+quit_hook='\n        if (combinedPack != null) combinedPack.forget(event.getPlayer().getUniqueId());'
+if quit_anchor + quit_hook not in s:
+    replace(quit_anchor,quit_anchor+quit_hook)
+# Replace legacy URL resolution entirely, including on upgrade with an old config.
+start=s.index('    private void loadListenerResourcePackSettings() {')
+end=s.index('    /** Optional interop',start)
+s=s[:start]+'''    private void loadListenerResourcePackSettings() {
+        if (combinedPack != null) { combinedPack.close(); combinedPack = null; }
+        listenerPackEnabled = false;
+        listenerPackId = null;
+        listenerPackUrl = "";
+        listenerPackSha1Hex = "";
+        listenerPackReady.clear(); listenerPackStates.clear();
+        listenerPackSource = "CraftEngine combined pack (waiting for generation and hosting)";
+        if (!getConfig().getBoolean("resource-pack.enabled", true)) return;
+        if (!Bukkit.getPluginManager().isPluginEnabled("CraftEngine")) return;
+        try {
+            combinedPack = new EnbCombinedPack(this);
+            combinedPack.enable();
+        } catch (RuntimeException invalid) {
+            getLogger().severe("CraftEngine pack unavailable: " + invalid.getMessage());
+        }
+    }
+
+'''+s[end:]
 # The render preparer detects its private record and may reinsert it after the
 # CE backend exposes that record to the same package. Keep just the shared one.
 if '    record RenderObjectState(' in s:

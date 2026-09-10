@@ -7,18 +7,14 @@ interaction-range: 6
 # Maximum distance at which bridge sounds are sent to clients.
 audible-radius: 64
 
-# Combined ENB item textures + listener sounds. Official release JARs replace the two
-# placeholders below with the matching GitHub Release asset and its SHA-1.
+# CraftEngine generates and hosts the complete block/model/audio pack.
+# In CraftEngine config.yml, set resource-pack.delivery.send-on-join and
+# resource-pack.delivery.resend-on-upload to false. ENB handles delivery/status.
+# Legacy url/sha1/id/use-official-release/combined-file settings are ignored.
 resource-pack:
   enabled: true
   required: true
-  # Keep this true for automatic upgrades to the pack embedded in each official
-  # Paper Server release. Set false only when using your own URL / SHA-1 below.
-  use-official-release: true
-  id: "4ac1cf2c-ea6d-52a8-9605-8ecff682bd8d"
-  url: "__ENB_RESOURCE_PACK_URL__"
-  sha1: "__ENB_RESOURCE_PACK_SHA1__"
-  prompt: "ExtendedNoteBlock 需要物品材质和音乐音色包 / requires its item and sound pack."
+  prompt: "服务器需要 CraftEngine 方块材质和 ENB 音色包 / requires the complete CraftEngine pack."
 
 wand:
   # Safety cap for conductor-wand cuboid edits.
