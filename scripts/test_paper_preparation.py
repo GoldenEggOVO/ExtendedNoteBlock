@@ -10,7 +10,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 RELATIVE_SOURCE = Path('bridge/src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java')
 STEPS = ('prepare_paper_custom_model_data.py', 'prepare_paper_interactions.py',
-         'prepare_paper_render_sync.py', 'prepare_paper_listener_pack.py')
+         'prepare_paper_render_sync.py', 'prepare_paper_listener_pack.py',
+         'prepare_paper_craftengine.py')
 
 class PaperPreparationTest(unittest.TestCase):
     def test_release_generation_preserves_features_and_is_repeatable(self):
@@ -19,6 +20,7 @@ class PaperPreparationTest(unittest.TestCase):
             source = root / RELATIVE_SOURCE
             source.parent.mkdir(parents=True)
             shutil.copy2(ROOT / RELATIVE_SOURCE, source)
+            shutil.copytree(ROOT / 'craftengine', root / 'craftengine')
             (root / 'scripts').mkdir()
             for name in (*STEPS, 'prepare_paper_command_help.py'):
                 shutil.copy2(ROOT / 'scripts' / name, root / 'scripts' / name)
