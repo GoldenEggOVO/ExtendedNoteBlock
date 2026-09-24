@@ -126,7 +126,6 @@ def collect_errors() -> list[str]:
             release_tag,
         ),
         "docs/README.md": (mod_version, server_version, minecraft_version),
-        "docs/README_zh-cn.md": (mod_version, server_version, minecraft_version),
         "docs/README_en.md": (mod_version, server_version, minecraft_version),
         "docs/INSTALLATION.md": (
             f"ExtendedNoteBlock-Full-Fabric-{mod_version}-mc{minecraft_version}.jar",

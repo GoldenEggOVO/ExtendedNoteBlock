@@ -1,6 +1,6 @@
 # 开发指南 · Minecraft 26.2
 
-[返回首页](../README.md) · [文档中心](README.md) · [English](DEVELOPMENT.md) · [日本語](DEVELOPMENT_ja-jp.md)
+[返回首页](../README.md) · [文档中心](README.md) · [English](DEVELOPMENT.md)
 
 当前分支只构建 Minecraft **26.2**，产出 Full Fabric、Paper Client、Paper Server 三个程序版本，以及自动下发的物品 + 声音资源包。Full Fabric 与 Paper Client 不可同时装在客户端。
 
@@ -27,9 +27,7 @@
 | `scripts/` | 源码准备和打包脚本 |
 | `.github/workflows/` | CI 与发布定义 |
 | `docs/` | 安装、架构、开发、待办和版本说明 |
-| `legacy/` | 不参与构建的上游 1.20.1 / 1.21.1 历史文件 |
 
-当前 Gradle 不再提供旧版切换任务。历史文件的用途见 [legacy/README.md](../legacy/README.md)。
 
 ## 构建前
 
@@ -52,6 +50,7 @@ chmod +x gradlew
 ./gradlew clean test build --stacktrace
 python3 scripts/make_paper_bridge_client_jar.py
 python3 scripts/make_server_resource_pack.py
+python3 scripts/make_craftengine_pack.py --resource-pack build/server-resource-pack/ExtendedNoteBlock-Server-Resources-2.13.1-mc26.2.zip --output build/craftengine/ExtendedNoteBlock-CraftEngine-2.13.1-mc26.2.zip --version 2.13.1
 ```
 
 Paper Client 从 Full 构建输出中按严格白名单提取客户端类，并内置物品模型资源包。不能直接重命名 Full JAR 来代替 Paper Client。
@@ -70,7 +69,7 @@ python3 scripts/prepare_paper_schematic.py
 ./gradlew -p bridge clean build --stacktrace
 ```
 
-最后一个准备脚本还会调用 `prepare_paper_command_help.py`。直接编译未经准备的插件源码，不能复现当前 Release。
+`prepare_paper_render_sync.py` 还会调用 `prepare_paper_command_help.py`。直接编译未经准备的插件源码，不能复现当前 Release。
 
 Windows 下可将 `python3` 换成指向 Python 3 的 `python`，将 `./gradlew` 换成 `.\gradlew.bat`，并跳过 `chmod`。
 
@@ -78,10 +77,11 @@ Windows 下可将 `python3` 换成指向 Python 3 的 `python`，将 `./gradlew`
 | --- | --- |
 | `build/libs/` | Full Fabric 运行 JAR 与 sources JAR |
 | `build/paper-bridge-client/` | Paper Client JAR |
-| `build/server-resource-pack/` | 自动下发的物品材质 + 聆听音色组合 ZIP |
+| `build/server-resource-pack/` | 供 CraftEngine 打包使用的物品与音色中间 ZIP |
+| `build/craftengine/` | ENB CraftEngine 安装资源 ZIP |
 | `bridge/build/libs/` | Paper Server JAR |
 
-组合资源包需要 JDK 25 与 FFmpeg。脚本会核对 GeneralUser GS SoundFont 的固定 SHA-256，渲染并归一化 751 个实际采样，以 OGG quality 4 编码并逐个解码排除过轻输出；源 `.sf2` 不会进入 ZIP。构建还会强制资源包小于 50,000,000 bytes。CI 发布时将最终资源包 URL 与 SHA-1 同时写入 `config.yml` 和仅随 JAR 分发的 `enb-release-pack.properties`，防止旧服务器配置覆盖正式升级，最后统一生成 `SHA256SUMS.txt`。
+组合资源包需要 JDK 25 与 FFmpeg。脚本会核对 GeneralUser GS SoundFont 的固定 SHA-256，渲染并归一化 751 个实际采样，以 OGG quality 4 编码并逐个解码排除过轻输出；源 `.sf2` 不会进入 ZIP。构建还会强制资源包小于 50,000,000 bytes。聆听资源 ZIP 仅作为 CraftEngine 打包的中间输入，不再单独发布。服主安装 ENB CraftEngine 注册资源后，通过 CraftEngine 生成并托管完整包；ENB 读取生成文件和托管地址，核对 SHA-1 后向玩家下发。配置步骤见[安装指南](INSTALLATION.md)。
 
 ## 分支与发布
 
@@ -93,7 +93,7 @@ Windows 下可将 `python3` 换成指向 Python 3 的 `python`，将 `./gradlew`
 
 当前[工作流](../.github/workflows/build-26.2.yml)会在 `main` 的 push、目标为 `main` 的 PR 和手动运行时执行文档质量检查。代码变化与 `release:` 提交运行 Full / Client / Server 完整构建；仅文档变化跳过耗时构建。只有推送到 `main`、最新提交信息以 `release:` 开头、两个构建任务都成功，才执行发布任务。普通合并及手动构建不会发布新版本。发布前须更新版本号与对应发布说明，并确保合并后的最新提交信息保留预期的 `release:` 前缀。
 
-文档和整理使用 `docs:` / `chore:` 提交。分支可以在发布后继续前进；正式 Tag 保持指向产物实际使用的提交。Full / Client / Server Resources 使用 `gradle.properties` 中的 `mod_version`；Paper Server 使用 `bridge/build.gradle` 中的独立版本号。
+文档和整理使用 `docs:` / `chore:` 提交。分支可以在发布后继续前进；正式 Tag 保持指向产物实际使用的提交。Full / Client / CraftEngine resources 使用 `gradle.properties` 中的 `mod_version`；Paper Server 使用 `bridge/build.gradle` 中的独立版本号。
 
 ## 验证范围
 
@@ -107,8 +107,8 @@ CI 验证现有测试、Full 运行内容、Paper Client 的 Registry 安全与�
 
 文档链接、版本号、图片引用与第三方声明检查：`python3 scripts/check_documentation.py`。完整 Python 回归检查：`python3 -m unittest discover -s scripts -p 'test_*.py' -v`。Paper 保存数据测试：`./gradlew -p bridge test`。Release 工作流检查启动成功标记，并从 `docs/releases/<mod_version>.md` 读取当前版本说明。
 
-## 2.13.0 构建补充
+## CraftEngine 与 Litematica 集成
 
-Paper Server 0.14.0 使用公开 Maven 的 CraftEngine core/bukkit 26.8.2 API（运行时不内嵌），必须在原有 Paper 准备步骤后依次运行 `prepare_paper_craftengine.py`、`prepare_paper_schematic.py`。生成源码只用于构建；权威集成源在 `craftengine/integration/` 与 `scripts/templates/`。
+Paper Server 0.14.1 使用公开 Maven 的 CraftEngine core/bukkit 26.8.2 API（运行时不内嵌），必须在原有 Paper 准备步骤后依次运行 `prepare_paper_craftengine.py`、`prepare_paper_schematic.py`。生成源码只用于构建；权威集成源在 `craftengine/integration/` 与 `scripts/templates/`。
 
-客户端编译兼容 Litematica 0.28.8 / MaLiLib 0.29.6，运行时可选。发布检查包含无 Litematica 与有 Litematica 两次 Paper Client 启动。CraftEngine 安装资源由 `scripts/make_craftengine_pack.py --resource-pack <server-resources.zip> --output <output.zip> --version 2.13.0` 生成；其中不含 CraftEngine 插件二进制或服务器私有配置。
+客户端编译兼容 Litematica 0.28.8 / MaLiLib 0.29.6，运行时可选。发布检查包含无 Litematica 与有 Litematica 两次 Paper Client 启动。CraftEngine 安装资源由 `scripts/make_craftengine_pack.py --resource-pack <server-resources.zip> --output <output.zip> --version 2.13.1` 生成；其中不含 CraftEngine 插件二进制或服务器私有配置。

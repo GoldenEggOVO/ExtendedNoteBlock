@@ -1,6 +1,6 @@
 # Development Guide · Minecraft 26.2
 
-[Home](../README.md) · [Documentation](README.md) · [简体中文](DEVELOPMENT_zh-cn.md) · [日本語](DEVELOPMENT_ja-jp.md)
+[Home](../README.md) · [Documentation](README.md) · [简体中文](DEVELOPMENT_zh-cn.md)
 
 This branch targets Minecraft **26.2**. It builds three program editions: Full Fabric, a registry-safe Paper Client, and a Paper / Purpur server plugin. The Paper Client and Full Fabric must not be installed together.
 
@@ -29,9 +29,7 @@ Versions come from [gradle.properties](../gradle.properties), the [wrapper confi
 | `scripts/` | 26.2 source preparation and client / resource-pack packaging |
 | `.github/workflows/build-26.2.yml` | Build, verification and release workflow |
 | `docs/` | Installation, architecture, development, roadmap and release notes |
-| `legacy/` | Inactive upstream 1.20.1 / 1.21.1 sources, settings and publishing tool |
 
-The active Gradle build does not include `legacy/`. The old version-switching tasks are not available in this branch.
 
 ## Build Full Fabric, Paper Client and resource packs
 
@@ -48,6 +46,7 @@ chmod +x gradlew
 ./gradlew clean test build --stacktrace
 python3 scripts/make_paper_bridge_client_jar.py
 python3 scripts/make_server_resource_pack.py
+python3 scripts/make_craftengine_pack.py --resource-pack build/server-resource-pack/ExtendedNoteBlock-Server-Resources-2.13.1-mc26.2.zip --output build/craftengine/ExtendedNoteBlock-CraftEngine-2.13.1-mc26.2.zip --version 2.13.1
 ```
 
 The Paper Client packaging script consumes the Full build output and applies a strict class whitelist. Do not replace it with a copy of the Full JAR.
@@ -74,10 +73,11 @@ On Windows, use `python` if Python 3 is installed under that name, replace `./gr
 | --- | --- |
 | `build/libs/` | Full Fabric runtime JAR and sources JAR |
 | `build/paper-bridge-client/` | Paper Client JAR |
-| `build/server-resource-pack/` | Combined auto-download item + listener ZIP |
+| `build/server-resource-pack/` | Intermediate item + listener ZIP for CraftEngine packaging |
+| `build/craftengine/` | ENB CraftEngine installation ZIP |
 | `bridge/build/libs/` | Paper Server JAR |
 
-The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed GeneralUser GS SoundFont checksum, renders and peak-normalizes 751 physical samples, uses Vorbis quality 4, decodes each OGG to reject inaudible output, enforces a 50,000,000-byte ceiling, and does not include the source `.sf2` in the ZIP. Release automation injects the final pack asset URL and SHA-1 into both `config.yml` and the JAR-only `enb-release-pack.properties` before generating `SHA256SUMS.txt`; the latter prevents stale server configs from shadowing an official upgrade.
+The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed GeneralUser GS SoundFont checksum, renders and peak-normalizes 751 physical samples, uses Vorbis quality 4, decodes each OGG to reject inaudible output, enforces a 50,000,000-byte ceiling, and does not include the source `.sf2` in the ZIP. The listener ZIP is an intermediate build input, not a separate release asset. Install the published ENB CraftEngine resources and generate/upload the complete pack through CraftEngine. ENB reads the generated file and hosting URL, verifies SHA-1, and sends that complete pack to players. See the [installation guide](INSTALLATION.md).
 
 ## Branches and releases
 
@@ -89,7 +89,7 @@ The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed Gen
 
 The current [workflow](../.github/workflows/build-26.2.yml) validates documentation on pushes to `main`, pull requests targeting `main`, and manual runs. Code changes and `release:` commits run the complete Full / Client / Server build. Documentation-only changes skip those expensive jobs. The release job runs only for a push to `main` whose head commit message starts with `release:` and whose build jobs succeed. Ordinary merges and manual builds do not publish a release. Before a release, bump the version and add matching release notes; use a merge strategy that preserves the intended `release:` head commit message.
 
-Use `docs:` / `chore:` commits for repository maintenance. Branches may advance after a release; keep the published release tag anchored to the source commit that produced its artifacts. Full / Client / Server Resources use `mod_version`, while Paper Server has its own version in `bridge/build.gradle`.
+Use `docs:` / `chore:` commits for repository maintenance. Branches may advance after a release; keep the published release tag anchored to the source commit that produced its artifacts. Full / Client / CraftEngine resources use `mod_version`, while Paper Server has its own version in `bridge/build.gradle`.
 
 ## Validation boundaries
 
@@ -103,8 +103,8 @@ After building and packaging the Paper Client, run `./gradlew runPaperClientSmok
 
 `python3 scripts/check_documentation.py` validates local links, headings, screenshot references, current version markers, release-note indexes and third-party notices. `python3 -m unittest discover -s scripts -p 'test_*.py' -v` includes that integration check and the Mixin package guard. `./gradlew -p bridge test` runs the server payload validation tests. The release workflow requires these checks and the startup success marker, and publishes the matching `docs/releases/<mod_version>.md` file as release notes.
 
-## 2.13.0 构建补充
+## CraftEngine and Litematica integration
 
-Paper Server 0.14.0 使用公开 Maven 的 CraftEngine core/bukkit 26.8.2 API（运行时不内嵌），必须在原有 Paper 准备步骤后依次运行 `prepare_paper_craftengine.py`、`prepare_paper_schematic.py`。生成源码只用于构建；权威集成源在 `craftengine/integration/` 与 `scripts/templates/`。
+Paper Server 0.14.1 compiles against the public CraftEngine core/bukkit 26.8.2 API without bundling the plugin. The authoritative integration sources are in `craftengine/integration/` and `scripts/templates/`; generated copies are build outputs.
 
-客户端编译兼容 Litematica 0.28.8 / MaLiLib 0.29.6，运行时可选。发布检查包含无 Litematica 与有 Litematica 两次 Paper Client 启动。CraftEngine 安装资源由 `scripts/make_craftengine_pack.py --resource-pack <server-resources.zip> --output <output.zip> --version 2.13.0` 生成；其中不含 CraftEngine 插件二进制或服务器私有配置。
+The client supports Litematica 0.28.8 / MaLiLib 0.29.6 as optional runtime dependencies. Release checks start Paper Client both with and without Litematica. The CraftEngine installation ZIP contains ENB registration resources, not the CraftEngine plugin binary or private server configuration.

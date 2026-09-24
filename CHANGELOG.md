@@ -1,12 +1,21 @@
 # Changelog
 
+## 2.13.1 / Paper Server 0.14.1
+
+统一下发 CraftEngine 生成并托管的完整资源包，移除独立 Server-Resources 发布附件。[详细说明](docs/releases/2.13.1.md)。
+
 ## 2.13.0 / Paper Server 0.14.0
 
 CraftEngine 成为 Paper Server 必需插件；Litematica 保存建筑完整 ENB 参数，并在命令粘贴建筑及音乐工坊投影后自动导入。[详细说明](docs/releases/2.13.0.md)。
 
-[Documentation](docs/README.md) · [Detailed release notes](docs/releases/README.md) · [Latest release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.12.0-mc26.2)
+[Documentation](docs/README.md) · [Detailed release notes](docs/releases/README.md) · [Latest release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2)
 
-## Unreleased — Minecraft 26.2
+## Repository maintenance after 2.13.1
+
+- Removed inactive 1.20.1 / 1.21.1 source archives and the retired standalone resource-pack release tool; earlier sources remain in Git history.
+- Consolidated documentation into Chinese and English guides and corrected the CraftEngine build and delivery instructions.
+
+## Earlier repository maintenance — Minecraft 26.2
 
 - Added automated documentation checks for local links, heading anchors, asset references, current version markers, release-note indexing and third-party notices.
 - Added contribution guidance, structured bug/feature/audio issue forms, a private security-reporting policy and a root third-party notice.
@@ -101,7 +110,7 @@ See the [release notes](docs/releases/2.8.0.md).
 - [2.4.2](docs/releases/2.4.2.md)
 - [2.4.1](docs/releases/2.4.1.md)
 
-These historical notes are retained for source history even when older published releases or tags are removed.
+These historical notes are retained for source history after older published releases are removed.
 
 ## 2.0.2 - 2026-08-08
 

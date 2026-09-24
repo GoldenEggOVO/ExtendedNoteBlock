@@ -1,13 +1,13 @@
 # 历史发布文章
 
-- [2.13.0：CraftEngine 与 Litematica 自动复制](2.13.0.md)
-
-[文档中心](../README.md) · [CHANGELOG](../../CHANGELOG.md) · [当前 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.12.0-mc26.2)
+[文档中心](../README.md) · [CHANGELOG](../../CHANGELOG.md) · [当前 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2)
 
 这些文章记录各版本发布时的功能、限制和安装变化。旧文章中的下载链接、Visuals ZIP 或实现细节可能已经过时；安装与排错请始终参考[当前安装指南](../INSTALLATION.md)。
 
 | 版本 | 重点变化 |
 | --- | --- |
+| [2.13.1](2.13.1.md) | 统一由 ENB 下发 CraftEngine 生成的完整资源包 |
+| [2.13.0](2.13.0.md) | CraftEngine 必需依赖与 Litematica 自动复制 |
 | [2.12.0](2.12.0.md) | 移除假方块与独立 Visuals，提升原版监听音频质量并将资源包控制在 50 MB 内 |
 | [2.11.0](2.11.0.md) | 曾加入无 Mod 假方块外观，随后在 2.12.0 移除 |
 | [2.10.1](2.10.1.md) | 修复自动资源包升级、状态反馈和极端音区过轻问题 |
@@ -20,6 +20,4 @@
 | [2.4.2](2.4.2.md) | 三版本打包与资源包安全回退 |
 | [2.4.1](2.4.1.md) | Paper Client / Server / Visuals 初期拆分 |
 
-GitHub 目前只保留最新正式 Release 与 tag，旧文章留在源码中用于追溯设计演变。
-
-- [2.13.1：统一 CraftEngine 资源包](2.13.1.md)
+GitHub 目前只保留最新正式 Release；源码 tag 保留用于追溯，旧文章留在源码中用于追溯设计演变。

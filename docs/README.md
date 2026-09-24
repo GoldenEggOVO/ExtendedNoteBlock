@@ -2,7 +2,7 @@
 
 > Paper Server 0.14.1 必须安装 **CraftEngine 26.8.2** 和 ENB 注册资源。自动建筑复制需要客户端 **Litematica 0.28.8 / MaLiLib 0.29.6**。Full Fabric 不需要 CraftEngine。
 
-[项目首页](../README.md) · [English](README_en.md) · [简体中文入口](README_zh-cn.md) · [当前 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2)
+[项目首页](../README.md) · [English](README_en.md) · [当前 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2)
 
 这里集中维护 Extended Note Block 的用户说明、Paper / Purpur 技术文档和版本记录。当前基线为 Minecraft **26.2**、Full Fabric / Paper Client **2.13.1**、Paper Server **0.14.1**。
 
@@ -22,9 +22,7 @@
 | [Paper / Purpur 架构](ARCHITECTURE.md) | 三版本职责、原版载体、坐标同步、声音协议和持久化 |
 | [开发指南（中文）](DEVELOPMENT_zh-cn.md) | JDK / Gradle、构建命令、测试、分支和发布规则 |
 | [Development Guide](DEVELOPMENT.md) | English development reference |
-| [開発ガイド](DEVELOPMENT_ja-jp.md) | 日本語のビルド・開発リファレンス |
 | [路线图与验证](ROADMAP.md) | 已完成能力、实机验证和后续功能 |
-| [历史源码归档](../legacy/README.md) | 不参与当前 26.2 构建的旧版源码与工具 |
 | [参与贡献](../CONTRIBUTING.md) | Issue、Pull Request、构建与检查要求 |
 | [安全策略](../SECURITY.md) | 私下报告漏洞和当前支持范围 |
 | [第三方声明](../THIRD_PARTY_NOTICES.md) | 上游代码与音频素材的来源和许可 |
