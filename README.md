@@ -1,6 +1,6 @@
 # Extended Note Block · Minecraft 26.2
 
-**简体中文** · [English](docs/README_en.md)
+**English** · [简体中文](docs/README_zh-cn.md)
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62B47A?style=flat-square)](https://www.minecraft.net/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5-DBD0B4?style=flat-square)](https://fabricmc.net/)
@@ -10,87 +10,109 @@
 
 ![Extended Note Block Banner](docs/assets/ENB-Banner.webp)
 
-Extended Note Block 为 Minecraft 带来完整 MIDI 音域的扩展音符盒、指挥棒、无线红石和 NBS 音乐工坊。它支持 MIDI、NBS 与常见音频导入，也可以将歌曲导出为 Minecraft 音乐结构。
+Extended Note Block adds MIDI-range note blocks, a conductor wand, wireless redstone and a music workshop to Minecraft. Import NBS, MIDI or supported audio files, edit and preview music, and export Minecraft music structures.
 
-当前正式版为 **Full Fabric / Paper Client 2.13.1**、**Paper Server 0.14.1**，适用于 **Minecraft 26.2 / Java 25**。
+**Minecraft 26.2 · Java 25 · Full Fabric / Paper Client 2.13.1 · Paper Server 0.14.1**
 
-[下载 2.13.1](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2) · [安装指南](docs/INSTALLATION.md) · [功能展示](docs/FEATURES.md) · [全部文档](docs/README.md)
+[Download 2.13.1](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2) · [Choose an edition](#choose-an-edition) · [Quick start](#quick-start) · [Litematica](#copying-with-litematica) · [Development guide](docs/DEVELOPMENT.md)
 
-## 我应该安装哪个版本？
+## Choose an edition
 
-| 使用场景 | 需要安装 |
+| Your setup | What to install |
 | --- | --- |
-| 单人游戏 | 客户端安装 **Full Fabric** 与 Fabric API |
-| Fabric 多人服务器 | 服务端和客户端都安装 **Full Fabric** 与 Fabric API |
-| Paper / Purpur 服主 | 服务端安装 **Paper Server + CraftEngine 26.8.2**，并导入 ENB 注册资源 |
-| Paper / Purpur 普通玩家 | 原版客户端即可；进服后加载服务器资源包 |
-| Paper / Purpur 创作者 | 客户端安装 **Paper Client** 与 Fabric API，服务器安装 **Paper Server + CraftEngine** |
+| Single-player | **Full Fabric** and Fabric API in the client's `mods/` folder |
+| Fabric multiplayer | **Full Fabric** and Fabric API on both server and clients |
+| Paper / Purpur server owner | **Paper Server + CraftEngine 26.8.2**, plus the ENB CraftEngine installation ZIP |
+| Paper / Purpur listener | No client mod required; accept the server's resource pack |
+| Paper / Purpur music creator | **Paper Client** and Fabric API on the client; the server needs Paper Server and CraftEngine |
 
 > [!IMPORTANT]
-> **CraftEngine 是 Paper Server 的必需插件；Full Fabric 不需要 CraftEngine。**
+> **CraftEngine is required for Paper Server.** The ENB CraftEngine ZIP contains registration data and assets, not the CraftEngine plugin itself. Obtain CraftEngine separately from its author.
 >
-> **Full Fabric 与 Paper Client 不能同时安装在同一个客户端。** Full Fabric 会注册真正的 ENB 方块；Paper Client 则保持原版 Registry，用于连接 Paper / Purpur。
+> **Do not install Full Fabric and Paper Client together.** Use Paper Client to connect to Paper / Purpur. Full Fabric registers custom blocks and does not require CraftEngine.
 
-## 主要功能
+Fabric installations use **Fabric Loader 0.19.5** and **Fabric API 0.159.0+26.2**. These are the tested build versions, not a promise of compatibility with other versions. Do not put Fabric API in Paper's `plugins/` folder.
 
-- MIDI **0–127**、128 种 GM 乐器、力度、延音、延迟、淡入淡出与 Pitch Cents。
-- 128 键钢琴式编辑界面，以及可扩展的音量、弯音和声源位置控制。
-- NBS / MIDI / WAV / MP3 / OGG / AIFF / AU 导入、试听和结构规划。
-- Litematic、结构 NBT 与数据包导出；Paper Client 配合 Litematica 保存建筑参数，粘贴建筑或工坊投影后自动导入 ENB 数据。
-- 指挥棒批量编辑、无线红石和 NBS Projection Receiver。
-- Paper 服无 Mod 聆听：自动资源包用 32 种代表音色、751 个实际 OGG 覆盖完整音域。
+## Features
 
-[查看界面截图和功能说明](docs/FEATURES.md)
+- MIDI notes **0–127**, 128 GM instrument IDs, velocity, sustain, delay, fades and pitch adjustment.
+- A piano-style editor and music workshop with NBS / MIDI / WAV / MP3 / OGG / AIFF / AU import.
+- Litematic, structure NBT and datapack export.
+- Conductor-wand batch editing, wireless redstone and projection playback.
+- Paper Client integration with Litematica to preserve ENB music data when saving and pasting structures.
 
-## Paper / Purpur 模式
+Paper Client provides the full instrument set and advanced sound controls. Vanilla listeners use a smaller bank of **32 representative timbres and 47 percussion sounds**, covering MIDI 0–127. The two playback modes are not identical.
 
-Paper Server 使用 **CraftEngine 26.8.2** 注册 ENB 方块与物品；ENB 保存完整音乐参数和投影时间轴。安装时必须同时部署 Release 中的 ENB CraftEngine 注册资源。
+## Quick start
 
-- **原版玩家：** 只加载 CraftEngine 生成的完整资源包，即可看到 ENB 方块并听到音乐；不再下发独立 ENB 包。安装时按指南关闭 CraftEngine 的重复自动发送。
-- **Paper Client 玩家：** 获得编辑界面、完整 128 种音色和高级声音控制。
-- **建筑复制：** 客户端安装 Litematica **0.28.8** 和 MaLiLib **0.29.6**，普通保存会附带服务器 ENB 参数，完整粘贴后自动导入。音乐工坊导出的 Paper 投影也支持自动导入。
-- **数据保留：** MIDI、乐器、力度、延音、延迟、淡入淡出、Pitch Cents 和接收器时间轴随结构保留。旋转、镜像和子区域位置用于转换坐标。
+### Single-player or Fabric server
 
-复制权限默认仅 OP。自动导入使用 Litematica 命令粘贴：选择 Replace All、关闭 changed-block-only，并在装有 Servux / LitematicaFolia 时关闭 `pasteUsingServux`。Easy Place 逐块搭建仍使用手动恢复入口。详细安装、升级与兼容边界见[安装指南](docs/INSTALLATION.md)。
+1. Install Java 25, Fabric Loader and Fabric API for Minecraft 26.2.
+2. Put `ExtendedNoteBlock-Full-Fabric-2.13.1-mc26.2.jar` in `mods/`. For Fabric multiplayer, install it and Fabric API on both sides.
+3. Start the game. Press **N** to open the music workshop; the key can be changed in Controls.
 
-## 快速开始
+### Paper / Purpur server
 
-### 单人 / Fabric 服务器
+1. Stop the server normally. Back up `plugins/ExtendedNoteBlockBridge/` and `plugins/CraftEngine/`, then remove the old ENB plugin JAR.
+2. Put `ExtendedNoteBlock-Paper-Server-0.14.1-mc26.2.jar` and **CraftEngine 26.8.2** in `plugins/`.
+3. Extract `ExtendedNoteBlock-CraftEngine-2.13.1-mc26.2.zip` into the server root. Its files must end up in `plugins/CraftEngine/resources/enb/`. This is an installation bundle, not the final pack to send directly to players.
+4. Configure the single resource-pack delivery flow below. On a first installation, start once to create CraftEngine's configuration, then stop before editing it.
+5. Restart normally, generate and upload the complete CraftEngine pack using your configured host, then join and accept the pack. An operator can run `/enb pack status` and `/enb give all`.
+6. Creators install `ExtendedNoteBlock-Paper-Client-Fabric-2.13.1-mc26.2.jar` with Fabric API on their client. Press **N** for the workshop and right-click a registered ENB note block to edit it.
 
-1. 安装 **Java 25、Fabric Loader 0.19.5、Fabric API 0.159.0+26.2**。
-2. 将 **Full Fabric** JAR 放入 `mods/`；Fabric 多人服务器的服务端与客户端都需安装。
-3. 启动游戏，默认按 **N** 打开音乐工坊。
+### One resource pack
 
-### Paper / Purpur 服务器
+**CraftEngine generates and hosts the complete pack; ENB sends that same pack and tracks its load status.** It contains the block mappings, models, textures and listener audio. ENB no longer downloads a separate GitHub `Server-Resources` ZIP.
 
-1. 正常停服并备份数据，将 **Paper Server 0.14.1 + CraftEngine 26.8.2** 放入 `plugins/`，移出旧版 ENB JAR。
-2. 将 Release 中的 **ENB CraftEngine ZIP** 解压到服务器根目录，确认资源位于 `plugins/CraftEngine/resources/enb/`。此 ZIP 是服务端安装资源，不是直接发给玩家的最终资源包。
-3. 在 CraftEngine 配置的 `resource-pack.delivery` 下，将 `send-on-join` 和 `resend-on-upload` 都设为 `false`。由 CraftEngine 生成、托管完整包，ENB 统一发送并检测加载状态。
-4. 正常重启，按[资源包配置说明](docs/INSTALLATION.md#paper-服务器资源包)生成并上传完整包。OP 可用 `/enb pack status` 检查、`/enb give all` 获取物品。
-5. 普通玩家加载服务器资源包即可；创作者在客户端安装 **Paper Client + Fabric API**，按 **N** 打开工坊、右键 ENB 音符盒编辑参数。
+In the existing `plugins/CraftEngine/config.yml`, set these two delivery options while preserving your hosting configuration:
 
-[完整安装与升级指南](docs/INSTALLATION.md) · [English setup guide](docs/README_en.md#quick-start)
+```yaml
+resource-pack:
+  delivery:
+    send-on-join: false
+    resend-on-upload: false
+```
 
-## 文档
+Do not replace the entire configuration file with this snippet. If either automatic sender remains enabled, ENB pauses its own delivery and reports the conflict to avoid duplicate requests.
 
-| 入口 | 内容 |
+Generate and upload the complete pack with CraftEngine. The download address must be reachable by players. ENB obtains the generated file and player download URL through CraftEngine, verifies that their SHA-1 values match, and sends the pack. No URL, hash or output path needs to be entered in ENB.
+
+Keep a valid ZIP and the ENB resource paths; pack protection that breaks CRC checks or renames those paths can prevent validation. Old ENB `url`, `sha1`, `id`, `use-official-release` and `combined-file` settings are ignored. Preserve the existing ENB data folders when upgrading.
+
+| Command | Purpose |
 | --- | --- |
-| [English guide](docs/README_en.md) | English overview, installation, resource packs and Litematica |
-| [文档中心](docs/README.md) | 用户、服主、开发者与历史文章总入口 |
-| [安装与使用](docs/INSTALLATION.md) | 依赖、安装、命令、资源包、Litematic 与排错 |
-| [功能展示](docs/FEATURES.md) | GUI、指挥棒、无线红石与音色包截图 |
-| [Paper 架构](docs/ARCHITECTURE.md) | 原版载体、同步、声音、导入和持久化 |
-| [开发指南](docs/DEVELOPMENT_zh-cn.md) | 工具链、构建、测试、分支与发布流程 |
-| [路线图](docs/ROADMAP.md) | 已完成能力、实机验证和后续功能 |
-| [版本记录](CHANGELOG.md) | 版本级变更摘要与历史发布文章 |
-| [参与贡献](CONTRIBUTING.md) | 问题报告、开发流程与提交检查清单 |
-| [安全策略](SECURITY.md) | 私下报告安全问题与支持范围 |
+| `/enb help` | Show available commands |
+| `/enb give all` | Get ENB items; operator permissions by default |
+| `/enb pack status` | Check delivery and loading status |
+| `/enb pack resend` | Request the complete pack again |
+| `/enb pack test <MIDI 0-127> [instrument 0-127]` | Test listener audio directly |
 
-## 来源与许可证
+A successful load enables vanilla MIDI listener playback. Until then, playback falls back to limited vanilla note-block sounds. With ENB's default `resource-pack.required: true`, declining the pack disconnects the player.
 
-- 原项目与原作者：[Atemukesu/ExtendedNoteBlock](https://github.com/atemukesu/ExtendedNoteBlock) — **Atemukesu**。
-- 26.1.1 移植与音乐工坊扩展：[BianFuuuu/ExtendedNoteBlock](https://github.com/BianFuuuu/ExtendedNoteBlock) — **BF_skt**。
-- Minecraft 26.2 / Paper-Purpur Bridge 维护：**GoldenEggOVO**。
-- [原版详细手册](https://atemukesu.github.io/ExtendedNoteBlock/) 可供 Full Fabric 功能参考；Paper 的实际能力以本仓库文档为准。
+## Copying with Litematica
 
-本项目使用 [MIT License](LICENSE)，并保留原作者版权声明。音频及其他依赖材料见[第三方声明](THIRD_PARTY_NOTICES.md)。
+Use **Paper Client 2.13.1**, **Paper Server 0.14.1**, **CraftEngine 26.8.2**, **Litematica 0.28.8** and **MaLiLib 0.29.6**. Litematica and MaLiLib are optional for players who do not use this feature.
+
+1. Select an existing build and save it normally in Litematica. Wait for ENB's server-side data snapshot to finish saving with the schematic. Music-workshop Paper projections also contain ENB metadata.
+2. Load the schematic and choose the destination, rotation and mirror settings.
+3. Use **command paste** with `pasteReplaceBehavior` set to **All**, and disable changed-block-only mode. If the server has Servux / LitematicaFolia, set `pasteUsingServux` to **false**.
+4. After the paste, wait for ENB's successful import message before testing playback.
+
+Copy/import permission (`extendednoteblockbridge.import`) is operator-only by default. Target chunks must already be loaded. Music parameters and receiver timelines are preserved, with coordinates adjusted for placement, rotation, mirroring and subregions.
+
+**Servux Direct Paste, Easy Place and independent WorldEdit pastes do not trigger automatic ENB import.** For workshop projections built with Easy Place, the workshop's **Restore ENB** action remains available. Old schematics without ENB metadata cannot recover music settings from appearance alone; save the original build again using the new client. Keep the original file because third-party editors may strip the extra metadata.
+
+## More information
+
+- [Development guide](docs/DEVELOPMENT.md): English build, test and `main` branch release workflow.
+- [Contributing](CONTRIBUTING.md), [security policy](SECURITY.md), [license](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md).
+- [Detailed installation reference](docs/INSTALLATION.md), [feature screenshots](docs/FEATURES.md), [release notes](docs/releases/2.13.1.md) and [validation roadmap](docs/ROADMAP.md): Chinese documentation.
+- [Upstream manual](https://atemukesu.github.io/ExtendedNoteBlock/): reference for Full Fabric features; Paper-specific behavior is documented in this repository.
+
+Automated build and startup checks do not replace multiplayer visual or listening tests. See the validation roadmap for outstanding in-game checks.
+
+## Credits
+
+Original project: [Atemukesu/ExtendedNoteBlock](https://github.com/atemukesu/ExtendedNoteBlock), by **Atemukesu**. The 26.1.1 port and music-workshop extensions are from [BianFuuuu/ExtendedNoteBlock](https://github.com/BianFuuuu/ExtendedNoteBlock), by **BF_skt**. Minecraft 26.2 and Paper / Purpur integration are maintained by **GoldenEggOVO**.
+
+Released under the [MIT License](LICENSE), retaining upstream copyright notices.
