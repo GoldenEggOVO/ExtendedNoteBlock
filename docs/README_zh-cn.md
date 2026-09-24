@@ -2,7 +2,7 @@
 
 > Paper Server 0.14.1 必须安装 **CraftEngine 26.8.2** 和 ENB 注册资源。自动建筑复制需要客户端 **Litematica 0.28.8 / MaLiLib 0.29.6**。Full Fabric 不需要 CraftEngine。
 
-[项目首页](../README.md) · [文档中心](README.md) · [日本語](README_ja-jp.md)
+[项目首页](../README.md) · [文档中心](README.md)
 
 本仓库以简体中文维护主要用户文档。当前正式版为 **Full Fabric / Paper Client 2.13.1**、**Paper Server 0.14.1**，适用于 Minecraft **26.2**。
 

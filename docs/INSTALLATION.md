@@ -60,7 +60,7 @@ CraftEngine 负责生成和托管，ENB 负责下发这一份包。若上述自�
 
 ENB 默认 `resource-pack.enabled: true`、`required: true`。旧配置中的 `url`、`sha1`、`id`、`use-official-release`、`combined-file` 不再生效，无需删除已有音乐数据。新包生成或托管尚未完成时等待匹配的包，不会退回旧的独立包。保留正常 ZIP 格式和 ENB 资源路径；破坏 CRC 或重命名 ENB 资源路径的保护设置会使完整性校验失败。
 
-可用 `/enb pack status` 查看状态、`/enb pack resend` 重发。资源包实际成功加载后才启用原版 MIDI 聆听，Paper Client 用户继续走 Mod 声音协议。2.13.0 的旧附件保留供旧版插件使用，2.13.1 不再发布独立 `Server-Resources` 附件。
+可用 `/enb pack status` 查看状态、`/enb pack resend` 重发。资源包实际成功加载后才启用原版 MIDI 聆听，Paper Client 用户继续走 Mod 声音协议。GitHub Releases 只保留当前正式版附件；旧版独立包下载地址已停用，使用旧插件的服务器应升级。2.13.1 不再发布独立 `Server-Resources` 附件。
 
 原版聆听模式将全部 128 个 GM 乐器编号映射到 32 种代表音色，每种使用 22 个半八度锚点覆盖 MIDI 0–127，另含 47 个打击乐音色。常规播放最多只需约 ±3 半音的实时变调；采样使用 OGG quality 4、高精度离线重采样和短尾部淡出。位置音频所需的单声道取自已居中的合成器主声道，避免部分立体声效果在左右相加时发生相位抵消。它保留乐器类别、音高、力度、延音、延迟和基础空间位置；连续音高 / 音量曲线与移动声源仍以 Paper Client 最完整。
 

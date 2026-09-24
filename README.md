@@ -1,6 +1,6 @@
 # Extended Note Block · Minecraft 26.2
 
-**简体中文** · [English](docs/README_en.md) · [日本語](docs/README_ja-jp.md)
+**简体中文** · [English](docs/README_en.md)
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62B47A?style=flat-square)](https://www.minecraft.net/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5-DBD0B4?style=flat-square)](https://fabricmc.net/)

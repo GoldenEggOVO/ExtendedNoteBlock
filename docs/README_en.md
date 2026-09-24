@@ -1,6 +1,6 @@
 # Extended Note Block — English Guide
 
-[简体中文](../README.md) · **English** · [日本語](README_ja-jp.md)
+[简体中文](../README.md) · **English**
 
 Extended Note Block adds MIDI-range note blocks, a conductor wand, wireless redstone and a music workshop to Minecraft. Import NBS, MIDI or supported audio files, edit and preview music, and export Minecraft music structures.
 
