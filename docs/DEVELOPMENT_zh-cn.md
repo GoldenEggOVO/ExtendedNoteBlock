@@ -33,10 +33,10 @@
 
 ## 构建前
 
-当前源码准备脚本会修改已跟踪的 Java / 资源文件。需要保持开发目录干净时，可在独立 worktree 中构建；以下示例构建已提交的 `port/26.2`，不会包含原目录的未提交修改：
+当前源码准备脚本会修改已跟踪的 Java / 资源文件。需要保持开发目录干净时，可在独立 worktree 中构建；以下示例构建已提交的 `main`，不会包含原目录的未提交修改：
 
 ```bash
-git worktree add --detach ../enb-build port/26.2
+git worktree add --detach ../enb-build main
 cd ../enb-build
 ```
 
@@ -87,12 +87,11 @@ Windows 下可将 `python3` 换成指向 Python 3 的 `python`，将 `./gradlew`
 
 | Ref | 用途 |
 | --- | --- |
-| `port/26.2` | 主要开发分支 |
-| `main` | 仓库展示分支，在确定的检查点同步 |
-| `release/26.2` | 发布维护分支，在确定的检查点同步 |
+| `main` | 已验证源码，唯一长期开发与发布分支 |
+| 临时功能 / 修复分支 | 完成后合并到 `main`，确认没有未合并提交后删除 |
 | `v<模组版本>-mc26.2` | 对应正式产物的精确源码提交 |
 
-当前[工作流](../.github/workflows/build-26.2.yml)会在 `port/26.2` / `release/26.2` 的 push、目标为 `main` 的 PR 和手动运行时执行文档质量检查。代码变化与 `release:` 提交运行 Full / Client / Server 完整构建；仅文档变化会跳过耗时构建，同步到 `release/26.2` 时也只运行质量门。只有推送到 `port/26.2`、最新提交信息以 `release:` 开头、两个构建任务都成功，才执行发布任务。
+当前[工作流](../.github/workflows/build-26.2.yml)会在 `main` 的 push、目标为 `main` 的 PR 和手动运行时执行文档质量检查。代码变化与 `release:` 提交运行 Full / Client / Server 完整构建；仅文档变化跳过耗时构建。只有推送到 `main`、最新提交信息以 `release:` 开头、两个构建任务都成功，才执行发布任务。普通合并及手动构建不会发布新版本。发布前须更新版本号与对应发布说明，并确保合并后的最新提交信息保留预期的 `release:` 前缀。
 
 文档和整理使用 `docs:` / `chore:` 提交。分支可以在发布后继续前进；正式 Tag 保持指向产物实际使用的提交。Full / Client / Server Resources 使用 `gradle.properties` 中的 `mod_version`；Paper Server 使用 `bridge/build.gradle` 中的独立版本号。
 

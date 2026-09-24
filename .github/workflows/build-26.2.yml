@@ -3,8 +3,7 @@ name: Build Minecraft 26.2
 on:
   push:
     branches:
-      - port/26.2
-      - release/26.2
+      - main
   pull_request:
     branches:
       - main
@@ -47,14 +46,8 @@ jobs:
 
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             run_build=true
-          elif [[ "$EVENT_NAME" == "push" && "$REF_NAME" == "port/26.2" && "$HEAD_MESSAGE" == release:* ]]; then
+          elif [[ "$EVENT_NAME" == "push" && "$REF_NAME" == "main" && "$HEAD_MESSAGE" == release:* ]]; then
             run_build=true
-          elif [[ "$EVENT_NAME" == "push" && "$REF_NAME" == "release/26.2" ]]; then
-            git fetch --no-tags origin port/26.2:refs/remotes/origin/port/26.2
-            if git merge-base --is-ancestor "$GITHUB_SHA" origin/port/26.2; then
-              run_build=false
-              echo "Skipping duplicate full build for a commit already present on port/26.2."
-            fi
           elif [[ "$EVENT_NAME" == "pull_request" ]]; then
             diff_range="${BASE_SHA}...${GITHUB_SHA}"
           elif [[ "$EVENT_NAME" == "push" && -n "$BEFORE_SHA" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
@@ -305,7 +298,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/port/26.2' && startsWith(github.event.head_commit.message, 'release:')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'release:')
     needs:
       - quality-gate
       - build-mod

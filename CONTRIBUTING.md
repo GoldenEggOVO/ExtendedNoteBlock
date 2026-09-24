@@ -28,7 +28,7 @@ The complete client build requires JDK 25. Resource-pack generation also require
 
 ## Pull requests
 
-Open pull requests against `main`. Keep unrelated formatting or generated-file changes out of the patch, explain user-visible behavior, and state what was actually tested. Do not use a `release:` commit prefix; that prefix is reserved for maintainers publishing verified artifacts from `port/26.2`.
+Open pull requests against `main`. Keep unrelated formatting or generated-file changes out of the patch, explain user-visible behavior, and state what was actually tested. Do not use a `release:` commit prefix; that prefix is reserved for maintainers publishing verified artifacts from `main`.
 
 Before submitting, confirm that:
 

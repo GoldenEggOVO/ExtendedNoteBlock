@@ -38,7 +38,7 @@ The active Gradle build does not include `legacy/`. The old version-switching ta
 Run from the repository root with JDK 25 selected. The source-preparation scripts modify tracked files, so use a disposable checkout or a detached worktree for builds when you want to keep your development checkout clean:
 
 ```bash
-git worktree add --detach ../enb-build port/26.2
+git worktree add --detach ../enb-build main
 cd ../enb-build
 ```
 
@@ -83,12 +83,11 @@ The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed Gen
 
 | Ref | Role |
 | --- | --- |
-| `port/26.2` | Main development branch |
-| `main` | Repository landing branch, synchronized at agreed checkpoints |
-| `release/26.2` | Release maintenance branch, synchronized at agreed checkpoints |
+| `main` | Verified source, default development and release branch |
+| Temporary feature / fix branches | Short-lived work; merge into `main`, then delete after checking for unmerged commits |
 | `v<mod-version>-mc26.2` | Exact source commit for a published release |
 
-The current [workflow](../.github/workflows/build-26.2.yml) validates documentation on pushes to `port/26.2` and `release/26.2`, pull requests targeting `main`, and manual runs. Code changes and `release:` commits run the complete Full / Client / Server build. Documentation-only changes skip those expensive jobs, and synchronized pushes to `release/26.2` run only the quality gate. The release job runs only for a push to `port/26.2` whose head commit message starts with `release:` and whose build jobs succeed.
+The current [workflow](../.github/workflows/build-26.2.yml) validates documentation on pushes to `main`, pull requests targeting `main`, and manual runs. Code changes and `release:` commits run the complete Full / Client / Server build. Documentation-only changes skip those expensive jobs. The release job runs only for a push to `main` whose head commit message starts with `release:` and whose build jobs succeed. Ordinary merges and manual builds do not publish a release. Before a release, bump the version and add matching release notes; use a merge strategy that preserves the intended `release:` head commit message.
 
 Use `docs:` / `chore:` commits for repository maintenance. Branches may advance after a release; keep the published release tag anchored to the source commit that produced its artifacts. Full / Client / Server Resources use `mod_version`, while Paper Server has its own version in `bridge/build.gradle`.
 
