@@ -1,5 +1,7 @@
 # Extended Note Block · Minecraft 26.2
 
+**简体中文** · [English](docs/README_en.md) · [日本語](docs/README_ja-jp.md)
+
 [![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62B47A?style=flat-square)](https://www.minecraft.net/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5-DBD0B4?style=flat-square)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square)](https://adoptium.net/)
@@ -12,7 +14,7 @@ Extended Note Block 为 Minecraft 带来完整 MIDI 音域的扩展音符盒、�
 
 当前正式版为 **Full Fabric / Paper Client 2.13.1**、**Paper Server 0.14.1**，适用于 **Minecraft 26.2 / Java 25**。
 
-[下载 2.13.1](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2) · [安装指南](docs/INSTALLATION.md) · [功能展示](docs/FEATURES.md) · [全部文档](docs/README.md) · [日本語](docs/README_ja-jp.md)
+[下载 2.13.1](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2) · [安装指南](docs/INSTALLATION.md) · [功能展示](docs/FEATURES.md) · [全部文档](docs/README.md)
 
 ## 我应该安装哪个版本？
 
@@ -53,17 +55,27 @@ Paper Server 使用 **CraftEngine 26.8.2** 注册 ENB 方块与物品；ENB 保�
 
 ## 快速开始
 
-1. 从 [Releases](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2) 下载与你场景匹配的 JAR。
-2. Fabric 文件放入 `mods/`；Paper Server 与 CraftEngine 文件放入服务端 `plugins/`，解压 ENB CraftEngine 注册资源至服务器根目录。
-3. 完整重启游戏或服务器。Paper 服 OP 可执行 `/enb give all` 获取测试物品。
-4. 默认按 **N** 打开 NBS 音乐工坊；右键已登记的 ENB 音符盒打开编辑界面。
+### 单人 / Fabric 服务器
 
-完整依赖、升级流程、命令、目录和 Litematic 恢复步骤见[安装与使用](docs/INSTALLATION.md)。
+1. 安装 **Java 25、Fabric Loader 0.19.5、Fabric API 0.159.0+26.2**。
+2. 将 **Full Fabric** JAR 放入 `mods/`；Fabric 多人服务器的服务端与客户端都需安装。
+3. 启动游戏，默认按 **N** 打开音乐工坊。
+
+### Paper / Purpur 服务器
+
+1. 正常停服并备份数据，将 **Paper Server 0.14.1 + CraftEngine 26.8.2** 放入 `plugins/`，移出旧版 ENB JAR。
+2. 将 Release 中的 **ENB CraftEngine ZIP** 解压到服务器根目录，确认资源位于 `plugins/CraftEngine/resources/enb/`。此 ZIP 是服务端安装资源，不是直接发给玩家的最终资源包。
+3. 在 CraftEngine 配置的 `resource-pack.delivery` 下，将 `send-on-join` 和 `resend-on-upload` 都设为 `false`。由 CraftEngine 生成、托管完整包，ENB 统一发送并检测加载状态。
+4. 正常重启，按[资源包配置说明](docs/INSTALLATION.md#paper-服务器资源包)生成并上传完整包。OP 可用 `/enb pack status` 检查、`/enb give all` 获取物品。
+5. 普通玩家加载服务器资源包即可；创作者在客户端安装 **Paper Client + Fabric API**，按 **N** 打开工坊、右键 ENB 音符盒编辑参数。
+
+[完整安装与升级指南](docs/INSTALLATION.md) · [English setup guide](docs/README_en.md#quick-start)
 
 ## 文档
 
 | 入口 | 内容 |
 | --- | --- |
+| [English guide](docs/README_en.md) | English overview, installation, resource packs and Litematica |
 | [文档中心](docs/README.md) | 用户、服主、开发者与历史文章总入口 |
 | [安装与使用](docs/INSTALLATION.md) | 依赖、安装、命令、资源包、Litematic 与排错 |
 | [功能展示](docs/FEATURES.md) | GUI、指挥棒、无线红石与音色包截图 |
