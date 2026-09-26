@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.13.2 / Paper Server 0.14.2
+
+Added editable English and Simplified Chinese Paper server language files, with English as the default. The Full Fabric and Paper Client interfaces use Minecraft client language settings. CraftEngine ENB item names default to English. [Release notes](docs/releases/2.13.2.md).
+
 ## 2.13.1 / Paper Server 0.14.1
 
 统一下发 CraftEngine 生成并托管的完整资源包，移除独立 Server-Resources 发布附件。[详细说明](docs/releases/2.13.1.md)。
@@ -8,7 +12,7 @@
 
 CraftEngine 成为 Paper Server 必需插件；Litematica 保存建筑完整 ENB 参数，并在命令粘贴建筑及音乐工坊投影后自动导入。[详细说明](docs/releases/2.13.0.md)。
 
-[Documentation](docs/README.md) · [Detailed release notes](docs/releases/README.md) · [Latest release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2)
+[Documentation](docs/README.md) · [Detailed release notes](docs/releases/README.md) · [Latest release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2)
 
 ## Repository maintenance after 2.13.1
 

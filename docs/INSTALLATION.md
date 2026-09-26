@@ -4,14 +4,14 @@
 
 ## 下载与依赖
 
-从 [v2.13.1-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2) 下载所需文件。Release 同时提供 `SHA256SUMS.txt`。
+从 [v2.13.2-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2) 下载所需文件。Release 同时提供 `SHA256SUMS.txt`。
 
 | 文件 | 安装对象 |
 | --- | --- |
-| `ExtendedNoteBlock-Full-Fabric-2.13.1-mc26.2.jar` | 单人 / Fabric 服务端模式 |
-| `ExtendedNoteBlock-Paper-Client-Fabric-2.13.1-mc26.2.jar` | Paper / Purpur 专用 Fabric 客户端 |
-| `ExtendedNoteBlock-Paper-Server-0.14.1-mc26.2.jar` | Paper / Purpur 服务端，内置强制自动资源包配置 |
-| `ExtendedNoteBlock-CraftEngine-2.13.1-mc26.2.zip` | 安装到服务端的 ENB 注册配置、模型与全部聆听音色，交由 CraftEngine 生成完整包 |
+| `ExtendedNoteBlock-Full-Fabric-2.13.2-mc26.2.jar` | 单人 / Fabric 服务端模式 |
+| `ExtendedNoteBlock-Paper-Client-Fabric-2.13.2-mc26.2.jar` | Paper / Purpur 专用 Fabric 客户端 |
+| `ExtendedNoteBlock-Paper-Server-0.14.2-mc26.2.jar` | Paper / Purpur 服务端，内置强制自动资源包配置 |
+| `ExtendedNoteBlock-CraftEngine-2.13.2-mc26.2.zip` | 安装到服务端的 ENB 注册配置、模型与全部聆听音色，交由 CraftEngine 生成完整包 |
 
 | 环境 | 本版本构建基线 |
 | --- | --- |
@@ -23,7 +23,7 @@
 | Paper Server 必需插件 | CraftEngine 26.8.2 |
 | 自动复制客户端依赖 | Litematica 0.28.8 + MaLiLib 0.29.6 |
 
-**CraftEngine 是 Paper Server 必需依赖，缺少它时插件不会加载。Full Fabric 不需要 CraftEngine。** ENB 发布包不包含 CraftEngine JAR，请从作者渠道安装；Release 的 `ExtendedNoteBlock-CraftEngine-2.13.1-mc26.2.zip` 只提供 ENB 注册配置和自有资源。
+**CraftEngine 是 Paper Server 必需依赖，缺少它时插件不会加载。Full Fabric 不需要 CraftEngine。** ENB 发布包不包含 CraftEngine JAR，请从作者渠道安装；Release 的 `ExtendedNoteBlock-CraftEngine-2.13.2-mc26.2.zip` 只提供 ENB 注册配置和自有资源。
 
 Fabric API 只用于 Fabric 客户端 / 服务端，不放入 Paper 的 `plugins/`。上述版本是当前构建基线，并非对其他版本兼容性的承诺。
 
@@ -60,7 +60,7 @@ CraftEngine 负责生成和托管，ENB 负责下发这一份包。若上述自�
 
 ENB 默认 `resource-pack.enabled: true`、`required: true`。旧配置中的 `url`、`sha1`、`id`、`use-official-release`、`combined-file` 不再生效，无需删除已有音乐数据。新包生成或托管尚未完成时等待匹配的包，不会退回旧的独立包。保留正常 ZIP 格式和 ENB 资源路径；破坏 CRC 或重命名 ENB 资源路径的保护设置会使完整性校验失败。
 
-可用 `/enb pack status` 查看状态、`/enb pack resend` 重发。资源包实际成功加载后才启用原版 MIDI 聆听，Paper Client 用户继续走 Mod 声音协议。GitHub Releases 只保留当前正式版附件；旧版独立包下载地址已停用，使用旧插件的服务器应升级。2.13.1 不再发布独立 `Server-Resources` 附件。
+可用 `/enb pack status` 查看状态、`/enb pack resend` 重发。资源包实际成功加载后才启用原版 MIDI 聆听，Paper Client 用户继续走 Mod 声音协议。GitHub Releases 只保留当前正式版附件；旧版独立包下载地址已停用，使用旧插件的服务器应升级。2.13.1 起不再发布独立 `Server-Resources` 附件。
 
 原版聆听模式将全部 128 个 GM 乐器编号映射到 32 种代表音色，每种使用 22 个半八度锚点覆盖 MIDI 0–127，另含 47 个打击乐音色。常规播放最多只需约 ±3 半音的实时变调；采样使用 OGG quality 4、高精度离线重采样和短尾部淡出。位置音频所需的单声道取自已居中的合成器主声道，避免部分立体声效果在左右相加时发生相位抵消。它保留乐器类别、音高、力度、延音、延迟和基础空间位置；连续音高 / 音量曲线与移动声源仍以 Paper Client 最完整。
 
@@ -101,7 +101,7 @@ ENB 默认 `resource-pack.enabled: true`、`required: true`。旧配置中的 `u
 
 ## Paper Litematic 恢复 ENB
 
-自动复制需要 **Paper Client 2.13.1 + Paper Server 0.14.1 + CraftEngine 26.8.2**，客户端另装 **Litematica 0.28.8 + MaLiLib 0.29.6**。Litematica 对不使用复制功能的玩家是可选依赖。
+自动复制需要 **Paper Client 2.13.2 + Paper Server 0.14.2 + CraftEngine 26.8.2**，客户端另装 **Litematica 0.28.8 + MaLiLib 0.29.6**。Litematica 对不使用复制功能的玩家是可选依赖。
 
 ### 复制已有建筑
 
@@ -126,6 +126,10 @@ ENB 默认 `resource-pack.enabled: true`、`required: true`。旧配置中的 `u
 - 第三方工具重新保存文件时可能删除 ENB 扩展字段。保留原始 `.litematic`，不要把外观相同当作参数完整。
 - 缺块、未加载或 CraftEngine 注册资源未就绪会使导入失败并提示；修正原因后重新完整粘贴。
 
+## 语言设置
+
+Full Fabric 与 Paper Client 的界面由 Minecraft 客户端语言设置决定，目前内置英语和简体中文。Paper Server 默认使用英语，第一次启动会生成 `plugins/ExtendedNoteBlockBridge/lang/en_us.yml` 与 `zh_cn.yml`。服主可编辑消息 YAML，并在 `plugins/ExtendedNoteBlockBridge/config.yml` 中设置 `language: en_us` 或 `language: zh_cn`。执行 `/enb reload` 后生效。CraftEngine 的 ENB 物品名称可在 `plugins/CraftEngine/resources/enb/configuration/enb.yml` 修改；修改后重新生成并上传 CraftEngine 资源包。
+
 ## 常见问题
 
 ### 连接 Paper 时因未知 ENB Registry ID 断线
@@ -138,7 +142,7 @@ ENB 默认 `resource-pack.enabled: true`、`required: true`。旧配置中的 `u
 
 ### MIDI 低音区听起来仍然相同
 
-Paper Client 请确认版本为 2.13.1 或更新；原版客户端先执行 `/enb pack status`，必须看到 `SUCCESSFULLY_LOADED (MIDI 0-127 listener enabled)`。可用同一乐器依次试听 **0 / 6 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120 / 126 / 127**。若资源包未成功加载，插件只会播放原版音符盒回退，低音区仍受原版限制；默认 `required: true` 时拒绝资源包会被服务器断开连接。MIDI 0–15 的物理频率低于或接近人耳与普通扬声器下限，即使技术映射正确，也可能几乎听不到。
+Paper Client 请确认版本为 2.13.2 或更新；原版客户端先执行 `/enb pack status`，必须看到 `SUCCESSFULLY_LOADED (MIDI 0-127 listener enabled)`。可用同一乐器依次试听 **0 / 6 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120 / 126 / 127**。若资源包未成功加载，插件只会播放原版音符盒回退，低音区仍受原版限制；默认 `required: true` 时拒绝资源包会被服务器断开连接。MIDI 0–15 的物理频率低于或接近人耳与普通扬声器下限，即使技术映射正确，也可能几乎听不到。
 
 ### 启动出现 IllegalClassLoadError
 
@@ -153,4 +157,4 @@ Paper Server 0.8.2 开始，GUI 保存与 `/enb` 命令统一检查 `extendednot
 - [功能展示](FEATURES.md)
 - [Paper / Purpur 架构](ARCHITECTURE.md)
 - [路线图与验证](ROADMAP.md)
-- [2.13.1 发布说明](releases/2.13.1.md)
+- [2.13.2 发布说明](releases/2.13.2.md)

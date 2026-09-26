@@ -1,6 +1,9 @@
 # ExtendedNoteBlockBridge configuration
 # Minecraft 26.2 / Paper / Purpur
 
+# ENB server messages: en_us or zh_cn. Edit plugins/ExtendedNoteBlockBridge/lang/<language>.yml.
+language: en_us
+
 # Maximum distance used by player-facing bridge interactions.
 interaction-range: 6
 
@@ -14,7 +17,7 @@ audible-radius: 64
 resource-pack:
   enabled: true
   required: true
-  prompt: "服务器需要 CraftEngine 方块材质和 ENB 音色包 / requires the complete CraftEngine pack."
+  prompt: "This server requires the complete CraftEngine block and ENB music resource pack."
 
 wand:
   # Safety cap for conductor-wand cuboid edits.

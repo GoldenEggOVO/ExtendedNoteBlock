@@ -1,11 +1,12 @@
 # 历史发布文章
 
-[文档中心](../README.md) · [CHANGELOG](../../CHANGELOG.md) · [当前 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2)
+[文档中心](../README.md) · [CHANGELOG](../../CHANGELOG.md) · [当前 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2)
 
 这些文章记录各版本发布时的功能、限制和安装变化。旧文章中的下载链接、Visuals ZIP 或实现细节可能已经过时；安装与排错请始终参考[当前安装指南](../INSTALLATION.md)。
 
 | 版本 | 重点变化 |
 | --- | --- |
+| [2.13.2](2.13.2.md) | 默认英文、中文语言文件与客户端语言跟随 |
 | [2.13.1](2.13.1.md) | 统一由 ENB 下发 CraftEngine 生成的完整资源包 |
 | [2.13.0](2.13.0.md) | CraftEngine 必需依赖与 Litematica 自动复制 |
 | [2.12.0](2.12.0.md) | 移除假方块与独立 Visuals，提升原版监听音频质量并将资源包控制在 50 MB 内 |

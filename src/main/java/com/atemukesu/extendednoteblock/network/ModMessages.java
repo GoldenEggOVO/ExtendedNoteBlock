@@ -63,7 +63,7 @@ public class ModMessages {
                     entity.updateValues(note, velocity, sustain, delay, fadeIn, fadeOut);
                     updateInstrumentBlock(player, world, payload.pos(), instrumentId);
                 } else {
-                    System.err.println("在位置 " + payload.pos() + " 未找到 ExtendedNoteBlockEntity");
+                    System.err.println("No ExtendedNoteBlockEntity at " + payload.pos() + "");
                 }
             });
         });
@@ -119,7 +119,7 @@ public class ModMessages {
                         updates.add(new Triple<>(path, mode, value));
                     }
                 } catch (Exception e) {
-                    System.err.println("解析 updatesJson 失败: " + e.getMessage());
+                    System.err.println("Failed to parse updatesJson: " + e.getMessage());
                 }
 
                 CompoundTag advancedPatch = payload.hasAdvanced() ? payload.advancedPatch() : null;
@@ -348,7 +348,7 @@ public class ModMessages {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("更换方块时出错: " + e.getMessage());
+                System.err.println("Error while replacing block: " + e.getMessage());
             }
         }
     }

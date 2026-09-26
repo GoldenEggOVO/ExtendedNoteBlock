@@ -226,6 +226,7 @@ jobs:
         run: |
           python3 ../scripts/prepare_paper_craftengine.py
           python3 ../scripts/prepare_paper_schematic.py
+          python3 ../scripts/prepare_paper_language.py
       - name: Verify vanilla-safe identity, interaction, render and listener bridge
         run: |
           grep -q 'PersistentDataType.STRING' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java

@@ -99,7 +99,7 @@ final class EnbCombinedPack implements AutoCloseable {
         if(closed || !plugin.listenerPackEnabled || !eligible(player))return;
         if(Config.sendPackOnJoin() || Config.sendPackOnUpload()) {
             problem("Set CraftEngine resource-pack.delivery.send-on-join and resend-on-upload to false; ENB sends the CraftEngine pack and tracks its load status.");
-            if(force)player.sendMessage("ENB: 请关闭 CraftEngine 的 send-on-join / resend-on-upload，避免重复下发资源包。");
+            if(force)player.sendMessage("ENB: Disable CraftEngine send-on-join and resend-on-upload to avoid duplicate resource-pack requests.");
             return;
         }
         UUID playerId=player.getUniqueId();
@@ -119,7 +119,7 @@ final class EnbCombinedPack implements AutoCloseable {
                     var data=error==null ? selectDownload(downloads,hash) : null;
                     if(data==null) {
                         problem("CraftEngine host has no download matching the verified ENB pack. Generate/upload the complete CraftEngine pack first.");
-                        if(force)player.sendMessage("ENB: CraftEngine 完整资源包尚未生成或托管校验值不一致，请联系服主。");
+                        if(force)player.sendMessage("ENB: The complete CraftEngine pack is missing or its hosted checksum differs. Contact the server owner.");
                         return;
                     }
                     if(Config.sendPackOnJoin() || Config.sendPackOnUpload())return;

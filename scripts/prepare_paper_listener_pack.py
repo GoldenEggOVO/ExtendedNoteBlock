@@ -98,19 +98,19 @@ join_replacement = r'''    @EventHandler
         if ("SUCCESSFULLY_LOADED".equals(status)) {
             listenerPackReady.add(event.getPlayer().getUniqueId());
             getLogger().info("ENB listener resource pack loaded by " + event.getPlayer().getName());
-            event.getPlayer().sendMessage("ENB 资源包已加载：原版客户端 MIDI 0-127 聆听模式已启用。");
+            event.getPlayer().sendMessage("ENB resource pack loaded: vanilla-client MIDI 0-127 listening is enabled.");
         } else if (status.equals("ACCEPTED")) {
             getLogger().info("ENB listener resource pack accepted by " + event.getPlayer().getName());
-            event.getPlayer().sendMessage("ENB 资源包已接受，正在下载。");
+            event.getPlayer().sendMessage("ENB resource pack accepted; downloading.");
         } else if (status.equals("DOWNLOADED")) {
             getLogger().info("ENB listener resource pack downloaded by " + event.getPlayer().getName());
-            event.getPlayer().sendMessage("ENB 资源包已下载，正在加载声音与物品材质。");
+            event.getPlayer().sendMessage("ENB resource pack downloaded; loading sounds and item textures.");
         } else if (status.equals("DECLINED") || status.startsWith("FAILED")
                 || status.equals("INVALID_URL") || status.equals("DISCARDED")) {
             listenerPackReady.remove(event.getPlayer().getUniqueId());
             getLogger().warning("ENB listener resource pack " + status.toLowerCase(Locale.ROOT)
                     + " for " + event.getPlayer().getName());
-            event.getPlayer().sendMessage("ENB 资源包未加载（" + status + "），当前只能使用受限的原版音符盒回退。");
+            event.getPlayer().sendMessage("ENB resource pack was not loaded (" + status + "); only limited vanilla note-block playback is available.");
         }
     }
 
@@ -281,7 +281,7 @@ helper_block = r'''    // ------------------------------------------------------
         listenerPackReady.remove(player.getUniqueId());
         listenerPackStates.put(player.getUniqueId(), "REQUESTED");
         if (announce) {
-            player.sendMessage("ENB 正在下发物品材质与音乐资源包；若服务器资源包设为‘启用’，客户端会静默下载。");
+            player.sendMessage("ENB is sending the complete item and music resource pack. Set server resource packs to Enabled for automatic downloads.");
         }
         player.setResourcePack(listenerPackId, listenerPackUrl, listenerPackSha1,
                 listenerPackPrompt, listenerPackRequired);
@@ -292,7 +292,7 @@ helper_block = r'''    // ------------------------------------------------------
             if (!state.equals("DECLINED") && !state.startsWith("FAILED")
                     && !state.equals("INVALID_URL") && !state.equals("DISCARDED")) {
                 listenerPackStates.put(player.getUniqueId(), "NO_SUCCESS_AFTER_15S");
-                player.sendMessage("ENB 尚未收到资源包加载成功状态。请检查：多人游戏 → 编辑服务器 → 服务器资源包设为‘提示’或‘启用’，然后执行 /enb pack resend。");
+                player.sendMessage("ENB has not received a successful pack load status. Set server resource packs to Prompt or Enabled in the multiplayer server settings, then run /enb pack resend.");
                 getLogger().warning("No successful ENB resource-pack status from " + player.getName()
                         + " after 15 seconds (last=" + state + ").");
             }
@@ -304,7 +304,7 @@ helper_block = r'''    // ------------------------------------------------------
         if (action.equals("resend")) {
             if (sender instanceof Player player) {
                 sendListenerResourcePack(player, true);
-                sender.sendMessage("ENB 资源包请求已重新发送。");
+                sender.sendMessage("ENB resource-pack request resent.");
             } else {
                 for (Player player : Bukkit.getOnlinePlayers()) sendListenerResourcePack(player, true);
                 sender.sendMessage("ENB resource-pack request resent to all online players.");
@@ -317,7 +317,7 @@ helper_block = r'''    // ------------------------------------------------------
                 return;
             }
             if (!listenerPackReady.contains(player.getUniqueId())) {
-                sender.sendMessage("ENB 资源包尚未成功加载；先执行 /enb pack status 或 /enb pack resend。");
+                sender.sendMessage("The ENB resource pack has not loaded; run /enb pack status or /enb pack resend first.");
                 return;
             }
             try {

@@ -46,7 +46,7 @@ chmod +x gradlew
 ./gradlew clean test build --stacktrace
 python3 scripts/make_paper_bridge_client_jar.py
 python3 scripts/make_server_resource_pack.py
-python3 scripts/make_craftengine_pack.py --resource-pack build/server-resource-pack/ExtendedNoteBlock-Server-Resources-2.13.1-mc26.2.zip --output build/craftengine/ExtendedNoteBlock-CraftEngine-2.13.1-mc26.2.zip --version 2.13.1
+python3 scripts/make_craftengine_pack.py --resource-pack build/server-resource-pack/ExtendedNoteBlock-Server-Resources-2.13.2-mc26.2.zip --output build/craftengine/ExtendedNoteBlock-CraftEngine-2.13.2-mc26.2.zip --version 2.13.2
 ```
 
 The Paper Client packaging script consumes the Full build output and applies a strict class whitelist. Do not replace it with a copy of the Full JAR.
@@ -62,6 +62,7 @@ python3 scripts/prepare_paper_render_sync.py
 python3 scripts/prepare_paper_listener_pack.py
 python3 scripts/prepare_paper_craftengine.py
 python3 scripts/prepare_paper_schematic.py
+python3 scripts/prepare_paper_language.py
 ./gradlew -p bridge clean build --stacktrace
 ```
 
@@ -105,6 +106,6 @@ After building and packaging the Paper Client, run `./gradlew runPaperClientSmok
 
 ## CraftEngine and Litematica integration
 
-Paper Server 0.14.1 compiles against the public CraftEngine core/bukkit 26.8.2 API without bundling the plugin. The authoritative integration sources are in `craftengine/integration/` and `scripts/templates/`; generated copies are build outputs.
+Paper Server 0.14.2 compiles against the public CraftEngine core/bukkit 26.8.2 API without bundling the plugin. The authoritative integration sources are in `craftengine/integration/` and `scripts/templates/`; generated copies are build outputs.
 
 The client supports Litematica 0.28.8 / MaLiLib 0.29.6 as optional runtime dependencies. Release checks start Paper Client both with and without Litematica. The CraftEngine installation ZIP contains ENB registration resources, not the CraftEngine plugin binary or private server configuration.

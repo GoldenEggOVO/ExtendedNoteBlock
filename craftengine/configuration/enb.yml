@@ -3,7 +3,7 @@
     "enb:extended_note_block": {
       "material": "paper",
       "data": {
-        "item_name": "<!i><aqua>扩展音符盒"
+        "item_name": "<!i><aqua>Extended Note Block"
       },
       "model": "extendednoteblock:item/extended_note_block",
       "behavior": {
@@ -14,7 +14,7 @@
     "enb:global_redstone_transmitter": {
       "material": "paper",
       "data": {
-        "item_name": "<!i><aqua>全局红石发射器"
+        "item_name": "<!i><aqua>Global Redstone Transmitter"
       },
       "model": "extendednoteblock:item/global_redstone_transmitter",
       "behavior": {
@@ -25,7 +25,7 @@
     "enb:global_redstone_receiver": {
       "material": "paper",
       "data": {
-        "item_name": "<!i><aqua>全局红石接收器"
+        "item_name": "<!i><aqua>Global Redstone Receiver"
       },
       "model": "extendednoteblock:item/global_redstone_receiver",
       "behavior": {
@@ -36,7 +36,7 @@
     "enb:nbs_projection_receiver": {
       "material": "paper",
       "data": {
-        "item_name": "<!i><aqua>NBS 投影接收器"
+        "item_name": "<!i><aqua>NBS Projection Receiver"
       },
       "model": "extendednoteblock:item/nbs_projection_receiver",
       "behavior": {
@@ -47,7 +47,7 @@
     "enb:conductor_wand": {
       "material": "blaze_rod",
       "data": {
-        "item_name": "<!i><aqua>指挥棒"
+        "item_name": "<!i><aqua>Conductor Wand"
       },
       "model": "extendednoteblock:item/conductor_wand"
     }

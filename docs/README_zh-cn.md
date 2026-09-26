@@ -5,16 +5,16 @@
 [![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62B47A?style=flat-square)](https://www.minecraft.net/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5-DBD0B4?style=flat-square)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square)](https://adoptium.net/)
-[![Release](https://img.shields.io/badge/Release-2.13.1-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2)
+[![Release](https://img.shields.io/badge/Release-2.13.2-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2)
 [![License](https://img.shields.io/github/license/GoldenEggOVO/ExtendedNoteBlock?style=flat-square)](../LICENSE)
 
 ![Extended Note Block Banner](assets/ENB-Banner.webp)
 
 Extended Note Block 为 Minecraft 带来完整 MIDI 音域的扩展音符盒、指挥棒、无线红石和 NBS 音乐工坊。它支持 MIDI、NBS 与常见音频导入，也可以将歌曲导出为 Minecraft 音乐结构。
 
-当前正式版为 **Full Fabric / Paper Client 2.13.1**、**Paper Server 0.14.1**，适用于 **Minecraft 26.2 / Java 25**。
+当前正式版为 **Full Fabric / Paper Client 2.13.2**、**Paper Server 0.14.2**，适用于 **Minecraft 26.2 / Java 25**。
 
-[下载 2.13.1](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.1-mc26.2) · [安装指南](INSTALLATION.md) · [功能展示](FEATURES.md) · [全部文档](README.md)
+[下载 2.13.2](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2) · [安装指南](INSTALLATION.md) · [功能展示](FEATURES.md) · [全部文档](README.md)
 
 ## 我应该安装哪个版本？
 
@@ -63,13 +63,17 @@ Paper Server 使用 **CraftEngine 26.8.2** 注册 ENB 方块与物品；ENB 保�
 
 ### Paper / Purpur 服务器
 
-1. 正常停服并备份数据，将 **Paper Server 0.14.1 + CraftEngine 26.8.2** 放入 `plugins/`，移出旧版 ENB JAR。
+1. 正常停服并备份数据，将 **Paper Server 0.14.2 + CraftEngine 26.8.2** 放入 `plugins/`，移出旧版 ENB JAR。
 2. 将 Release 中的 **ENB CraftEngine ZIP** 解压到服务器根目录，确认资源位于 `plugins/CraftEngine/resources/enb/`。此 ZIP 是服务端安装资源，不是直接发给玩家的最终资源包。
 3. 在 CraftEngine 配置的 `resource-pack.delivery` 下，将 `send-on-join` 和 `resend-on-upload` 都设为 `false`。由 CraftEngine 生成、托管完整包，ENB 统一发送并检测加载状态。
 4. 正常重启，按[资源包配置说明](INSTALLATION.md#paper-服务器资源包)生成并上传完整包。OP 可用 `/enb pack status` 检查、`/enb give all` 获取物品。
 5. 普通玩家加载服务器资源包即可；创作者在客户端安装 **Paper Client + Fabric API**，按 **N** 打开工坊、右键 ENB 音符盒编辑参数。
 
 [完整安装与升级指南](INSTALLATION.md) · [English setup guide](../README.md#quick-start)
+
+## 语言设置
+
+Full Fabric 和 Paper Client 界面跟随 Minecraft 客户端语言设置，提供英语和简体中文。Paper Server 默认英语；首次启动会生成 `plugins/ExtendedNoteBlockBridge/lang/en_us.yml` 和 `zh_cn.yml`。编辑语言文件后，在 `plugins/ExtendedNoteBlockBridge/config.yml` 中设置 `language: en_us` 或 `language: zh_cn`，再执行 `/enb reload`。CraftEngine 物品名称另在 `plugins/CraftEngine/resources/enb/configuration/enb.yml` 中编辑，修改后需重新生成资源包。
 
 ## 文档
 
