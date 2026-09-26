@@ -4,7 +4,7 @@
 
 ## 下载与依赖
 
-从 [v2.13.2-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2) 下载所需文件。Release 同时提供 `SHA256SUMS.txt`。
+从 [v2.13.2-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2) 下载所需文件。
 
 | 文件 | 安装对象 |
 | --- | --- |

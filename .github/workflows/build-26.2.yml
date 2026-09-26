@@ -358,8 +358,6 @@ jobs:
 
           # CraftEngine's server-specific output is generated and hosted by each server.
           # No independent listener ZIP or GitHub pack URL is published or embedded.
-          sha256sum release/* > release/SHA256SUMS.txt
-
           echo "MOD_VERSION=$MOD_VERSION" >> "$GITHUB_ENV"
           echo "MC_VERSION=$MC_VERSION" >> "$GITHUB_ENV"
           echo "SERVER_VERSION=$SERVER_VERSION" >> "$GITHUB_ENV"
