@@ -5,18 +5,18 @@
 [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62B47A?style=flat-square)](https://www.minecraft.net/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.20.1-DBD0B4?style=flat-square)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square)](https://adoptium.net/)
-[![Release](https://img.shields.io/badge/Release-2.13.4-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.4-mc26.3)
+[![Release](https://img.shields.io/badge/Release-2.13.5-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.5-mc26.3)
 [![License](https://img.shields.io/github/license/GoldenEggOVO/ExtendedNoteBlock?style=flat-square)](LICENSE)
 
 ![Extended Note Block Banner](docs/assets/ENB-Banner.webp)
 
 Extended Note Block adds MIDI-range note blocks, a conductor wand, wireless redstone and a music workshop to Minecraft. Import NBS, MIDI or supported audio files, edit and preview music, and export Minecraft music structures.
 
-**Minecraft 26.3 · Java 25 · Full Fabric / Paper Client 2.13.4 · Paper Server 0.14.5**
+**Minecraft 26.3 · Java 25 · Full Fabric / Paper Client 2.13.5 · Paper Server 0.14.6**
 
 Download the four edition-specific files from the release below. This version targets Minecraft 26.3; use matching client and server versions.
 
-[Latest release (26.3)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.4-mc26.3) · [Choose an edition](#choose-an-edition) · [Quick start](#quick-start) · [Litematica](#copying-with-litematica) · [Development guide](docs/DEVELOPMENT.md)
+[Latest release (26.3)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.5-mc26.3) · [Choose an edition](#choose-an-edition) · [Quick start](#quick-start) · [Litematica](#copying-with-litematica) · [Development guide](docs/DEVELOPMENT.md)
 
 ## Choose an edition
 
@@ -50,17 +50,17 @@ Paper Client provides the full instrument set and advanced sound controls. Vanil
 ### Single-player or Fabric server
 
 1. Install Java 25, Fabric Loader and Fabric API for Minecraft 26.3.
-2. Put `ExtendedNoteBlock-Full-Fabric-2.13.4-mc26.3.jar` in `mods/`. For Fabric multiplayer, install it and Fabric API on both sides.
+2. Put `ExtendedNoteBlock-Full-Fabric-2.13.5-mc26.3.jar` in `mods/`. For Fabric multiplayer, install it and Fabric API on both sides.
 3. Start the game. Press **N** to open the music workshop; the key can be changed in Controls.
 
 ### Paper / Purpur server
 
 1. Stop the server normally. Back up `plugins/ExtendedNoteBlockBridge/` and `plugins/CraftEngine/`, then remove the old ENB plugin JAR.
-2. Put `ExtendedNoteBlock-Paper-Server-0.14.5-mc26.3.jar` and **CraftEngine 26.9.2** in `plugins/`.
-3. Extract `ExtendedNoteBlock-CraftEngine-2.13.4-mc26.3.zip` into the server root. Its files must end up in `plugins/CraftEngine/resources/enb/`. This is an installation bundle, not the final pack to send directly to players.
+2. Put `ExtendedNoteBlock-Paper-Server-0.14.6-mc26.3.jar` and **CraftEngine 26.9.2** in `plugins/`.
+3. Extract `ExtendedNoteBlock-CraftEngine-2.13.5-mc26.3.zip` into the server root. Its files must end up in `plugins/CraftEngine/resources/enb/`. This is an installation bundle, not the final pack to send directly to players.
 4. Configure the single resource-pack delivery flow below. On a first installation, start once to create CraftEngine's configuration, then stop before editing it.
 5. Restart normally, generate and upload the complete CraftEngine pack using your configured host, then join and accept the pack. An operator can run `/enb pack status` and `/enb give all`.
-6. Creators install `ExtendedNoteBlock-Paper-Client-Fabric-2.13.4-mc26.3.jar` with Fabric API on their client. Press **N** for the workshop and right-click a registered ENB note block to edit it.
+6. Creators install `ExtendedNoteBlock-Paper-Client-Fabric-2.13.5-mc26.3.jar` with Fabric API on their client. Press **N** for the workshop and right-click a registered ENB note block to edit it.
 
 ### One resource pack
 
@@ -101,7 +101,7 @@ Paper Server defaults to English. On first start it creates `plugins/ExtendedNot
 
 ## Copying with Litematica
 
-Use **Paper Client 2.13.4**, **Paper Server 0.14.5**, **CraftEngine 26.9.2**, **Litematica 0.29.1** and **MaLiLib 0.30.2**. Litematica and MaLiLib are optional for players who do not use this feature.
+Use **Paper Client 2.13.5**, **Paper Server 0.14.6**, **CraftEngine 26.9.2**, **Litematica 0.29.1** and **MaLiLib 0.30.2**. Litematica and MaLiLib are optional for players who do not use this feature.
 
 1. Select an existing build and save it normally in Litematica. Wait for ENB's server-side data snapshot to finish saving with the schematic. Music-workshop Paper projections also contain ENB metadata.
 2. Load the schematic and choose the destination, rotation and mirror settings.
@@ -116,7 +116,7 @@ Copy/import permission (`extendednoteblockbridge.import`) is operator-only by de
 
 - [Development guide](docs/DEVELOPMENT.md): English build, test and `main` branch release workflow.
 - [Contributing](CONTRIBUTING.md), [security policy](SECURITY.md), [license](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md).
-- [Detailed installation reference](docs/INSTALLATION.md), [feature screenshots](docs/FEATURES.md), [release notes](docs/releases/2.13.4.md) and [validation roadmap](docs/ROADMAP.md): Chinese documentation.
+- [Detailed installation reference](docs/INSTALLATION.md), [feature screenshots](docs/FEATURES.md), [release notes](docs/releases/2.13.5.md) and [validation roadmap](docs/ROADMAP.md): Chinese documentation.
 - [Upstream manual](https://atemukesu.github.io/ExtendedNoteBlock/): reference for Full Fabric features; Paper-specific behavior is documented in this repository.
 
 Automated build and startup checks do not replace multiplayer visual or listening tests. See the validation roadmap for outstanding in-game checks.

@@ -5,16 +5,16 @@
 [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62B47A?style=flat-square)](https://www.minecraft.net/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.20.1-DBD0B4?style=flat-square)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square)](https://adoptium.net/)
-[![Release](https://img.shields.io/badge/Release-2.13.4-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.4-mc26.3)
+[![Release](https://img.shields.io/badge/Release-2.13.5-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.5-mc26.3)
 [![License](https://img.shields.io/github/license/GoldenEggOVO/ExtendedNoteBlock?style=flat-square)](../LICENSE)
 
 ![Extended Note Block Banner](assets/ENB-Banner.webp)
 
 Extended Note Block 为 Minecraft 带来完整 MIDI 音域的扩展音符盒、指挥棒、无线红石和 NBS 音乐工坊。它支持 MIDI、NBS 与常见音频导入，也可以将歌曲导出为 Minecraft 音乐结构。
 
-当前版本为 **Full Fabric / Paper Client 2.13.4**、**Paper Server 0.14.5**，适用于 **Minecraft 26.3 / Java 25**。
+当前版本为 **Full Fabric / Paper Client 2.13.5**、**Paper Server 0.14.6**，适用于 **Minecraft 26.3 / Java 25**。
 
-[最新版本（26.3）](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.4-mc26.3) · [安装指南](INSTALLATION.md) · [功能展示](FEATURES.md) · [全部文档](README.md)
+[最新版本（26.3）](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.5-mc26.3) · [安装指南](INSTALLATION.md) · [功能展示](FEATURES.md) · [全部文档](README.md)
 
 从 Release 下载对应安装包。此版本面向 Minecraft 26.3，客户端与服务端需使用匹配版本。
 
@@ -65,7 +65,7 @@ Paper Server 使用 **CraftEngine 26.9.2** 注册 ENB 方块与物品；ENB 保�
 
 ### Paper / Purpur 服务器
 
-1. 正常停服并备份数据，将 **Paper Server 0.14.5 + CraftEngine 26.9.2** 放入 `plugins/`，移出旧版 ENB JAR。
+1. 正常停服并备份数据，将 **Paper Server 0.14.6 + CraftEngine 26.9.2** 放入 `plugins/`，移出旧版 ENB JAR。
 2. 将 Release 中的 **ENB CraftEngine ZIP** 解压到服务器根目录，确认资源位于 `plugins/CraftEngine/resources/enb/`。此 ZIP 是服务端安装资源，不是直接发给玩家的最终资源包。
 3. 在 CraftEngine 配置的 `resource-pack.delivery` 下，将 `send-on-join` 和 `resend-on-upload` 都设为 `false`。CraftEngine 26.9 还需移除所有已启用的 `reload_pack` 触发工作流中的 `send_pack` 步骤（包括默认工作流），保留生成与上传步骤。由 CraftEngine 生成、托管完整包，ENB 统一发送并检测加载状态。
 4. 正常重启，按[资源包配置说明](INSTALLATION.md#paper-服务器资源包)生成并上传完整包。OP 可用 `/enb pack status` 检查、`/enb give all` 获取物品。

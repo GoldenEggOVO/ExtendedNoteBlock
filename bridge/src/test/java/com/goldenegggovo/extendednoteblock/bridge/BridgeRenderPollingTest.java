@@ -55,6 +55,90 @@ class BridgeRenderPollingTest {
         method.invoke(plugin);
     }
 
+    private static final class RenderPlayer extends org.mockbukkit.mockbukkit.entity.PlayerMock {
+        final java.util.List<byte[]> packets = new java.util.ArrayList<>();
+        RenderPlayer(ServerMock server) { super(server, "Listener", java.util.UUID.randomUUID()); }
+        @Override public java.util.Set<String> getListeningPluginChannels() {
+            return java.util.Set.of("extendednoteblock:bridge_object_sync");
+        }
+        @Override public void sendPluginMessage(org.bukkit.plugin.Plugin source, String channel, byte[] message) {
+            if (channel.equals("extendednoteblock:bridge_object_sync")) packets.add(message.clone());
+        }
+    }
+
+    private void assertUpserts(RenderPlayer player, boolean powered, int noteVariant, int... types) throws Exception {
+        var received = new java.util.HashSet<Integer>();
+        assertEquals(types.length, player.packets.size());
+        for (byte[] packet : player.packets) {
+            var input = new java.io.DataInputStream(new java.io.ByteArrayInputStream(packet));
+            assertEquals(1, input.readInt());
+            long position = input.readLong();
+            int type = input.readInt();
+            assertTrue(received.add(type), "Only one update per object");
+            assertEquals(((long) type << 38) | 64L, position);
+            assertEquals(powered, input.readBoolean());
+            assertEquals(type == 0 ? noteVariant : 0, input.readInt());
+            assertEquals(0, input.available());
+        }
+        assertEquals(java.util.Arrays.stream(types).boxed().collect(java.util.stream.Collectors.toSet()), received);
+        player.packets.clear();
+    }
+
+    @Test void renderChangesDeletionAndUnloadedRoutesKeepTheirPacketCoordinates() throws Exception {
+        world.loadChunk(0, 0);
+        var player = new RenderPlayer(server);
+        server.addPlayer(player);
+        player.teleport(new org.bukkit.Location(world, 0, 65, 0));
+        String note = note(0);
+        var types = new ExtendedNoteBlockBridge.BridgeItemType[] {
+            EXTENDED_NOTE_BLOCK, GLOBAL_REDSTONE_TRANSMITTER, GLOBAL_REDSTONE_RECEIVER, NBS_PROJECTION_RECEIVER
+        };
+        var keys = new String[4];
+        keys[0] = note;
+        for (int x = 1; x < 4; x++) {
+            keys[x] = world.getUID() + ":" + x + ":64:0";
+            plugin.objects.put(keys[x], types[x]);
+            plugin.indexObject(keys[x], types[x]);
+            plugin.loadedBlocks.put(keys[x], mock(Block.class));
+        }
+        when(plugin.loadedBlocks.get(keys[2]).getType()).thenReturn(Material.REDSTONE_BLOCK);
+        plugin.transmitterPower.put(keys[1], false);
+        plugin.globalPower.put(world.getUID(), false);
+        plugin.transmitterProjectionTarget.put(keys[1], keys[3]);
+        player.packets.clear();
+        render();
+        assertUpserts(player, false, 1, 0, 1, 2, 3);
+        render();
+        assertTrue(player.packets.isEmpty(), "Stable objects must not be broadcast again");
+
+        plugin.notes.put(note, new ExtendedNoteBlockBridge.NoteConfig(65, 9, 90, 25, 50, 2, 4, 13));
+        when(plugin.loadedBlocks.get(note).getBlockPower()).thenReturn(15);
+        plugin.transmitterPower.put(keys[1], true);
+        plugin.globalPower.put(world.getUID(), true);
+        render();
+        assertUpserts(player, true, 5, 0, 1, 2, 3);
+
+        plugin.objects.remove(note);
+        plugin.notes.remove(note);
+        plugin.unindexObject(note, EXTENDED_NOTE_BLOCK);
+        render();
+        assertEquals(1, player.packets.size());
+        var removed = new java.io.DataInputStream(new java.io.ByteArrayInputStream(player.packets.getFirst()));
+        assertEquals(2, removed.readInt());
+        assertEquals(64L, removed.readLong(), "Removal retains coordinates after unindex clears the cache");
+        player.packets.clear();
+
+        server.getPluginManager().callEvent(new ChunkUnloadEvent(world.getChunkAt(0, 0)));
+        plugin.transmitterPower.put(keys[1], false);
+        plugin.globalPower.put(world.getUID(), false);
+        plugin.transmitterProjectionTarget.remove(keys[1]);
+        plugin.blockQueries = 0;
+        render();
+        assertEquals(0, plugin.blockQueries);
+        assertUpserts(player, false, 0, 1, 2, 3);
+        assertEquals(3, plugin.objects.size());
+    }
+
     @Test void unloadedLedgerDoesNotCreatePerTickWorldQueries() throws Exception {
         for (int i = 0; i < 8879; i++) note(100_000 + i);
         render();
@@ -77,6 +161,23 @@ class BridgeRenderPollingTest {
         assertSame(previous, plugin.lastRenderStates.get(key));
         assertEquals(1, previous.variant());
         assertEquals(13, plugin.notes.get(key).pitchCents());
+    }
+
+    @Test void repeatedRegistrationUsesTheCurrentTypeWithoutChangingNoteData() throws Exception {
+        world.loadChunk(0, 0);
+        String key = note(0);
+        var config = plugin.notes.get(key);
+        render();
+        plugin.objects.put(key, GLOBAL_REDSTONE_TRANSMITTER);
+        plugin.transmitterPower.put(key, true);
+        plugin.indexObject(key, GLOBAL_REDSTONE_TRANSMITTER);
+        plugin.indexObject(key, GLOBAL_REDSTONE_TRANSMITTER);
+        plugin.blockQueries = 0;
+        render();
+        assertEquals(1, plugin.blockQueries);
+        assertEquals(1, plugin.lastRenderStates.get(key).typeId());
+        assertTrue(plugin.lastRenderStates.get(key).powered());
+        assertSame(config, plugin.notes.get(key));
     }
 
     @Test void renderAndCraftEngineShareOneBlockQuery() throws Exception {

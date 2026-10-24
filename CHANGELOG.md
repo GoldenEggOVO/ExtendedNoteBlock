@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.13.5 / Paper Server 0.14.6 — Minecraft 26.3
+
+- Cache the loaded polling keys until membership changes and retrieve render coordinates only when needed.
+- Preserve one-tick redstone, projection playback, wireless routes, all saved note data, Litematica transfer, CraftEngine integration and optional audio.
+- Cover cache invalidation, repeated registration and render packet coordinates with regression tests. [Release notes](docs/releases/2.13.5.md).
+
 ## 2.13.4 / Paper Server 0.14.5 — Minecraft 26.3
 
 - Read object types directly from ledger entries when all registered objects are loaded, avoiding a second registry lookup per object. Partial loading still polls only active positions.
@@ -24,7 +30,7 @@ Added editable English and Simplified Chinese Paper server language files, with 
 
 CraftEngine 成为 Paper Server 必需插件；Litematica 保存建筑完整 ENB 参数，并在命令粘贴建筑及音乐工坊投影后自动导入。[详细说明](docs/releases/2.13.0.md)。
 
-[Documentation](docs/README.md) · [Detailed release notes](docs/releases/README.md) · [Latest release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.4-mc26.3)
+[Documentation](docs/README.md) · [Detailed release notes](docs/releases/README.md) · [Latest release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.5-mc26.3)
 
 ## Repository maintenance after 2.13.1
 

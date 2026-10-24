@@ -12,6 +12,7 @@ final class BridgeChunkIndex {
     private final Map<Chunk, Set<String>> chunks = new HashMap<>();
     private final Map<String, Chunk> positions = new HashMap<>();
     private final Set<String> active = new HashSet<>();
+    private String[] pollingKeys;
 
     void add(String key, UUID world, int x, int z, boolean loaded) {
         Chunk chunk = new Chunk(world, x >> 4, z >> 4);
@@ -19,12 +20,12 @@ final class BridgeChunkIndex {
         if (old != null && !old.equals(chunk)) remove(key);
         positions.put(key, chunk);
         chunks.computeIfAbsent(chunk, ignored -> new HashSet<>()).add(key);
-        if (loaded) active.add(key); else active.remove(key);
+        if (loaded ? active.add(key) : active.remove(key)) pollingKeys = null;
     }
 
     void remove(String key) {
         Chunk chunk = positions.remove(key);
-        active.remove(key);
+        if (active.remove(key)) pollingKeys = null;
         if (chunk == null) return;
         Set<String> keys = chunks.get(chunk);
         keys.remove(key);
@@ -33,7 +34,7 @@ final class BridgeChunkIndex {
 
     Set<String> setLoaded(UUID world, int x, int z, boolean loaded) {
         Set<String> keys = chunks.getOrDefault(new Chunk(world, x, z), Set.of());
-        if (loaded) active.addAll(keys); else active.removeAll(keys);
+        if (loaded ? active.addAll(keys) : active.removeAll(keys)) pollingKeys = null;
         return keys;
     }
 
@@ -47,15 +48,21 @@ final class BridgeChunkIndex {
 
     Set<String> unloadWorld(UUID world) {
         Set<String> keys = worldKeys(world);
-        active.removeAll(keys);
+        if (active.removeAll(keys)) pollingKeys = null;
         return keys;
     }
 
     Set<String> activeKeys() { return active; }
 
+    String[] pollingKeys() {
+        if (pollingKeys == null) pollingKeys = active.toArray(String[]::new);
+        return pollingKeys;
+    }
+
     void clear() {
         chunks.clear();
         positions.clear();
         active.clear();
+        pollingKeys = null;
     }
 }

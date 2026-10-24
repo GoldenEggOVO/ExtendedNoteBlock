@@ -4,14 +4,14 @@
 
 ## 下载与依赖
 
-本页对应 [2.13.4／Minecraft 26.3](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.4-mc26.3)。从 Release 下载对应安装包，不要混用不同 Minecraft 版本的客户端。
+本页对应 [2.13.5／Minecraft 26.3](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.5-mc26.3)。从 Release 下载对应安装包，不要混用不同 Minecraft 版本的客户端。
 
 | 文件 | 安装对象 |
 | --- | --- |
-| `ExtendedNoteBlock-Full-Fabric-2.13.4-mc26.3.jar` | 单人 / Fabric 服务端模式 |
-| `ExtendedNoteBlock-Paper-Client-Fabric-2.13.4-mc26.3.jar` | Paper / Purpur 专用 Fabric 客户端 |
-| `ExtendedNoteBlock-Paper-Server-0.14.5-mc26.3.jar` | Paper / Purpur 服务端，内置强制自动资源包配置 |
-| `ExtendedNoteBlock-CraftEngine-2.13.4-mc26.3.zip` | 安装到服务端的 ENB 注册配置、模型与全部聆听音色，交由 CraftEngine 生成完整包 |
+| `ExtendedNoteBlock-Full-Fabric-2.13.5-mc26.3.jar` | 单人 / Fabric 服务端模式 |
+| `ExtendedNoteBlock-Paper-Client-Fabric-2.13.5-mc26.3.jar` | Paper / Purpur 专用 Fabric 客户端 |
+| `ExtendedNoteBlock-Paper-Server-0.14.6-mc26.3.jar` | Paper / Purpur 服务端，内置强制自动资源包配置 |
+| `ExtendedNoteBlock-CraftEngine-2.13.5-mc26.3.zip` | 安装到服务端的 ENB 注册配置、模型与全部聆听音色，交由 CraftEngine 生成完整包 |
 
 | 环境 | 本版本构建基线 |
 | --- | --- |
@@ -23,7 +23,7 @@
 | Paper Server 必需插件 | CraftEngine 26.9.2 |
 | 自动复制客户端依赖 | Litematica 0.29.1 + MaLiLib 0.30.2 |
 
-**CraftEngine 是 Paper Server 必需依赖，缺少它时插件不会加载。Full Fabric 不需要 CraftEngine。** ENB 发布包不包含 CraftEngine JAR，请从作者渠道安装；Release 的 `ExtendedNoteBlock-CraftEngine-2.13.4-mc26.3.zip` 只提供 ENB 注册配置和自有资源。
+**CraftEngine 是 Paper Server 必需依赖，缺少它时插件不会加载。Full Fabric 不需要 CraftEngine。** ENB 发布包不包含 CraftEngine JAR，请从作者渠道安装；Release 的 `ExtendedNoteBlock-CraftEngine-2.13.5-mc26.3.zip` 只提供 ENB 注册配置和自有资源。
 
 Fabric API 只用于 Fabric 客户端 / 服务端，不放入 Paper 的 `plugins/`。上述版本是当前构建基线，并非对其他版本兼容性的承诺。
 
@@ -103,7 +103,7 @@ ENB 默认 `resource-pack.enabled: true`、`required: true`。旧配置中的 `u
 
 ## Paper Litematic 恢复 ENB
 
-自动复制需要 **Paper Client 2.13.4 + Paper Server 0.14.5 + CraftEngine 26.9.2**，客户端另装 **Litematica 0.29.1 + MaLiLib 0.30.2**。Litematica 对不使用复制功能的玩家是可选依赖。
+自动复制需要 **Paper Client 2.13.5 + Paper Server 0.14.6 + CraftEngine 26.9.2**，客户端另装 **Litematica 0.29.1 + MaLiLib 0.30.2**。Litematica 对不使用复制功能的玩家是可选依赖。
 
 ### 复制已有建筑
 
@@ -144,7 +144,7 @@ Full Fabric 与 Paper Client 的界面由 Minecraft 客户端语言设置决定�
 
 ### MIDI 低音区听起来仍然相同
 
-Paper Client 请确认版本为 2.13.4 或更新；原版客户端先执行 `/enb pack status`，必须看到 `SUCCESSFULLY_LOADED (MIDI 0-127 listener enabled)`。可用同一乐器依次试听 **0 / 6 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120 / 126 / 127**。若资源包未成功加载，插件只会播放原版音符盒回退，低音区仍受原版限制；默认 `required: true` 时拒绝资源包会被服务器断开连接。MIDI 0–15 的物理频率低于或接近人耳与普通扬声器下限，即使技术映射正确，也可能几乎听不到。
+Paper Client 请确认版本为 2.13.5 或更新；原版客户端先执行 `/enb pack status`，必须看到 `SUCCESSFULLY_LOADED (MIDI 0-127 listener enabled)`。可用同一乐器依次试听 **0 / 6 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120 / 126 / 127**。若资源包未成功加载，插件只会播放原版音符盒回退，低音区仍受原版限制；默认 `required: true` 时拒绝资源包会被服务器断开连接。MIDI 0–15 的物理频率低于或接近人耳与普通扬声器下限，即使技术映射正确，也可能几乎听不到。
 
 ### 启动出现 IllegalClassLoadError
 
@@ -159,7 +159,7 @@ Paper Server 0.8.2 开始，GUI 保存与 `/enb` 命令统一检查 `extendednot
 - [功能展示](FEATURES.md)
 - [Paper / Purpur 架构](ARCHITECTURE.md)
 - [路线图与验证](ROADMAP.md)
-- [2.13.4 发布说明](releases/2.13.4.md)
+- [2.13.5 发布说明](releases/2.13.5.md)
 
 ## 可选音频与运行时优化
 

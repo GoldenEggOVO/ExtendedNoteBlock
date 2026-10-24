@@ -6,6 +6,40 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class BridgeChunkIndexTest {
+    @Test void cachedPollingKeysTrackChangesAcrossWorldsAndSameSizedReplacements() {
+        var index = new BridgeChunkIndex();
+        UUID a = UUID.randomUUID(), b = UUID.randomUUID();
+        index.add("a", a, 0, 0, true);
+        index.add("b", b, 0, 0, true);
+        String[] original = index.pollingKeys();
+        assertEquals(Set.of("a", "b"), Set.of(original));
+        index.add("a", a, 0, 0, true);
+        assertSame(original, index.pollingKeys(), "Unchanged membership must reuse the polling snapshot");
+        index.add("a", a, 0, 0, false);
+        assertEquals(Set.of("b"), Set.of(index.pollingKeys()));
+        index.add("a", a, 0, 0, true);
+        assertEquals(Set.of("a", "b"), Set.of(index.pollingKeys()));
+        index.setLoaded(a, 0, 0, false);
+        assertEquals(Set.of("b"), Set.of(index.pollingKeys()));
+        index.setLoaded(a, 0, 0, true);
+        assertEquals(Set.of("a", "b"), Set.of(index.pollingKeys()));
+        index.remove("a");
+        index.add("c", a, 0, 0, true);
+        assertEquals(Set.of("b", "c"), Set.of(index.pollingKeys()));
+        index.add("c", a, 16, 0, false);
+        index.setLoaded(a, 0, 0, true);
+        assertEquals(Set.of("b"), Set.of(index.pollingKeys()));
+        index.setLoaded(a, 1, 0, true);
+        assertEquals(Set.of("b", "c"), Set.of(index.pollingKeys()));
+        index.unloadWorld(b);
+        assertEquals(Set.of("c"), Set.of(index.pollingKeys()));
+        index.clear();
+        assertEquals(Set.of(), Set.of(index.pollingKeys()));
+        index.add("d", a, 0, 0, true);
+        index.setLoaded(a, 1, 0, true);
+        assertEquals(Set.of("d"), Set.of(index.pollingKeys()));
+    }
+
     @Test void negativeCoordinatesAndWorldsStayIndependent() {
         var index = new BridgeChunkIndex();
         UUID a = UUID.randomUUID(), b = UUID.randomUUID();

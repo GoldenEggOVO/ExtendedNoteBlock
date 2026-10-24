@@ -13,8 +13,8 @@
     }
 
     private void refreshRenderObject(String key, BridgeItemType type, boolean active) {
-        BlockRef ref = blockRefs.get(key);
         if (type == null) {
+            BlockRef ref = blockRefs.get(key);
             RenderObjectState previous = lastRenderStates.remove(key);
             if (previous != null) {
                 if (ref == null) ref = parseKey(key);
@@ -24,12 +24,14 @@
             return;
         }
         if (!type.placeable) return;
+        BlockRef ref = type == BridgeItemType.GLOBAL_REDSTONE_RECEIVER ? blockRefs.get(key) : null;
         Block block = active ? getLoadedBlock(key) : null;
         RenderObjectState previous = lastRenderStates.get(key);
         RenderObjectState next = currentRenderState(key, type, ref, block, previous);
         if (craftEngine != null) craftEngine.sync(key, type, next, block);
         if (next != previous) {
             lastRenderStates.put(key, next);
+            if (ref == null) ref = blockRefs.get(key);
             if (ref != null) broadcastRenderUpsert(ref, next);
         }
     }
