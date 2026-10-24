@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — 2.13.3 / Paper Server 0.14.4 — Minecraft 26.3
+
+- Update Full Fabric, Paper Client, Litematica integration and Paper Server to Minecraft 26.3.
+- Poll loaded ENB positions through a chunk index, share block lookups with CraftEngine and reuse unchanged render states while retaining saved notes, projections and wireless routes.
+- Preserve optional listener audio, player preferences and resource-pack IDs; support CraftEngine 26.9 pack workflows. [Development notes](docs/releases/2.13.3.md).
+
 ## 2.13.2 / Paper Server 0.14.2
 
 Added editable English and Simplified Chinese Paper server language files, with English as the default. The Full Fabric and Paper Client interfaces use Minecraft client language settings. CraftEngine ENB item names default to English. [Release notes](docs/releases/2.13.2.md).

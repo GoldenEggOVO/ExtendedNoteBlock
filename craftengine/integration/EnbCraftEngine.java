@@ -31,6 +31,7 @@ final class EnbCraftEngine implements Listener, AutoCloseable {
     private BukkitTask refresh;
     private int migrationBudget;
     private boolean ready;
+    private boolean rollback, migrateKnown = true;
     private int tick, restored;
 
     EnbCraftEngine(ExtendedNoteBlockBridge plugin) { this.plugin=plugin; }
@@ -54,7 +55,12 @@ final class EnbCraftEngine implements Listener, AutoCloseable {
     @EventHandler public void reloaded(CraftEngineReloadEvent e) {
         Bukkit.getScheduler().runTask(plugin,()->{definitions.clear();synced.clear();ready=false;refreshDefinitions();});
     }
-    void beginTick(){tick++;migrationBudget=Math.min(128,Math.max(1,plugin.getConfig().getInt("craftengine.migrations-per-tick",32)));}
+    void beginTick(){
+        tick++;
+        migrationBudget=Math.min(128,Math.max(1,plugin.getConfig().getInt("craftengine.migrations-per-tick",32)));
+        rollback=plugin.getConfig().getBoolean("craftengine.rollback",false);
+        migrateKnown=plugin.getConfig().getBoolean("craftengine.migrate-known-blocks",true);
+    }
     boolean managed(Block b) {
         if (b==null) return false;
         var state=CraftEngineBlocks.getCustomBlockState(b);
@@ -110,10 +116,13 @@ final class EnbCraftEngine implements Listener, AutoCloseable {
         return CraftEngineBlocks.place(b.getLocation(),desired,UpdateFlags.UPDATE_ALL,false);
     }
     void sync(String key,BridgeItemType type,ExtendedNoteBlockBridge.RenderObjectState render) {
+        sync(key,type,render,plugin.getLoadedBlock(key));
+    }
+    void forget(String key) { synced.remove(key);notePower.remove(key); }
+    void sync(String key,BridgeItemType type,ExtendedNoteBlockBridge.RenderObjectState render,Block b) {
         if(!ready)return;
-        Block b=plugin.getLoadedBlock(key);
-        if(b==null){synced.remove(key);notePower.remove(key);return;}
-        if(plugin.getConfig().getBoolean("craftengine.rollback",false)){
+        if(b==null){forget(key);return;}
+        if(rollback){
             if(migrationBudget>0 && matches(b,type)){restoreCarrier(b);migrationBudget--;restored++;}
             return;
         }
@@ -122,7 +131,7 @@ final class EnbCraftEngine implements Listener, AutoCloseable {
         boolean custom=matches(b,type);
         if(!custom) {
             synced.remove(key);
-            if(journal==null || !plugin.getConfig().getBoolean("craftengine.migrate-known-blocks",true) || migrationBudget<=0)return;
+            if(journal==null || !migrateKnown || migrationBudget<=0)return;
             // Only the ENB identity ledger authorizes conversion; never scan materials in a world.
             // A stale ledger must not claim another custom block with the same vanilla carrier.
             if(!acceptsCopy(b,type))return;

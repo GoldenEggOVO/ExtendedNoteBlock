@@ -60,11 +60,11 @@ public class PreLaunchCheckScreen extends Screen {
         this.ticks++;
         if (this.currentState == State.SUCCESS && this.ticks > 40) {
             if (this.minecraft != null) {
-                this.minecraft.setScreen(new TitleScreen());
+                this.minecraft.gui.setScreen(new TitleScreen());
             }
         } else if (this.currentState == State.FAILURE && this.ticks > 40) {
             if (this.minecraft != null) {
-                this.minecraft.setScreen(new SoundPackManagerScreen(new TitleScreen()));
+                this.minecraft.gui.setScreen(new SoundPackManagerScreen(new TitleScreen()));
             }
         }
     }

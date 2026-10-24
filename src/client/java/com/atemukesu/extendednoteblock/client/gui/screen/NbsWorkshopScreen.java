@@ -27,7 +27,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Util;
 
 public class NbsWorkshopScreen extends Screen {
     private static final int[] COMPATIBLE_SPEEDS = { 25, 50, 100, 125, 200, 250, 400, 500, 1000, 2000 };
@@ -96,7 +95,7 @@ public class NbsWorkshopScreen extends Screen {
 
         addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.nbs.open_folder"), button -> {
             ensureDirectories();
-            Util.getPlatform().openFile(songsDirectory.toFile());
+            com.mojang.blaze3d.Blaze3D.openPath(songsDirectory);
         }).bounds(center - rowWidth / 2, top, rowWidth / 2 - 2, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.nbs.refresh"), button -> {
             refreshFiles();
@@ -228,7 +227,7 @@ public class NbsWorkshopScreen extends Screen {
         Button vanillaExport = Button.builder(Component.translatable("gui.extendednoteblock.nbs.vanilla_export"),
                 button -> {
                     stopPreview();
-                    minecraft.setScreen(new VanillaExportScreen(this, song, outputName, transpose, speedPercent));
+                    minecraft.gui.setScreen(new VanillaExportScreen(this, song, outputName, transpose, speedPercent));
                 }).bounds(left, actionY + 24, paperClient() ? (panelWidth - 6) / 2 : panelWidth, 20).build();
         vanillaExport.active = !busy;
         addRenderableWidget(vanillaExport);
@@ -254,7 +253,7 @@ public class NbsWorkshopScreen extends Screen {
         addRenderableWidget(otherSong);
         addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.nbs.open_output"), button -> {
             ensureDirectories();
-            Util.getPlatform().openFile(schematicsDirectory.toFile());
+            com.mojang.blaze3d.Blaze3D.openPath(schematicsDirectory);
         }).bounds(middle, bottomY, columnWidth, 20).build());
 
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
@@ -268,7 +267,7 @@ public class NbsWorkshopScreen extends Screen {
     private void addImportButton(int x, int y, int width) {
         addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.import.title"), button -> {
             stopPreview();
-            minecraft.setScreen(new com.atemukesu.extendednoteblock.bridgeclient.BridgeImportScreen(this));
+            minecraft.gui.setScreen(new com.atemukesu.extendednoteblock.bridgeclient.BridgeImportScreen(this));
         }).bounds(x, y, width, 20).build());
     }
 
@@ -281,14 +280,14 @@ public class NbsWorkshopScreen extends Screen {
             try {
                 int value = Integer.parseInt(text);
                 boolean valid = value >= min && value <= max;
-                field.setTextColor(valid ? 0xFFFFFFFF : ChatFormatting.RED.getColor());
+                field.setTextColor(valid ? 0xFFFFFFFF : 0xFFFF5555);
                 if (valid) {
                     setter.accept(value);
                     stopPreview();
                     updateProjectionPreview();
                 }
             } catch (NumberFormatException exception) {
-                field.setTextColor(ChatFormatting.RED.getColor());
+                field.setTextColor(0xFFFF5555);
             }
         });
         addRenderableWidget(field);
@@ -436,7 +435,7 @@ public class NbsWorkshopScreen extends Screen {
                     outputName = sanitizeFileName(stripExtension(path.getFileName().toString()));
                     busy = false;
                     setStatus(Component.translatable("gui.extendednoteblock.nbs.loaded"), 0xFF55FF55);
-                    if (minecraft.screen == this) {
+                    if (minecraft.gui.screen() == this) {
                         rebuildWidgets();
                     }
                 });
@@ -445,7 +444,7 @@ public class NbsWorkshopScreen extends Screen {
                     busy = false;
                     setStatus(Component.translatable("gui.extendednoteblock.nbs.load_failed", shortError(exception)),
                             0xFFFF5555);
-                    if (minecraft.screen == this) {
+                    if (minecraft.gui.screen() == this) {
                         rebuildWidgets();
                     }
                 });
@@ -469,7 +468,7 @@ public class NbsWorkshopScreen extends Screen {
                     busy = false;
                     setStatus(Component.translatable("gui.extendednoteblock.nbs.audio_converted",
                             result.output().getFileName().toString(), result.song().notes().size()), 0xFF55FF55);
-                    if (minecraft.screen == this) {
+                    if (minecraft.gui.screen() == this) {
                         rebuildWidgets();
                     }
                 });
@@ -478,7 +477,7 @@ public class NbsWorkshopScreen extends Screen {
                     busy = false;
                     setStatus(Component.translatable("gui.extendednoteblock.nbs.audio_convert_failed",
                             shortError(exception)), 0xFFFF5555);
-                    if (minecraft.screen == this) {
+                    if (minecraft.gui.screen() == this) {
                         rebuildWidgets();
                     }
                 });
@@ -502,7 +501,7 @@ public class NbsWorkshopScreen extends Screen {
                     busy = false;
                     setStatus(Component.translatable("gui.extendednoteblock.nbs.midi_converted",
                             result.output().getFileName().toString(), result.song().notes().size()), 0xFF55FF55);
-                    if (minecraft.screen == this) {
+                    if (minecraft.gui.screen() == this) {
                         rebuildWidgets();
                     }
                 });
@@ -511,7 +510,7 @@ public class NbsWorkshopScreen extends Screen {
                     busy = false;
                     setStatus(Component.translatable("gui.extendednoteblock.nbs.midi_convert_failed",
                             shortError(exception)), 0xFFFF5555);
-                    if (minecraft.screen == this) {
+                    if (minecraft.gui.screen() == this) {
                         rebuildWidgets();
                     }
                 });
@@ -552,7 +551,7 @@ public class NbsWorkshopScreen extends Screen {
                         setStatus(Component.translatable("gui.extendednoteblock.nbs.exported",
                                 result.output().getFileName().toString(), result.noteCount()), 0xFF55FF55);
                     }
-                    if (minecraft.screen == this) {
+                    if (minecraft.gui.screen() == this) {
                         rebuildWidgets();
                     }
                 });
@@ -561,7 +560,7 @@ public class NbsWorkshopScreen extends Screen {
                     busy = false;
                     setStatus(Component.translatable("gui.extendednoteblock.nbs.export_failed", shortError(exception)),
                             0xFFFF5555);
-                    if (minecraft.screen == this) {
+                    if (minecraft.gui.screen() == this) {
                         rebuildWidgets();
                     }
                 });
@@ -746,7 +745,7 @@ public class NbsWorkshopScreen extends Screen {
     public void onClose() {
         stopPreview();
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
 

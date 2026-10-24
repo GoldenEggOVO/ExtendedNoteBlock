@@ -57,12 +57,19 @@ class ServerResourcePackTest(unittest.TestCase):
         self.assertIsNotNone(match)
         self.assertEqual(module.VOICE_ALIASES, int(match.group(1)))
 
-    def test_pack_metadata_matches_minecraft_26_2(self):
+    def test_bundled_sound_pack_uses_current_resource_format(self):
+        with zipfile.ZipFile(ROOT / "src/main/resources/assets/extendednoteblock/extendednoteblock_default.zip") as archive:
+            pack = json.loads(archive.read("pack.mcmeta"))["pack"]
+        self.assertEqual(97, pack["pack_format"])
+        self.assertEqual([97, 1], pack["min_format"])
+        self.assertEqual([97, 1], pack["max_format"])
+
+    def test_pack_metadata_matches_minecraft_26_3(self):
         meta = module.pack_metadata("test")
         self.assertEqual(module.RESOURCE_PACK_FORMAT, meta["pack"]["pack_format"])
-        self.assertEqual(module.RESOURCE_PACK_FORMAT, meta["pack"]["min_format"])
-        self.assertEqual(module.RESOURCE_PACK_FORMAT, meta["pack"]["max_format"])
-        self.assertEqual("26.2", module.metadata(False)["minecraft"])
+        self.assertEqual([97, 1], meta["pack"]["min_format"])
+        self.assertEqual([97, 1], meta["pack"]["max_format"])
+        self.assertEqual("26.3", module.metadata(False)["minecraft"])
         self.assertEqual(6, module.metadata(False)["anchor_step_semitones"])
         self.assertEqual(4, module.metadata(False)["ogg_vorbis_quality"])
         self.assertEqual(9.5, module.metadata(False)["maximum_rendered_hold_seconds"])

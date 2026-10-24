@@ -5,7 +5,6 @@ import com.atemukesu.extendednoteblock.client.gui.screen.ExtendedNoteBlockScreen
 import com.atemukesu.extendednoteblock.sound.SoundPackInfo;
 import com.atemukesu.extendednoteblock.sound.SoundPackManager;
 import net.minecraft.ChatFormatting;
-import net.minecraft.util.Util;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
@@ -74,7 +73,7 @@ public class EditPackScreen extends Screen {
         // "打开文件夹" 按钮
         this.addRenderableWidget(Button.builder(
                 Component.translatable("gui.extendednoteblock.edit_pack.button.open_folder"),
-                button -> Util.getPlatform().openFile(getSamplesDirectory().toFile()))
+                button -> com.mojang.blaze3d.Blaze3D.openPath(getSamplesDirectory()))
                 .bounds(this.width / 2 - 154, buttonY, 150, 20).build());
 
         // "重新加载" 按钮
@@ -85,7 +84,7 @@ public class EditPackScreen extends Screen {
         // "完成" 按钮
         this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), (button) -> {
             if (this.minecraft != null)
-                this.minecraft.setScreen(this.parent);
+                this.minecraft.gui.setScreen(this.parent);
         }).bounds(this.width / 2 - 100, bottomRowY, 200, 20).build());
     }
 
@@ -146,7 +145,7 @@ public class EditPackScreen extends Screen {
 
         if (this.minecraft != null) {
             // 弹出Toast提示用户资源已重载
-            this.minecraft.getToastManager().addToast(new net.minecraft.client.gui.components.toasts.SystemToast(
+            this.minecraft.gui.toastManager().addToast(new net.minecraft.client.gui.components.toasts.SystemToast(
                     net.minecraft.client.gui.components.toasts.SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
                     Component.translatable("gui.extendednoteblock.edit_pack.reloaded.title"),
                     Component.translatable("gui.extendednoteblock.edit_pack.reloaded.description")));
@@ -162,7 +161,7 @@ public class EditPackScreen extends Screen {
     public void onClose() {
         stopCurrentPreview(); // 关闭界面时停止声音
         if (this.minecraft != null) {
-            this.minecraft.setScreen(this.parent);
+            this.minecraft.gui.setScreen(this.parent);
         }
     }
 
@@ -403,12 +402,12 @@ public class EditPackScreen extends Screen {
                     Component warning = Component.translatable("gui.extendednoteblock.edit_pack.delete_confirm.warning")
                             .withStyle(ChatFormatting.RED);
 
-                    minecraft.setScreen(new ConfirmScreen(
+                    minecraft.gui.setScreen(new ConfirmScreen(
                             confirmed -> {
                                 if (confirmed) {
                                     this.deleteFile();
                                 }
-                                minecraft.setScreen(EditPackScreen.this);
+                                minecraft.gui.setScreen(EditPackScreen.this);
                             },
                             question, warning));
                 }).bounds(0, 0, 20, 20).build();

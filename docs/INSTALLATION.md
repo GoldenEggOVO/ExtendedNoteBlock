@@ -1,29 +1,29 @@
-# 安装与使用 · Minecraft 26.2
+# 安装与使用 · Minecraft 26.3
 
 [返回首页](../README.md) · [文档中心](README.md) · [功能展示](FEATURES.md) · [Paper 架构](ARCHITECTURE.md)
 
 ## 下载与依赖
 
-从 [v2.13.2-mc26.2 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2) 下载所需文件。
+本页对应尚未发布的 26.3 开发版本。构建文件见 [GitHub Actions](https://github.com/GoldenEggOVO/ExtendedNoteBlock/actions/workflows/build-26.3.yml)；当前公开 Release 仍为 [2.13.2／Minecraft 26.2](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2)。不要混用两个 Minecraft 版本的客户端。
 
 | 文件 | 安装对象 |
 | --- | --- |
-| `ExtendedNoteBlock-Full-Fabric-2.13.2-mc26.2.jar` | 单人 / Fabric 服务端模式 |
-| `ExtendedNoteBlock-Paper-Client-Fabric-2.13.2-mc26.2.jar` | Paper / Purpur 专用 Fabric 客户端 |
-| `ExtendedNoteBlock-Paper-Server-0.14.2-mc26.2.jar` | Paper / Purpur 服务端，内置强制自动资源包配置 |
-| `ExtendedNoteBlock-CraftEngine-2.13.2-mc26.2.zip` | 安装到服务端的 ENB 注册配置、模型与全部聆听音色，交由 CraftEngine 生成完整包 |
+| `ExtendedNoteBlock-Full-Fabric-2.13.3-mc26.3.jar` | 单人 / Fabric 服务端模式 |
+| `ExtendedNoteBlock-Paper-Client-Fabric-2.13.3-mc26.3.jar` | Paper / Purpur 专用 Fabric 客户端 |
+| `ExtendedNoteBlock-Paper-Server-0.14.4-mc26.3.jar` | Paper / Purpur 服务端，内置强制自动资源包配置 |
+| `ExtendedNoteBlock-CraftEngine-2.13.3-mc26.3.zip` | 安装到服务端的 ENB 注册配置、模型与全部聆听音色，交由 CraftEngine 生成完整包 |
 
 | 环境 | 本版本构建基线 |
 | --- | --- |
-| Minecraft | 26.2 |
+| Minecraft | 26.3 |
 | Java | 25 |
-| Fabric Loader | 0.19.5 |
-| Fabric API | 0.159.0+26.2 |
-| 插件服务端 | Paper / Purpur 26.2 |
-| Paper Server 必需插件 | CraftEngine 26.8.2 |
-| 自动复制客户端依赖 | Litematica 0.28.8 + MaLiLib 0.29.6 |
+| Fabric Loader | 0.20.1 |
+| Fabric API | 0.165.0+26.3 |
+| 插件服务端 | Paper / Purpur 26.3 |
+| Paper Server 必需插件 | CraftEngine 26.9.2 |
+| 自动复制客户端依赖 | Litematica 0.29.1 + MaLiLib 0.30.2 |
 
-**CraftEngine 是 Paper Server 必需依赖，缺少它时插件不会加载。Full Fabric 不需要 CraftEngine。** ENB 发布包不包含 CraftEngine JAR，请从作者渠道安装；Release 的 `ExtendedNoteBlock-CraftEngine-2.13.2-mc26.2.zip` 只提供 ENB 注册配置和自有资源。
+**CraftEngine 是 Paper Server 必需依赖，缺少它时插件不会加载。Full Fabric 不需要 CraftEngine。** ENB 发布包不包含 CraftEngine JAR，请从作者渠道安装；Release 的 `ExtendedNoteBlock-CraftEngine-2.13.3-mc26.3.zip` 只提供 ENB 注册配置和自有资源。
 
 Fabric API 只用于 Fabric 客户端 / 服务端，不放入 Paper 的 `plugins/`。上述版本是当前构建基线，并非对其他版本兼容性的承诺。
 
@@ -38,7 +38,7 @@ Full Fabric 注册真正的 ENB 方块和物品。连接纯 Paper / Purpur 服�
 ## Paper / Purpur
 
 1. 正常停服，备份 `plugins/ExtendedNoteBlockBridge/` 和 `plugins/CraftEngine/`，移出旧版 ENB JAR。
-2. 将 Paper Server 和 CraftEngine 26.8.2 JAR 放入 `plugins/`，解压 ENB CraftEngine ZIP 到服务器根目录，确认资源落在 `plugins/CraftEngine/resources/enb/`。启动服务器，按下文配置生成、托管及唯一发送方，再重建资源包。
+2. 将 Paper Server 和 CraftEngine 26.9.2 JAR 放入 `plugins/`，解压 ENB CraftEngine ZIP 到服务器根目录，确认资源落在 `plugins/CraftEngine/resources/enb/`。启动服务器，按下文配置生成、托管及唯一发送方，再重建资源包。
 3. 普通客户端进服时加载 ENB 服务器资源包；无需安装 Mod 即可听音乐并看到 ENB 物品材质。
 4. 需要编辑、精确世界方块模型与完整表现力时，再安装 Fabric Loader、Fabric API 和 Paper Client JAR；Full Fabric 与 Paper Client 二选一。
 5. OP 在游戏内运行 `/enb give all`，放置 ENB 物品后右键测试编辑界面。
@@ -56,7 +56,9 @@ resource-pack:
     resend-on-upload: false
 ```
 
-CraftEngine 负责生成和托管，ENB 负责下发这一份包。若上述自动发送仍开启，ENB 会提示配置冲突并暂停自己的发送，避免重复加载。更新配置后正常重启服务器，生成并上传完整包；下载地址必须让玩家能够访问。无需在 ENB 中填写 URL、SHA-1 或生成路径。
+CraftEngine 26.9 还需在工作流配置中，移除所有已启用且以 `reload_pack` 为触发器的工作流中的 `send_pack` 步骤（包括默认工作流），保留生成、上传等其他步骤。没有 `reload_pack` 触发器的手动工作流可以保留。
+
+CraftEngine 负责生成和托管，ENB 负责下发这一份包。若上述自动发送开关或 `reload_pack` 工作流中的 `send_pack` 步骤仍启用，ENB 会提示配置冲突并暂停自己的发送，避免重复加载。更新配置后正常重启服务器，生成并上传完整包；下载地址必须让玩家能够访问。无需在 ENB 中填写 URL、SHA-1 或生成路径。
 
 ENB 默认 `resource-pack.enabled: true`、`required: true`。旧配置中的 `url`、`sha1`、`id`、`use-official-release`、`combined-file` 不再生效，无需删除已有音乐数据。新包生成或托管尚未完成时等待匹配的包，不会退回旧的独立包。保留正常 ZIP 格式和 ENB 资源路径；破坏 CRC 或重命名 ENB 资源路径的保护设置会使完整性校验失败。
 
@@ -101,7 +103,7 @@ ENB 默认 `resource-pack.enabled: true`、`required: true`。旧配置中的 `u
 
 ## Paper Litematic 恢复 ENB
 
-自动复制需要 **Paper Client 2.13.2 + Paper Server 0.14.2 + CraftEngine 26.8.2**，客户端另装 **Litematica 0.28.8 + MaLiLib 0.29.6**。Litematica 对不使用复制功能的玩家是可选依赖。
+自动复制需要 **Paper Client 2.13.3 + Paper Server 0.14.4 + CraftEngine 26.9.2**，客户端另装 **Litematica 0.29.1 + MaLiLib 0.30.2**。Litematica 对不使用复制功能的玩家是可选依赖。
 
 ### 复制已有建筑
 
@@ -142,7 +144,7 @@ Full Fabric 与 Paper Client 的界面由 Minecraft 客户端语言设置决定�
 
 ### MIDI 低音区听起来仍然相同
 
-Paper Client 请确认版本为 2.13.2 或更新；原版客户端先执行 `/enb pack status`，必须看到 `SUCCESSFULLY_LOADED (MIDI 0-127 listener enabled)`。可用同一乐器依次试听 **0 / 6 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120 / 126 / 127**。若资源包未成功加载，插件只会播放原版音符盒回退，低音区仍受原版限制；默认 `required: true` 时拒绝资源包会被服务器断开连接。MIDI 0–15 的物理频率低于或接近人耳与普通扬声器下限，即使技术映射正确，也可能几乎听不到。
+Paper Client 请确认版本为 2.13.3 或更新；原版客户端先执行 `/enb pack status`，必须看到 `SUCCESSFULLY_LOADED (MIDI 0-127 listener enabled)`。可用同一乐器依次试听 **0 / 6 / 12 / 24 / 36 / 48 / 60 / 72 / 84 / 96 / 108 / 120 / 126 / 127**。若资源包未成功加载，插件只会播放原版音符盒回退，低音区仍受原版限制；默认 `required: true` 时拒绝资源包会被服务器断开连接。MIDI 0–15 的物理频率低于或接近人耳与普通扬声器下限，即使技术映射正确，也可能几乎听不到。
 
 ### 启动出现 IllegalClassLoadError
 
@@ -157,4 +159,10 @@ Paper Server 0.8.2 开始，GUI 保存与 `/enb` 命令统一检查 `extendednot
 - [功能展示](FEATURES.md)
 - [Paper / Purpur 架构](ARCHITECTURE.md)
 - [路线图与验证](ROADMAP.md)
-- [2.13.2 发布说明](releases/2.13.2.md)
+- [2.13.3 发布说明](releases/2.13.3.md)
+
+## 可选音频与运行时优化
+
+设置 `resource-pack.optional-audio.enabled: true`，同时指定可写发布目录 `directory` 和以 `/` 结尾的 HTTP(S) `public-url`。基础资源仍按原配置下发；玩家通过 `/enbaudio on|off|status` 选择音频，选择继续保存在 `optional-audio-players.txt`。升级保留原 UUID、偏好文件、ENB 音乐与投影数据。CraftEngine 26.9 的自动 `send_pack` 工作流应关闭，保持 ENB 为唯一发送方。
+
+区块活动索引仅存在于内存，不删除未加载区块中的记录，不改变 `objects.yml`、`notes.yml`、`projections.yml` 格式。详见[性能与兼容说明](PERFORMANCE.md)。

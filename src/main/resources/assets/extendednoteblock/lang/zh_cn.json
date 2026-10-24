@@ -255,5 +255,6 @@
   "gui.extendednoteblock.import.validating": "正在核对已粘贴方块：%s / %s",
   "gui.extendednoteblock.import.complete": "已恢复 %s 个 ENB 音符和投影曲目，服务器已保存。",
   "gui.extendednoteblock.import.failed": "恢复失败：%s",
-  "gui.extendednoteblock.import.interrupted": "恢复已中断。如果中断前正在完成，请检查方块或服务器日志确认结果。"
+  "gui.extendednoteblock.import.interrupted": "恢复已中断。如果中断前正在完成，请检查方块或服务器日志确认结果。",
+  "message.extendednoteblock.litematica.unsupported": "ENB：已禁用自动复制原理图音乐数据。请使用 Litematica %s 和 MaLiLib %s；其他版本不会自动保留 ENB 音乐设置。"
 }

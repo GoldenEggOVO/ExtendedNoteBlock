@@ -1,8 +1,8 @@
-# 待办与验证 · 2.13.2 基线
+# 待办与验证 · 2.13.3 基线
 
-[返回首页](../README.md) · [文档中心](README.md) · [2.13.2 更新说明](releases/2.13.2.md)
+[返回首页](../README.md) · [文档中心](README.md) · [2.13.3 更新说明](releases/2.13.3.md)
 
-当前基线为 Full Fabric / Paper Client **2.13.2** 与 Paper Server **0.14.2**。
+当前基线为 Full Fabric / Paper Client **2.13.3** 与 Paper Server **0.14.4**。
 
 ## 原版客户端自动资源包
 
@@ -52,7 +52,7 @@ CI 启动实际 Paper Client JAR，等待资源加载，检查内置物品包、
 
 ## CraftEngine 与自动复制
 
-- [x] Paper Server 必需 CraftEngine 26.8.2，发布 ENB 注册资源与可复现生成脚本。
+- [x] Paper Server 必需 CraftEngine 26.9.2，发布 ENB 注册资源与可复现生成脚本。
 - [x] Litematica 保存建筑 ENB 元数据，命令粘贴建筑和工坊投影后自动导入。
 - [ ] 实机验收：原版客户端模型、多人复制后MIDI/时间轴试听，以及大建筑粘贴过程。
 - [ ] Easy Place 每块放置的参数自动应用；当前保留工坊投影手动恢复。

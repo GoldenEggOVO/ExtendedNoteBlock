@@ -77,7 +77,7 @@ public class CreatePackScreen extends Screen {
             // 如果文本不为空且包含非法字符，则将输入框颜色设为红色以提示用户
             // 如果文本为空或是合法的，则恢复为默认白色
             if (!trimmedText.isEmpty() && !isValid) {
-                this.nameField.setTextColor(ChatFormatting.RED.getColor());
+                this.nameField.setTextColor(0xFFFF5555);
             } else {
                 this.nameField.setTextColor(0xFFFFFFFF);
             }
@@ -92,7 +92,7 @@ public class CreatePackScreen extends Screen {
 
         this.addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), (button) -> {
             if (this.minecraft != null)
-                this.minecraft.setScreen(this.parent);
+                this.minecraft.gui.setScreen(this.parent);
         }).bounds(this.width / 2 - 100, this.height / 2 + 44, 200, 20).build());
     }
 
@@ -107,9 +107,9 @@ public class CreatePackScreen extends Screen {
 
         SoundPackInfo newPack = SoundPackManager.getInstance().createNewPack(displayName);
         if (newPack != null && minecraft != null) {
-            minecraft.setScreen(new EditPackScreen(this.parent, newPack));
+            minecraft.gui.setScreen(new EditPackScreen(this.parent, newPack));
         } else {
-            this.nameField.setTextColor(ChatFormatting.RED.getColor());
+            this.nameField.setTextColor(0xFFFF5555);
             // 如果创建失败的原因是重名，变红依然是有效的反馈
         }
     }
@@ -121,7 +121,7 @@ public class CreatePackScreen extends Screen {
     @Override
     public void onClose() {
         if (this.minecraft != null)
-            this.minecraft.setScreen(this.parent);
+            this.minecraft.gui.setScreen(this.parent);
     }
 
     /**

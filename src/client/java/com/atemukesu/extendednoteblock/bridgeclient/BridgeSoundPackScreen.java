@@ -16,7 +16,6 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Util;
 
 import com.atemukesu.extendednoteblock.sound.SoundPackInfo;
 import com.atemukesu.extendednoteblock.sound.SoundPackManager;
@@ -66,7 +65,7 @@ public final class BridgeSoundPackScreen extends Screen {
                 Component.translatable("gui.extendednoteblock.pack_manager.button.open_folder"),
                 button -> {
                     Path packDir = SoundPackManager.getInstance().getPacksDirectory();
-                    Util.getPlatform().openFile(packDir.toFile());
+                    com.mojang.blaze3d.Blaze3D.openPath(packDir);
                 })
                 .bounds(startX, buttonY, buttonWidth, 20)
                 .build());

@@ -43,26 +43,37 @@ public final class PaperClientSmoke implements ClientModInitializer {
             if (!started || checked || client.gui.overlay() != null) return;
             checked = true;
             try {
-                if (FabricLoader.getInstance().isModLoaded("extendednoteblock")) {
-                    throw new AssertionError("Full mod leaked into the Paper test environment");
+                boolean full = Boolean.getBoolean("enb.fullSmoke");
+                if (FabricLoader.getInstance().isModLoaded("extendednoteblock") != full) {
+                    throw new AssertionError("Loaded mod edition does not match the smoke task");
                 }
-                if (BuiltInRegistries.BLOCK.keySet().stream().anyMatch(id -> id.getNamespace().equals("extendednoteblock"))
-                        || BuiltInRegistries.ITEM.keySet().stream().anyMatch(id -> id.getNamespace().equals("extendednoteblock"))) {
+                if (!full && (BuiltInRegistries.BLOCK.keySet().stream().anyMatch(id -> id.getNamespace().equals("extendednoteblock"))
+                        || BuiltInRegistries.ITEM.keySet().stream().anyMatch(id -> id.getNamespace().equals("extendednoteblock")))) {
                     throw new AssertionError("Custom ENB registry IDs exist in Paper Client");
                 }
 
-                String visuals = "extendednoteblock_bridge_client:bridge_items";
-                var repository = client.getResourcePackRepository();
-                if (!repository.getSelectedIds().contains(visuals)
-                        || !repository.getPack(visuals).getCompatibility().isCompatible()) {
-                    throw new AssertionError("Built-in Paper item pack is disabled or incompatible");
+                if (full && (!BuiltInRegistries.BLOCK.containsKey(Identifier.fromNamespaceAndPath("extendednoteblock", "extended_note_block"))
+                        || !BuiltInRegistries.ITEM.containsKey(Identifier.fromNamespaceAndPath("extendednoteblock", "conductor_wand")))) {
+                    throw new AssertionError("Full mod content did not register");
                 }
-                var selector = Identifier.fromNamespaceAndPath("minecraft", "items/blaze_rod.json");
-                try (var reader = client.getResourceManager().getResourceOrThrow(selector).openAsReader()) {
-                    var model = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject("model");
-                    if (!model.get("property").getAsString().equals("minecraft:custom_model_data")) {
-                        throw new AssertionError("Built-in item selectors were not loaded");
+                if (!full) {
+                    String visuals = "extendednoteblock_bridge_client:bridge_items";
+                    var repository = client.getResourcePackRepository();
+                    if (!repository.getSelectedIds().contains(visuals)
+                            || !repository.getPack(visuals).getCompatibility().isCompatible()) {
+                        throw new AssertionError("Built-in Paper item pack is disabled or incompatible");
                     }
+                    var selector = Identifier.fromNamespaceAndPath("minecraft", "items/blaze_rod.json");
+                    try (var reader = client.getResourceManager().getResourceOrThrow(selector).openAsReader()) {
+                        var model = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject("model");
+                        if (!model.get("property").getAsString().equals("minecraft:custom_model_data")) {
+                            throw new AssertionError("Built-in item selectors were not loaded");
+                        }
+                    }
+                }
+                var sounds = client.getResourcePackRepository().getPack("file/extendednoteblock_default.zip");
+                if (sounds == null || !sounds.getCompatibility().isCompatible()) {
+                    throw new AssertionError("Bundled sound pack is missing or incompatible");
                 }
 
                 Object manager = client.getSoundManager();
@@ -79,18 +90,18 @@ public final class PaperClientSmoke implements ClientModInitializer {
                             (float) calculatePitch.invoke(engine, sound("minecraft", pitch)));
                 }
                 Method attenuation = Arrays.stream(SoundEngine.class.getDeclaredMethods())
-                        .filter(method -> method.getName().contains("useFullAttenuationDistance"))
+                        .filter(method -> method.getName().contains(full ? "modifyAttenuationDistance" : "useFullAttenuationDistance"))
                         .findFirst().orElseThrow();
                 attenuation.setAccessible(true);
                 assertFloat(48, (float) attenuation.invoke(engine, 16f, sound("extendednoteblock", 1)));
-                assertFloat(16, (float) attenuation.invoke(engine, 16f, sound("minecraft", 1)));
+                assertFloat(full ? 48 : 16, (float) attenuation.invoke(engine, 16f, sound("minecraft", 1)));
 
                 client.gui.setScreen(new BridgeNoteBlockScreen(null,
                         new BridgeClientPayloads.NoteEditPayload(BlockPos.ZERO, 60, 40, 100, 20, 0, 0, 3)));
                 if (!(client.gui.screen() instanceof BridgeNoteBlockScreen)) {
                     throw new AssertionError("Paper note editor did not open");
                 }
-                checkLitematicImport();
+                if (!full) checkLitematicImport();
                 if (Boolean.getBoolean("enb.litematicaSmoke")) {
                     Class<?> schematic = Class.forName("fi.dy.masa.litematica.schematic.LitematicaSchematic");
                     if (!com.atemukesu.extendednoteblock.bridgeclient.litematica.SchematicDataHolder.class.isAssignableFrom(schematic)) {
@@ -103,11 +114,15 @@ public final class PaperClientSmoke implements ClientModInitializer {
                 }
                 client.gui.setScreen(new NbsWorkshopScreen(null));
                 String importLabel = net.minecraft.network.chat.Component.translatable("gui.extendednoteblock.import.title").getString();
-                if (client.gui.screen().children().stream().noneMatch(child -> child instanceof net.minecraft.client.gui.components.Button button
+                if (!full && client.gui.screen().children().stream().noneMatch(child -> child instanceof net.minecraft.client.gui.components.Button button
                         && button.getMessage().getString().equals(importLabel))) throw new AssertionError("Workshop has no restore button");
                 client.gui.setScreen(new BridgeImportScreen(null));
                 if (!(client.gui.screen() instanceof BridgeImportScreen)) throw new AssertionError("Restore screen did not open");
-                System.out.println("ENB_PAPER_CLIENT_SMOKE_OK: startup, resources, GUI, vanilla registries, MIDI 0-127 pitch, attenuation, Litematic export/import and bridge wire codecs");
+                if (full) {
+                    System.out.println("ENB_FULL_CLIENT_SMOKE_OK: startup, resources, registered content, workshop GUI, MIDI 0-127 pitch and attenuation");
+                } else {
+                    System.out.println("ENB_PAPER_CLIENT_SMOKE_OK: startup, resources, GUI, vanilla registries, MIDI 0-127 pitch, attenuation, Litematic export/import and bridge wire codecs");
+                }
                 System.exit(0);
             } catch (Throwable failure) {
                 failure.printStackTrace();

@@ -46,7 +46,7 @@ public abstract class MinecraftClientMixin {
         if (screen instanceof TitleScreen && !hasShownCheckScreen) {
             hasShownCheckScreen = true;
             // 显示我们自己的屏幕，而不是主菜单
-            Minecraft.getInstance().setScreen(new PreLaunchCheckScreen());
+            Minecraft.getInstance().gui.setScreen(new PreLaunchCheckScreen());
             // 取消原有的 setScreen(TitleScreen) 调用
             ci.cancel();
         }

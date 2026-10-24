@@ -64,6 +64,11 @@ public class VanillaExportSmokeTest {
         try (ZipFile zip = new ZipFile(zipPath.toFile())) {
             Set<String> entries = zip.stream().map(java.util.zip.ZipEntry::getName).collect(Collectors.toSet());
             assertTrue(entries.contains("pack.mcmeta"));
+            var metadata = com.google.gson.JsonParser.parseString(new String(
+                    zip.getInputStream(zip.getEntry("pack.mcmeta")).readAllBytes(),
+                    java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject().getAsJsonObject("pack");
+            assertEquals("[121,0]", metadata.get("min_format").toString());
+            assertEquals("[121,0]", metadata.get("max_format").toString());
             assertTrue(entries.contains("data/test_music/function/play.mcfunction"));
             assertTrue(entries.contains("data/test_music/function/stop.mcfunction"));
             assertTrue(entries.stream().anyMatch(value -> value.startsWith("data/test_music/function/timeline/")));

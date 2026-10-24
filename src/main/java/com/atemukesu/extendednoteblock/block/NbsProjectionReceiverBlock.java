@@ -3,7 +3,6 @@ package com.atemukesu.extendednoteblock.block;
 import com.atemukesu.extendednoteblock.block.entity.NbsProjectionReceiverBlockEntity;
 import com.atemukesu.extendednoteblock.nbs.NbsProjectionPlaybackManager;
 import com.atemukesu.extendednoteblock.util.RedstoneManager;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -83,8 +82,4 @@ public final class NbsProjectionReceiverBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    @Override
-    public MapCodec<NbsProjectionReceiverBlock> codec() {
-        return simpleCodec(NbsProjectionReceiverBlock::new);
-    }
 }

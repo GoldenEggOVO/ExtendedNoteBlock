@@ -8,7 +8,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import net.minecraft.ChatFormatting;
-import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -64,7 +63,7 @@ public class SoundPackManagerScreen extends Screen {
         this.addRenderableWidget(Button
                 .builder(Component.translatable("gui.extendednoteblock.pack_manager.button.create_new"), button -> {
                     if (this.minecraft != null)
-                        this.minecraft.setScreen(new CreatePackScreen(this));
+                        this.minecraft.gui.setScreen(new CreatePackScreen(this));
                 }).bounds(this.width / 2 - 154, topButtonRowY, 150, 20).build());
 
         // 创建并添加 "打开文件夹" 按钮
@@ -72,13 +71,13 @@ public class SoundPackManagerScreen extends Screen {
                 Component.translatable("gui.extendednoteblock.pack_manager.button.open_folder"),
                 button -> {
                     Path packDir = SoundPackManager.getInstance().getPacksDirectory();
-                    Util.getPlatform().openFile(packDir.toFile());
+                    com.mojang.blaze3d.Blaze3D.openPath(packDir);
                 }).bounds(this.width / 2 + 4, topButtonRowY, 150, 20).build());
 
         // 创建并添加 "完成" 按钮
         this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> {
             if (this.minecraft != null)
-                this.minecraft.setScreen(this.parent);
+                this.minecraft.gui.setScreen(this.parent);
         }).bounds(this.width / 2 - 100, this.height - 28, 200, 20).build());
 
         // 初始化时，自动选中当前激活的音色包。
@@ -94,7 +93,7 @@ public class SoundPackManagerScreen extends Screen {
         this.addRenderableWidget(
                 Button.builder(Component.translatable("gui.extendednoteblock.sponsor.button"), button -> {
                     if (this.minecraft != null)
-                        this.minecraft.setScreen(new SponsorScreen(this));
+                        this.minecraft.gui.setScreen(new SponsorScreen(this));
                 }).bounds(this.width - 105, 6, 100, 20).build());
     }
 
@@ -105,7 +104,7 @@ public class SoundPackManagerScreen extends Screen {
     @Override
     public void onClose() {
         if (this.minecraft != null)
-            this.minecraft.setScreen(this.parent);
+            this.minecraft.gui.setScreen(this.parent);
     }
 
     /**
@@ -230,7 +229,7 @@ public class SoundPackManagerScreen extends Screen {
                         button -> {
                             // 点击按钮时，如果音色包不是zip压缩包，则打开编辑界面
                             if (this.client != null && !pack.isZip()) {
-                                this.client.setScreen(new EditPackScreen(SoundPackManagerScreen.this, pack));
+                                this.client.gui.setScreen(new EditPackScreen(SoundPackManagerScreen.this, pack));
                             }
                         }).build();
 

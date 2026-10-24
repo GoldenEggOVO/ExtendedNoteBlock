@@ -105,17 +105,17 @@ publishing {
 
 repositories { maven { url = 'https://api.modrinth.com/maven' } }
 dependencies {
-    compileOnly project.hasProperty('litematicaJar') ? files(project.property('litematicaJar')) : 'maven.modrinth:litematica:0.28.8'
-    compileOnly project.hasProperty('malilibJar') ? files(project.property('malilibJar')) : 'maven.modrinth:malilib:0.29.6'
+    compileOnly project.hasProperty('litematicaJar') ? files(project.property('litematicaJar')) : 'maven.modrinth:litematica:0.29.1'
+    compileOnly project.hasProperty('malilibJar') ? files(project.property('malilibJar')) : 'maven.modrinth:malilib:0.30.2'
     testImplementation sourceSets.client.output
-    testImplementation project.hasProperty('litematicaJar') ? files(project.property('litematicaJar')) : 'maven.modrinth:litematica:0.28.8'
-    testImplementation project.hasProperty('malilibJar') ? files(project.property('malilibJar')) : 'maven.modrinth:malilib:0.29.6'
+    testImplementation project.hasProperty('litematicaJar') ? files(project.property('litematicaJar')) : 'maven.modrinth:litematica:0.29.1'
+    testImplementation project.hasProperty('malilibJar') ? files(project.property('malilibJar')) : 'maven.modrinth:malilib:0.30.2'
 }
 
 configurations { litematicaSmokeMods }
 dependencies {
-    litematicaSmokeMods project.hasProperty('litematicaJar') ? files(project.property('litematicaJar')) : 'maven.modrinth:litematica:0.28.8'
-    litematicaSmokeMods project.hasProperty('malilibJar') ? files(project.property('malilibJar')) : 'maven.modrinth:malilib:0.29.6'
+    litematicaSmokeMods project.hasProperty('litematicaJar') ? files(project.property('litematicaJar')) : 'maven.modrinth:litematica:0.29.1'
+    litematicaSmokeMods project.hasProperty('malilibJar') ? files(project.property('malilibJar')) : 'maven.modrinth:malilib:0.30.2'
 }
 tasks.register('runPaperClientLitematicaSmoke', net.fabricmc.loom.task.prod.ClientProductionRunTask) {
     dependsOn tasks.named('paperClientSmokeJar')
@@ -124,4 +124,13 @@ tasks.register('runPaperClientLitematicaSmoke', net.fabricmc.loom.task.prod.Clie
     runDir = layout.buildDirectory.dir('run/paperClientLitematicaSmoke')
     useXVFB = true
     jvmArgs.addAll('-Xmx2G', '-Dorg.lwjgl.glfw.checkThread0=false', '-Denb.litematicaSmoke=true')
+}
+
+// Reuse the isolated smoke mod against the packaged Full edition as well.
+tasks.register('runFullClientSmoke', net.fabricmc.loom.task.prod.ClientProductionRunTask) {
+    dependsOn tasks.named('paperClientSmokeJar'), tasks.named('jar')
+    mods.setFrom(configurations.productionRuntimeMods, tasks.named('paperClientSmokeJar'), tasks.named('jar'))
+    runDir = layout.buildDirectory.dir('run/fullClientSmoke')
+    useXVFB = true
+    jvmArgs.addAll('-Xmx2G', '-Denb.fullSmoke=true')
 }

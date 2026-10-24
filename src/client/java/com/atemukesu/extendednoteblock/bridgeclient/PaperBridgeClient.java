@@ -17,7 +17,6 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,9 +39,9 @@ public final class PaperBridgeClient implements ClientModInitializer {
         registerBuiltInItemPack();
         FabricLoader loader = FabricLoader.getInstance();
         if (loader.isModLoaded("litematica") &&
-                (!loader.getModContainer("litematica").orElseThrow().getMetadata().getVersion().getFriendlyString().equals("0.28.8")
-                || !loader.getModContainer("malilib").map(mod -> mod.getMetadata().getVersion().getFriendlyString().equals("0.29.6")).orElse(false))) {
-            String warning = "ENB: automatic schematic metadata copy is disabled. Use Litematica 0.28.8 and MaLiLib 0.29.6; other versions do not preserve ENB music settings automatically.";
+                (!loader.getModContainer("litematica").orElseThrow().getMetadata().getVersion().getFriendlyString().equals("0.29.1")
+                || !loader.getModContainer("malilib").map(mod -> mod.getMetadata().getVersion().getFriendlyString().equals("0.30.2")).orElse(false))) {
+            String warning = Component.translatable("message.extendednoteblock.litematica.unsupported", "0.29.1", "0.30.2").getString();
             LOGGER.warn(warning);
             ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> client.execute(() -> SchematicTransferClient.message(warning)));
         }
@@ -60,8 +59,8 @@ public final class PaperBridgeClient implements ClientModInitializer {
 
         openNbsWorkshopKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.extendednoteblock.open_nbs_workshop",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_N,
+                InputConstants.Type.KEYBOARD,
+                InputConstants.KEY_N,
                 KEY_CATEGORY));
 
         ClientPlayNetworking.registerGlobalReceiver(BridgeClientPayloads.StartSoundPayload.ID,

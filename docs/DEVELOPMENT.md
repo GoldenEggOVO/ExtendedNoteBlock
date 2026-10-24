@@ -1,22 +1,22 @@
-# Development Guide · Minecraft 26.2
+# Development Guide · Minecraft 26.3
 
 [Home](../README.md) · [Documentation](README.md) · [简体中文](DEVELOPMENT_zh-cn.md)
 
-This branch targets Minecraft **26.2**. It builds three program editions: Full Fabric, a registry-safe Paper Client, and a Paper / Purpur server plugin. The Paper Client and Full Fabric must not be installed together.
+This branch targets Minecraft **26.3**. It builds three program editions: Full Fabric, a registry-safe Paper Client, and a Paper / Purpur server plugin. The Paper Client and Full Fabric must not be installed together.
 
 ## Toolchain
 
 | Component | Current build baseline |
 | --- | --- |
 | Java JDK | 25 |
-| Gradle wrapper | 9.5.1 |
-| Fabric Loom | 1.17.20 |
-| Fabric Loader | 0.19.5 |
-| Fabric API | 0.159.0+26.2 |
-| Paper API | 26.2.build.119-stable |
+| Gradle wrapper | 9.8.2 |
+| Fabric Loom | 1.19.3 |
+| Fabric Loader | 0.20.1 |
+| Fabric API | 0.165.0+26.3 |
+| Paper API | 26.3.build.218-stable |
 | Helper scripts | Python 3 |
 
-Versions come from [gradle.properties](../gradle.properties), the [wrapper configuration](../gradle/wrapper/gradle-wrapper.properties), and [bridge/build.gradle](../bridge/build.gradle). Paper API is pinned to `26.2.build.119-stable` so identical source revisions resolve the same API baseline.
+Versions come from [gradle.properties](../gradle.properties), the [wrapper configuration](../gradle/wrapper/gradle-wrapper.properties), and [bridge/build.gradle](../bridge/build.gradle). Paper API is pinned to `26.3.build.218-stable` so identical source revisions resolve the same API baseline.
 
 ## Repository layout
 
@@ -26,8 +26,8 @@ Versions come from [gradle.properties](../gradle.properties), the [wrapper confi
 | `src/client/` | Fabric screens, sound engine and Paper companion code |
 | `src/test/` | Existing automated tests |
 | `bridge/` | Independent Paper / Purpur Gradle project |
-| `scripts/` | 26.2 source preparation and client / resource-pack packaging |
-| `.github/workflows/build-26.2.yml` | Build, verification and release workflow |
+| `scripts/` | 26.3 source preparation and client / resource-pack packaging |
+| `.github/workflows/build-26.3.yml` | Build, verification and release workflow |
 | `docs/` | Installation, architecture, development, roadmap and release notes |
 
 
@@ -41,12 +41,12 @@ cd ../enb-build
 ```
 
 ```bash
-python3 scripts/prepare_26_2_sources.py
+python3 scripts/prepare_26_3_sources.py
 chmod +x gradlew
 ./gradlew clean test build --stacktrace
 python3 scripts/make_paper_bridge_client_jar.py
 python3 scripts/make_server_resource_pack.py
-python3 scripts/make_craftengine_pack.py --resource-pack build/server-resource-pack/ExtendedNoteBlock-Server-Resources-2.13.2-mc26.2.zip --output build/craftengine/ExtendedNoteBlock-CraftEngine-2.13.2-mc26.2.zip --version 2.13.2
+python3 scripts/make_craftengine_pack.py --resource-pack build/server-resource-pack/ExtendedNoteBlock-Server-Resources-2.13.3-mc26.3.zip --output build/craftengine/ExtendedNoteBlock-CraftEngine-2.13.3-mc26.3.zip --version 2.13.3
 ```
 
 The Paper Client packaging script consumes the Full build output and applies a strict class whitelist. Do not replace it with a copy of the Full JAR.
@@ -62,6 +62,8 @@ python3 scripts/prepare_paper_render_sync.py
 python3 scripts/prepare_paper_listener_pack.py
 python3 scripts/prepare_paper_craftengine.py
 python3 scripts/prepare_paper_schematic.py
+python3 scripts/prepare_paper_optional_audio.py
+python3 scripts/prepare_paper_performance.py
 python3 scripts/prepare_paper_language.py
 ./gradlew -p bridge clean build --stacktrace
 ```
@@ -86,9 +88,9 @@ The combined pack build requires FFmpeg and JDK 25. It verifies the reviewed Gen
 | --- | --- |
 | `main` | Verified source, default development and release branch |
 | Temporary feature / fix branches | Short-lived work; merge into `main`, then delete after checking for unmerged commits |
-| `v<mod-version>-mc26.2` | Exact source commit for a published release |
+| `v<mod-version>-mc26.3` | Exact source commit for a published release |
 
-The current [workflow](../.github/workflows/build-26.2.yml) validates documentation on pushes to `main`, pull requests targeting `main`, and manual runs. Code changes and `release:` commits run the complete Full / Client / Server build. Documentation-only changes skip those expensive jobs. The release job runs only for a push to `main` whose head commit message starts with `release:` and whose build jobs succeed. Ordinary merges and manual builds do not publish a release. Before a release, bump the version and add matching release notes; use a merge strategy that preserves the intended `release:` head commit message.
+The current [workflow](../.github/workflows/build-26.3.yml) validates documentation on pushes to `main`, pull requests targeting `main`, and manual runs. Code changes and `release:` commits run the complete Full / Client / Server build. Documentation-only changes skip those expensive jobs. The release job runs only for a push to `main` whose head commit message starts with `release:` and whose build jobs succeed. Ordinary merges and manual builds do not publish a release. Before a release, bump the version and add matching release notes; use a merge strategy that preserves the intended `release:` head commit message.
 
 Use `docs:` / `chore:` commits for repository maintenance. Branches may advance after a release; keep the published release tag anchored to the source commit that produced its artifacts. Full / Client / CraftEngine resources use `mod_version`, while Paper Server has its own version in `bridge/build.gradle`.
 
@@ -106,6 +108,6 @@ After building and packaging the Paper Client, run `./gradlew runPaperClientSmok
 
 ## CraftEngine and Litematica integration
 
-Paper Server 0.14.2 compiles against the public CraftEngine core/bukkit 26.8.2 API without bundling the plugin. The authoritative integration sources are in `craftengine/integration/` and `scripts/templates/`; generated copies are build outputs.
+Paper Server 0.14.4 compiles against the public CraftEngine core/bukkit 26.9.1 API (runtime compatibility: 26.9.2) without bundling the plugin. The authoritative integration sources are in `craftengine/integration/` and `scripts/templates/`; generated copies are build outputs.
 
-The client supports Litematica 0.28.8 / MaLiLib 0.29.6 as optional runtime dependencies. Release checks start Paper Client both with and without Litematica. The CraftEngine installation ZIP contains ENB registration resources, not the CraftEngine plugin binary or private server configuration.
+The client supports Litematica 0.29.1 / MaLiLib 0.30.2 as optional runtime dependencies. Release checks start Paper Client both with and without Litematica. The CraftEngine installation ZIP contains ENB registration resources, not the CraftEngine plugin binary or private server configuration.

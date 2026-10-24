@@ -3,8 +3,8 @@ plugins {
 }
 
 group = 'com.goldenegggovo.extendednoteblock.bridge'
-version = '0.14.2'
-def paperApiVersion = '26.2.build.119-stable'
+version = '0.14.4'
+def paperApiVersion = '26.3.build.218-stable'
 
 repositories {
     mavenCentral()
@@ -20,15 +20,15 @@ dependencies {
         compileOnly files(craftEngineJar.get())
         testImplementation files(craftEngineJar.get())
     } else {
-        compileOnly 'net.momirealms:craft-engine-core:26.8.2'
-        compileOnly 'net.momirealms:craft-engine-bukkit:26.8.2'
-        testImplementation 'net.momirealms:craft-engine-core:26.8.2'
-        testImplementation 'net.momirealms:craft-engine-bukkit:26.8.2'
+        compileOnly 'net.momirealms:craft-engine-core:26.9.1'
+        compileOnly 'net.momirealms:craft-engine-bukkit:26.9.1'
+        testImplementation 'net.momirealms:craft-engine-core:26.9.1'
+        testImplementation 'net.momirealms:craft-engine-bukkit:26.9.1'
     }
     compileOnly "io.papermc.paper:paper-api:${paperApiVersion}"
     testImplementation 'org.mockito:mockito-core:5.20.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
-    testImplementation 'org.mockbukkit.mockbukkit:mockbukkit-v26.2:4.116.1'
+    testImplementation 'org.mockbukkit.mockbukkit:mockbukkit-v26.3:4.118.0'
     testImplementation "io.papermc.paper:paper-api:${paperApiVersion}"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.12.2'
 }

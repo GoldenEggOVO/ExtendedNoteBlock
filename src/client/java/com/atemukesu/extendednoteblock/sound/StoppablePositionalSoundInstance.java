@@ -71,10 +71,16 @@ public class StoppablePositionalSoundInstance implements TickableSoundInstance {
 
     @Override
     @Nullable
-    public WeighedSoundEvents resolve(net.minecraft.client.sounds.SoundManager soundManager) {
+    public WeighedSoundEvents getOrResolve(net.minecraft.client.sounds.SoundManager soundManager) {
         if (this.soundSet == null) {
             this.soundSet = soundManager.getSoundEvent(this.getIdentifier());
         }
+        return this.soundSet;
+    }
+
+    @Override
+    @Nullable
+    public WeighedSoundEvents getSoundEvent() {
         return this.soundSet;
     }
 

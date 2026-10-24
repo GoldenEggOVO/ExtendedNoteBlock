@@ -1,16 +1,22 @@
 name: ExtendedNoteBlockBridge
 version: '${version}'
 main: com.goldenegggovo.extendednoteblock.bridge.ExtendedNoteBlockBridge
-api-version: '26.2'
+api-version: '26.3'
 author: GoldenEggOVO
 description: Paper/Purpur ExtendedNoteBlock integration requiring CraftEngine, with complete Litematica metadata copying.
 depend: [CraftEngine]
 commands:
+  enbaudio:
+    description: Toggle optional ENB audio
+    usage: /enbaudio on|off|status
+    permission: extendednoteblockbridge.audio
   enb:
     description: Manage ExtendedNoteBlock bridge objects, conductor selections and NBS projections
     usage: /enb <help|give|set|info|remove|play|wand|projection|pack|list|reload>
     permission: extendednoteblockbridge.use
 permissions:
+  extendednoteblockbridge.audio:
+    default: true
   extendednoteblockbridge.admin:
     default: op
   extendednoteblockbridge.import:

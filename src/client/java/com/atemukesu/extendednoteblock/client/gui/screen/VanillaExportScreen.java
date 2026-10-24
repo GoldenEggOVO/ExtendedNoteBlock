@@ -18,7 +18,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Util;
 
 public final class VanillaExportScreen extends Screen {
     private static final String[] CATEGORIES = {"master", "music", "record", "block", "player", "ambient"};
@@ -93,7 +92,7 @@ public final class VanillaExportScreen extends Screen {
                 .bounds(left, bottom, column, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.vanilla.open_output"), button -> {
             ensureDirectories();
-            Util.getPlatform().openFile(currentDirectory().toFile());
+            com.mojang.blaze3d.Blaze3D.openPath(currentDirectory());
         }).bounds(middle, bottom, column, 20).build());
         Button export = Button.builder(Component.translatable("gui.extendednoteblock.vanilla.export"),
                 button -> startExport()).bounds(right, bottom, column, 20).build();
@@ -167,7 +166,7 @@ public final class VanillaExportScreen extends Screen {
             button.setMessage(categoryText());
         }).bounds(middle, 105, column, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.vanilla.instrument_blocks"),
-                button -> minecraft.setScreen(new VanillaBlockMappingScreen(this, mappings)))
+                button -> minecraft.gui.setScreen(new VanillaBlockMappingScreen(this, mappings)))
                 .bounds(right, 105, column, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.vanilla.general_page"), button -> {
             blocksPage = false; rebuildWidgets();
@@ -186,10 +185,10 @@ public final class VanillaExportScreen extends Screen {
             try {
                 int parsed = Integer.parseInt(value);
                 boolean valid = parsed >= min && parsed <= max;
-                field.setTextColor(valid ? 0xFFFFFFFF : ChatFormatting.RED.getColor());
+                field.setTextColor(valid ? 0xFFFFFFFF : 0xFFFF5555);
                 if (valid) setter.accept(parsed);
             } catch (NumberFormatException exception) {
-                field.setTextColor(ChatFormatting.RED.getColor());
+                field.setTextColor(0xFFFF5555);
             }
         });
         addRenderableWidget(field);
@@ -252,7 +251,7 @@ public final class VanillaExportScreen extends Screen {
                     status = Component.translatable("gui.extendednoteblock.vanilla.exported",
                             finalOutput.getFileName().toString(), finalNotes, finalShifted, finalTiming);
                     statusColor = finalShifted + finalTiming > 0 ? 0xFFFFAA55 : 0xFF55FF55;
-                    if (minecraft.screen == this) rebuildWidgets();
+                    if (minecraft.gui.screen() == this) rebuildWidgets();
                 });
             } catch (Exception exception) {
                 minecraft.execute(() -> {
@@ -260,7 +259,7 @@ public final class VanillaExportScreen extends Screen {
                     String message = exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage();
                     status = Component.translatable("gui.extendednoteblock.nbs.export_failed", message);
                     statusColor = 0xFFFF5555;
-                    if (minecraft.screen == this) rebuildWidgets();
+                    if (minecraft.gui.screen() == this) rebuildWidgets();
                 });
             }
         });
@@ -323,7 +322,7 @@ public final class VanillaExportScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (!busy && minecraft != null) minecraft.setScreen(parent);
+        if (!busy && minecraft != null) minecraft.gui.setScreen(parent);
     }
 
     @Override

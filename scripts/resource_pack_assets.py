@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared item-resource helpers for Minecraft 26.2 packs.
+"""Shared item-resource helpers for Minecraft 26.3 packs.
 
 Paper bridge items stay ordinary vanilla ItemStacks. The plugin writes one
 namespaced string to CustomModelData and these selectors choose the matching
@@ -16,7 +16,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSET_ROOT = ROOT / "src" / "main" / "resources" / "assets" / "extendednoteblock"
-RESOURCE_PACK_FORMAT = 88
+RESOURCE_PACK_FORMAT = 97
+RESOURCE_PACK_VERSION = [97, 1]
 ITEM_ASSET_DIRS = ("blockstates", "items", "lang", "models", "textures")
 CMD_NAMESPACE = "extendednoteblock"
 
@@ -65,8 +66,8 @@ def custom_model_key(logical_id: str) -> str:
 def pack_metadata(description: str) -> dict:
     return {"pack": {
         "pack_format": RESOURCE_PACK_FORMAT,
-        "min_format": RESOURCE_PACK_FORMAT,
-        "max_format": RESOURCE_PACK_FORMAT,
+        "min_format": RESOURCE_PACK_VERSION,
+        "max_format": RESOURCE_PACK_VERSION,
         "description": description,
     }}
 

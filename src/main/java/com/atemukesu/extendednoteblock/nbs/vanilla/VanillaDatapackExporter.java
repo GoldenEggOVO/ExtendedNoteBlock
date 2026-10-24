@@ -27,8 +27,8 @@ public final class VanillaDatapackExporter {
         String root = "data/" + namespace + "/function/";
         List<String> paths = new ArrayList<>();
         try (ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(temporary), StandardCharsets.UTF_8)) {
-            put(zip, "pack.mcmeta", "{\n  \"pack\": {\n    \"min_format\": [101, 1],\n"
-                    + "    \"max_format\": 101,\n    \"description\": \"ExtendedNoteBlock vanilla music\"\n  }\n}\n");
+            put(zip, "pack.mcmeta", "{\n  \"pack\": {\n    \"min_format\": [121, 0],\n"
+                    + "    \"max_format\": [121, 0],\n    \"description\": \"ExtendedNoteBlock vanilla music\"\n  }\n}\n");
             put(zip, root + "play.mcfunction", playFunction(plan, options));
             put(zip, root + "stop.mcfunction", stopFunction(plan, options));
             put(zip, root + "join.mcfunction", "tag @s add " + namespace + "_listener\n");

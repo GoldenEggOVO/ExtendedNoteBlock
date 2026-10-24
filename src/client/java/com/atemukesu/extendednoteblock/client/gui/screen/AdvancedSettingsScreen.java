@@ -130,12 +130,12 @@ public class AdvancedSettingsScreen extends Screen {
         int buttonY = this.height - 26;
         addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.advanced.save"), button -> {
             if (save() && this.minecraft != null) {
-                this.minecraft.setScreen(parent);
+                this.minecraft.gui.setScreen(parent);
             }
         }).bounds(this.width / 2 - 85, buttonY, 80, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.extendednoteblock.advanced.cancel"), button -> {
             if (this.minecraft != null) {
-                this.minecraft.setScreen(parent);
+                this.minecraft.gui.setScreen(parent);
             }
         }).bounds(this.width / 2 + 5, buttonY, 80, 20).build());
 
@@ -537,7 +537,7 @@ public class AdvancedSettingsScreen extends Screen {
         // 自动保存设置
         save();
         // 返回上一级
-        Minecraft.getInstance().setScreen(parent);
+        Minecraft.getInstance().gui.setScreen(parent);
     }
 
     // 不暂停游戏

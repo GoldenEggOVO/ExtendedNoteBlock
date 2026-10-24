@@ -1,6 +1,5 @@
 package com.atemukesu.extendednoteblock.nbs;
 
-import com.atemukesu.extendednoteblock.block.entity.ExtendedNoteBlockEntity;
 import com.atemukesu.extendednoteblock.map.InstrumentMap;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.SharedConstants;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -20,12 +20,61 @@ import net.minecraft.nbt.NbtIo;
 
 public final class NbsProjectionWriter {
     private static final int MAX_PROJECTED_NOTES = 75_000;
+    private static final boolean PAPER_SAFE_EXPORT = detectPaperSafeExport();
     private static final int[] BUILTIN_TO_GM = {
             0, 43, 128, 128, 115, 24, 73, 14, 8, 13,
             12, 113, 111, 80, 105, 9, 56, 56, 56, 56
     };
 
     private NbsProjectionWriter() {
+    }
+
+    private static boolean detectPaperSafeExport() {
+        try {
+            FabricLoader loader = FabricLoader.getInstance();
+            return loader.isModLoaded("extendednoteblock_bridge_client")
+                    && !loader.isModLoaded("extendednoteblock");
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    private static String exportTransmitterBlock() {
+        return PAPER_SAFE_EXPORT
+                ? "minecraft:red_concrete"
+                : "extendednoteblock:global_redstone_transmitter";
+    }
+
+    private static Map<String, String> exportTransmitterProperties() {
+        return PAPER_SAFE_EXPORT ? Map.of() : Map.of("powered", "false");
+    }
+
+    private static String exportProjectionReceiverBlock() {
+        return PAPER_SAFE_EXPORT
+                ? "minecraft:purple_concrete"
+                : "extendednoteblock:nbs_projection_receiver";
+    }
+
+    private static Map<String, String> exportProjectionReceiverProperties() {
+        return PAPER_SAFE_EXPORT ? Map.of() : Map.of("powered", "false");
+    }
+
+    private static String exportNoteBlock() {
+        return PAPER_SAFE_EXPORT ? "minecraft:note_block" : "extendednoteblock:extended_note_block";
+    }
+
+    private static Map<String, String> exportNoteProperties(int midiNote) {
+        if (PAPER_SAFE_EXPORT) {
+            // Vanilla note_block only exposes 25 note states. This state is a
+            // visual/clipboard fallback; full MIDI data is retained separately
+            // in ExtendedNoteBlockBridge metadata below.
+            int vanillaNote = clamp(midiNote - 54, 0, 24);
+            return Map.of(
+                    "instrument", "harp",
+                    "note", Integer.toString(vanillaNote),
+                    "powered", "false");
+        }
+        return Map.of("pitch", pitchName(midiNote), "powered", "false");
     }
 
     public static ProjectionResult write(NbsSong song, NbsProjectionOptions options, Path requestedOutput,
@@ -60,13 +109,15 @@ public final class NbsProjectionWriter {
         int controllerX = sizeX / 2;
         int controllerZ = sizeZ / 2;
         setBlock(blocks, sizeX, sizeZ, controllerX, 0, controllerZ,
-                palette.id("extendednoteblock:global_redstone_transmitter", Map.of("powered", "false")));
+                palette.id(exportTransmitterBlock(), exportTransmitterProperties()));
         setBlock(blocks, sizeX, sizeZ, controllerX + 1, 0, controllerZ,
-                palette.id("extendednoteblock:nbs_projection_receiver", Map.of("powered", "false")));
+                palette.id(exportProjectionReceiverBlock(), exportProjectionReceiverProperties()));
         setBlock(blocks, sizeX, sizeZ, controllerX, 1, controllerZ,
                 palette.id("minecraft:lever", Map.of("face", "floor", "facing", "north", "powered", "false")));
-        tileEntities.add(createProjectionReceiverEntity(
-                controllerX + 1, 0, controllerZ, projectedNotes, options.sustainTicks()));
+        if (!PAPER_SAFE_EXPORT) {
+            tileEntities.add(createProjectionReceiverEntity(
+                    controllerX + 1, 0, controllerZ, projectedNotes, options.sustainTicks()));
+        }
 
         for (int index = 0; index < projectedNotes.size(); index++) {
             ProjectedNote note = projectedNotes.get(index);
@@ -83,14 +134,19 @@ public final class NbsProjectionWriter {
                     "minecraft:dirt");
             setBlock(blocks, sizeX, sizeZ, x, y - 1, z, palette.id(instrumentBlock, Map.of()));
             setBlock(blocks, sizeX, sizeZ, x, y, z,
-                    palette.id("extendednoteblock:extended_note_block",
-                            Map.of("pitch", pitchName(note.midiNote()), "powered", "false")));
-            tileEntities.add(createNoteBlockEntity(x, y, z, note, options.sustainTicks()));
+                    palette.id(exportNoteBlock(), exportNoteProperties(note.midiNote())));
+            if (!PAPER_SAFE_EXPORT) {
+                tileEntities.add(createNoteBlockEntity(x, y, z, note, options.sustainTicks()));
+            }
         }
 
         long[] packedStates = pack(blocks, palette.size());
         CompoundTag root = createRoot(song, author, sizeX, sizeY, sizeZ, blocks.length,
                 projectedNotes.size() * 2 + 3, palette, packedStates, tileEntities);
+        if (PAPER_SAFE_EXPORT) {
+            root.put("ExtendedNoteBlockBridge", createPaperBridgeMetadata(
+                    projectedNotes, options.sustainTicks(), columns, controllerX, controllerZ));
+        }
 
         Path output = nextAvailablePath(requestedOutput);
         Files.createDirectories(output.getParent());
@@ -134,7 +190,7 @@ public final class NbsProjectionWriter {
 
             InstrumentResult instrument = mapInstrument(song, note.instrument(), options);
             long rawDelay = Math.round(timeline.millisAt(note.tick()) / options.speedMultiplier());
-            long delay = Math.min(rawDelay, ExtendedNoteBlockEntity.MAX_DELAY_MS);
+            long delay = Math.min(rawDelay, 3_600_000L);
             result.add(new ProjectedNote(midi, velocity, instrument.gmId(), note.pitchCents(), delay,
                     instrument.customFallback(), rawMidi != midi, rawDelay != delay));
         }
@@ -265,6 +321,44 @@ public final class NbsProjectionWriter {
         tag.putString("id", "extendednoteblock:nbs_projection_receiver_block_entity");
         tag.put("ProjectionData", data);
         return tag;
+    }
+
+    private static CompoundTag createPaperBridgeMetadata(List<ProjectedNote> notes,
+            int sustainTicks, int columns, int controllerX, int controllerZ) {
+        CompoundTag bridge = new CompoundTag();
+        bridge.putInt("FormatVersion", 1);
+        bridge.putString("Mode", "paper-safe-carriers");
+        bridge.putInt("SustainTicks", sustainTicks);
+        bridge.putInt("Columns", columns);
+        bridge.put("TransmitterPos", positionTag(controllerX, 0, controllerZ));
+        bridge.put("ProjectionReceiverPos", positionTag(controllerX + 1, 0, controllerZ));
+
+        int notesPerLayer = columns * columns;
+        ListTag noteList = new ListTag();
+        for (int index = 0; index < notes.size(); index++) {
+            ProjectedNote note = notes.get(index);
+            int layer = index / notesPerLayer;
+            int local = index % notesPerLayer;
+            int row = local / columns;
+            int rowColumn = local % columns;
+            int column = (row & 1) == 0 ? rowColumn : columns - 1 - rowColumn;
+            int x = 2 + column * 3;
+            int y = 3 + layer * 3;
+            int z = 3 + row * 3;
+
+            CompoundTag entry = positionTag(x, y, z);
+            entry.putInt("MidiNote", note.midiNote());
+            entry.putInt("Instrument", note.gmInstrument());
+            entry.putInt("Velocity", note.velocity());
+            entry.putInt("SustainTicks", sustainTicks);
+            entry.putInt("PitchCents", note.pitchCents());
+            entry.putInt("FadeInTicks", 0);
+            entry.putInt("FadeOutTicks", 0);
+            entry.putLong("DelayMs", note.delayMs());
+            noteList.add(entry);
+        }
+        bridge.put("Notes", noteList);
+        return bridge;
     }
 
     private static CompoundTag curvePoint(float time, float value) {

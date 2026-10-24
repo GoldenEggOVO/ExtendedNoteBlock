@@ -112,7 +112,7 @@ public class ExtendedNoteBlockBridge extends JavaPlugin implements Listener {
             }
         });
 
-        getLogger().info("ExtendedNoteBlockBridge enabled for Paper/Purpur 26.2");
+        getLogger().info("ExtendedNoteBlockBridge enabled for Paper/Purpur 26.3");
         getLogger().info("Core bridge features: vanilla carriers, conductor selection, wireless redstone, projection playback.");
     }
 

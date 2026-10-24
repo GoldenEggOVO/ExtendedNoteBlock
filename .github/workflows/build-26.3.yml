@@ -1,4 +1,4 @@
-name: Build Minecraft 26.2
+name: Build Minecraft 26.3
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: build-26-2-${{ github.ref }}
+  group: build-26-3-${{ github.ref }}
   cancel-in-progress: ${{ !(github.event_name == 'push' && startsWith(github.event.head_commit.message, 'release:')) }}
 
 jobs:
@@ -85,13 +85,28 @@ jobs:
           java-version: '25'
           cache: gradle
       - uses: gradle/actions/wrapper-validation@v4
-      - name: Prepare Minecraft 26.2 sources
-        run: python3 scripts/prepare_26_2_sources.py
+      - name: Prepare Minecraft 26.3 sources
+        run: python3 scripts/prepare_26_3_sources.py
       - name: Test packaging and listener-bank regression checks
         run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
       - run: chmod +x gradlew
       - name: Build Full Fabric mod
         run: ./gradlew clean test build --stacktrace
+      - name: Launch packaged Full Fabric client
+        timeout-minutes: 10
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 'true'
+          ALSOFT_DRIVERS: 'null'
+        run: |
+          ./gradlew runFullClientSmoke --stacktrace
+          grep -q 'ENB_FULL_CLIENT_SMOKE_OK' build/run/fullClientSmoke/logs/latest.log
+      - name: Preserve Full Fabric startup logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-client-startup-logs
+          path: build/run/fullClientSmoke/logs/
+          if-no-files-found: ignore
       - name: Build Paper-safe client jar with built-in item pack
         run: python3 scripts/make_paper_bridge_client_jar.py
       - name: Launch packaged Paper Client and check sound mixins
@@ -136,7 +151,7 @@ jobs:
           test -n "$PACK"
           test "$(stat -c %s "$PACK")" -lt 50000000
           MOD_VERSION="$(grep '^mod_version=' gradle.properties | cut -d= -f2)"
-          python3 scripts/make_craftengine_pack.py --resource-pack "$PACK" --output "build/craftengine/ExtendedNoteBlock-CraftEngine-${MOD_VERSION}-mc26.2.zip" --version "$MOD_VERSION"
+          python3 scripts/make_craftengine_pack.py --resource-pack "$PACK" --output "build/craftengine/ExtendedNoteBlock-CraftEngine-${MOD_VERSION}-mc26.3.zip" --version "$MOD_VERSION"
       - name: Verify Full Fabric runtime jar
         shell: bash
         run: |
@@ -172,25 +187,25 @@ jobs:
       - name: Upload Full Fabric artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: extendednoteblock-full-26.2
+          name: extendednoteblock-full-26.3
           path: build/libs/*.jar
           if-no-files-found: error
       - name: Upload Paper Client artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extendednoteblock-paper-client-26.2
+          name: extendednoteblock-paper-client-26.3
           path: build/paper-bridge-client/*.jar
           if-no-files-found: error
       - name: Upload combined server resource pack
         uses: actions/upload-artifact@v4
         with:
-          name: extendednoteblock-server-resources-26.2
+          name: extendednoteblock-server-resources-26.3
           path: build/server-resource-pack/*.zip
           if-no-files-found: error
       - name: Upload ENB CraftEngine registration resources
         uses: actions/upload-artifact@v4
         with:
-          name: extendednoteblock-craftengine-26.2
+          name: extendednoteblock-craftengine-26.3
           path: build/craftengine/*.zip
           if-no-files-found: error
 
@@ -226,6 +241,8 @@ jobs:
         run: |
           python3 ../scripts/prepare_paper_craftengine.py
           python3 ../scripts/prepare_paper_schematic.py
+          python3 ../scripts/prepare_paper_optional_audio.py
+          python3 ../scripts/prepare_paper_performance.py
           python3 ../scripts/prepare_paper_language.py
       - name: Verify vanilla-safe identity, interaction, render and listener bridge
         run: |
@@ -249,7 +266,7 @@ jobs:
           grep -q 'status.equals("DOWNLOADED")' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'addResourcePack(listenerPackId, listenerPackUrl, listenerPackSha1' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'CraftEngine combined pack (waiting for generation and hosting)' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
-          grep -q 'sendListenerResourcePack(event.getPlayer(), true), 40L' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
+          grep -q '!getConfig().getBoolean("resource-pack.optional-audio.enabled", false)), 40L' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'case "pack" -> handlePackCommand' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'action.equals("test")' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
           grep -q 'ListenerSoundResolver.resolve' src/main/java/com/goldenegggovo/extendednoteblock/bridge/ExtendedNoteBlockBridge.java
@@ -263,7 +280,9 @@ jobs:
             exit 1
           fi
       - name: Build Paper/Purpur server plugin
-        run: gradle clean build --stacktrace
+        run: |
+          chmod +x ../gradlew
+          ../gradlew clean build --stacktrace
       - name: Preserve Paper import test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -279,6 +298,11 @@ jobs:
           test -n "$JAR"
           jar tf "$JAR" | grep -qx 'plugin.yml'
           jar tf "$JAR" | grep -qx 'config.yml'
+          jar tf "$JAR" | grep -qx 'lang/en_us.yml'
+          jar tf "$JAR" | grep -qx 'lang/zh_cn.yml'
+          jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/BridgeChunkIndex.class'
+          jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/OptionalAudioPack.class'
+          jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/OptionalAudioPreferences.class'
           jar tf "$JAR" | grep -qx 'enb-release-pack.properties'
           jar tf "$JAR" | grep -qx 'com/atemukesu/extendednoteblock/bridgeprotocol/ProjectionImport.class'
           jar tf "$JAR" | grep -qx 'com/goldenegggovo/extendednoteblock/bridge/BridgeProjectionImporter.class'
@@ -294,7 +318,7 @@ jobs:
       - name: Upload Paper server plugin artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extendednoteblock-paper-server-26.2
+          name: extendednoteblock-paper-server-26.3
           path: bridge/build/libs/*.jar
           if-no-files-found: error
 
@@ -313,25 +337,25 @@ jobs:
       - name: Download Full Fabric mod
         uses: actions/download-artifact@v4
         with:
-          name: extendednoteblock-full-26.2
+          name: extendednoteblock-full-26.3
           path: artifacts/full
 
       - name: Download Paper Client
         uses: actions/download-artifact@v4
         with:
-          name: extendednoteblock-paper-client-26.2
+          name: extendednoteblock-paper-client-26.3
           path: artifacts/client
 
       - name: Download Paper/Purpur server plugin
         uses: actions/download-artifact@v4
         with:
-          name: extendednoteblock-paper-server-26.2
+          name: extendednoteblock-paper-server-26.3
           path: artifacts/server
 
       - name: Download ENB CraftEngine registration resources
         uses: actions/download-artifact@v4
         with:
-          name: extendednoteblock-craftengine-26.2
+          name: extendednoteblock-craftengine-26.3
           path: artifacts/craftengine
 
       - name: Prepare release files

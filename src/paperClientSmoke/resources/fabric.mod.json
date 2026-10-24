@@ -7,7 +7,6 @@
     "client": ["com.atemukesu.enbtest.PaperClientSmoke"]
   },
   "depends": {
-    "extendednoteblock_bridge_client": "*",
     "fabric-api": "*"
   }
 }

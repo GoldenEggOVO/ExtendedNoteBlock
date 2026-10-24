@@ -1,7 +1,6 @@
 package com.atemukesu.extendednoteblock.client.gui.screen;
 
 import java.net.URI;
-import net.minecraft.util.Util;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -26,14 +25,14 @@ public class SponsorScreen extends Screen {
         // Sponsor Button
         this.addRenderableWidget(
                 Button.builder(Component.translatable("gui.extendednoteblock.sponsor.action"), button -> {
-                    Util.getPlatform().openUri(URI.create(SPONSOR_URL));
+                    com.mojang.blaze3d.Blaze3D.openUri(URI.create(SPONSOR_URL));
                 }).bounds(this.width / 2 - 100, y, 200, 20).build());
 
         y += 25;
 
         // Back Button
         this.addRenderableWidget(Button.builder(CommonComponents.GUI_BACK, button -> {
-            this.minecraft.setScreen(this.parent);
+            this.minecraft.gui.setScreen(this.parent);
         }).bounds(this.width / 2 - 100, y, 200, 20).build());
     }
 
@@ -59,6 +58,6 @@ public class SponsorScreen extends Screen {
 
     @Override
     public void onClose() {
-        this.minecraft.setScreen(this.parent);
+        this.minecraft.gui.setScreen(this.parent);
     }
 }

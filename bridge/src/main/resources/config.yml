@@ -12,9 +12,16 @@ audible-radius: 64
 
 # CraftEngine generates and hosts the complete block/model/audio pack.
 # In CraftEngine config.yml, set resource-pack.delivery.send-on-join and
-# resource-pack.delivery.resend-on-upload to false. ENB handles delivery/status.
+# resource-pack.delivery.resend-on-upload to false, and remove send_pack steps from
+# reload_pack-triggered resource-pack.workflows. ENB handles delivery/status.
 # Legacy url/sha1/id/use-official-release/combined-file settings are ignored.
 resource-pack:
+  # Split ENB listener audio into a separate, optional pack; other assets stay required.
+  # Serve this directory at public-url. Player choices persist in optional-audio-players.txt.
+  optional-audio:
+    enabled: false
+    directory: plugins/ExtendedNoteBlockBridge/optional-audio
+    public-url: "http://localhost:8100/assets/optional-enb/"
   enabled: true
   required: true
   prompt: "This server requires the complete CraftEngine block and ENB music resource pack."

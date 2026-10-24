@@ -10,7 +10,7 @@ if '    private BridgeSchematicTransfer schematicTransfer;' not in text:
                         'import com.atemukesu.extendednoteblock.bridgeprotocol.ProjectionImport;\nimport com.atemukesu.extendednoteblock.bridgeprotocol.SchematicTransfer;')
     text = text.replace('    private BridgeProjectionImporter projectionImporter;',
                         '    private BridgeProjectionImporter projectionImporter;\n    private BridgeSchematicTransfer schematicTransfer;')
-    anchor = '        getLogger().info("ExtendedNoteBlockBridge enabled for Paper/Purpur 26.2");'
+    anchor = '        getLogger().info("ExtendedNoteBlockBridge enabled for Paper/Purpur 26.3");'
     if anchor not in text:
         raise SystemExit('Schematic preparation requires the Paper bridge enable anchor')
     text = text.replace(anchor, '''        schematicTransfer = new BridgeSchematicTransfer(this, new BridgeSchematicTransfer.Target() {

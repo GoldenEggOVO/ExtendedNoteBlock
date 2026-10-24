@@ -119,18 +119,20 @@ def collect_errors() -> list[str]:
 
     mod_version, server_version, minecraft_version = current_versions()
     release_tag = f"v{mod_version}-mc{minecraft_version}"
+    release_note = ROOT / "docs" / "releases" / f"{mod_version}.md"
+    unreleased = release_note.is_file() and "Status: Unreleased" in release_note.read_text(encoding="utf-8")
     required_text: dict[str, tuple[str, ...]] = {
         "README.md": (
             f"Full Fabric / Paper Client {mod_version}",
             f"Paper Server {server_version}",
-            release_tag,
+            minecraft_version if unreleased else release_tag,
         ),
         "docs/README.md": (mod_version, server_version, minecraft_version),
         "docs/README_zh-cn.md": (mod_version, server_version, minecraft_version),
         "docs/INSTALLATION.md": (
             f"ExtendedNoteBlock-Full-Fabric-{mod_version}-mc{minecraft_version}.jar",
             f"ExtendedNoteBlock-Paper-Server-{server_version}-mc{minecraft_version}.jar",
-            release_tag,
+            minecraft_version if unreleased else release_tag,
         ),
         "docs/ROADMAP.md": (mod_version, server_version),
     }
@@ -140,7 +142,6 @@ def collect_errors() -> list[str]:
             if expected not in text:
                 errors.append(f"{relative}: missing current version marker {expected!r}")
 
-    release_note = ROOT / "docs" / "releases" / f"{mod_version}.md"
     if not release_note.is_file():
         errors.append(f"docs/releases/{mod_version}.md: current release note is missing")
     release_index = (ROOT / "docs" / "releases" / "README.md").read_text(encoding="utf-8")

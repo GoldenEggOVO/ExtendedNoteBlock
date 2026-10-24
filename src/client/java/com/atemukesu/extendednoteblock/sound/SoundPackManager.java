@@ -1,6 +1,5 @@
 package com.atemukesu.extendednoteblock.sound;
 
-import com.atemukesu.extendednoteblock.ExtendedNoteBlock;
 import com.atemukesu.extendednoteblock.config.ConfigManager;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
@@ -42,7 +41,7 @@ public class SoundPackManager {
     /** 默认音色包的zip文件名。 */
     public static final String DEFAULT_PACK_ZIP_NAME = DEFAULT_PACK_ID + ".zip";
     /** 默认音色包在Mod JAR文件内的资源路径。 */
-    private static final String DEFAULT_PACK_RESOURCE_PATH = "assets/" + ExtendedNoteBlock.MOD_ID + "/"
+    private static final String DEFAULT_PACK_RESOURCE_PATH = "assets/" + "extendednoteblock" + "/"
             + DEFAULT_PACK_ZIP_NAME;
 
     /** 存储所有扫描到的可用音色包信息。 */
@@ -362,7 +361,7 @@ public class SoundPackManager {
         try {
             // 创建必要的目录结构。
             Files.createDirectories(
-                    packDir.resolve("assets").resolve(ExtendedNoteBlock.MOD_ID).resolve("sounds").resolve("notes"));
+                    packDir.resolve("assets").resolve("extendednoteblock").resolve("sounds").resolve("notes"));
 
             generatePackMcMeta(packDir);
 
@@ -397,10 +396,15 @@ public class SoundPackManager {
         if (!Files.exists(mcMetaPath)) {
             JsonObject packMeta = new JsonObject();
             JsonObject packSection = new JsonObject();
-            // Resource pack format used by Minecraft 26.2.
-            packSection.addProperty("pack_format", 88);
-            packSection.addProperty("min_format", 88);
-            packSection.addProperty("max_format", 88);
+            // Keep generated sound packs aligned with the running Minecraft version.
+            var format = net.minecraft.SharedConstants.getCurrentVersion()
+                    .packVersion(net.minecraft.server.packs.PackType.CLIENT_RESOURCES);
+            JsonArray version = new JsonArray();
+            version.add(format.major());
+            version.add(format.minor());
+            packSection.addProperty("pack_format", format.major());
+            packSection.add("min_format", version);
+            packSection.add("max_format", version.deepCopy());
             packSection.addProperty("description", "Generated sounds for Extended Note Block Mod");
             packMeta.add("pack", packSection);
 
@@ -467,7 +471,7 @@ public class SoundPackManager {
      */
     public Map<Integer, List<Integer>> scanOggFiles(Path rootPath) {
         Map<Integer, List<Integer>> instrumentNotes = new HashMap<>();
-        Path notesDir = rootPath.resolve("assets").resolve(ExtendedNoteBlock.MOD_ID).resolve("sounds").resolve("notes");
+        Path notesDir = rootPath.resolve("assets").resolve("extendednoteblock").resolve("sounds").resolve("notes");
 
         if (!Files.isDirectory(notesDir)) {
             return instrumentNotes;
@@ -506,7 +510,7 @@ public class SoundPackManager {
         instrumentNotes.forEach((instrumentId, notes) -> {
             for (int note : notes) {
                 String eventName = String.format("notes.%d.%d", instrumentId, note);
-                String soundPath = String.format("%s:notes/%d.%d", ExtendedNoteBlock.MOD_ID, instrumentId, note);
+                String soundPath = String.format("%s:notes/%d.%d", "extendednoteblock", instrumentId, note);
 
                 JsonObject soundEvent = new JsonObject();
                 soundEvent.addProperty("category", "record");
@@ -523,7 +527,7 @@ public class SoundPackManager {
             }
         });
 
-        Path soundsJsonPath = packPath.resolve("assets").resolve(ExtendedNoteBlock.MOD_ID).resolve(SOUNDS_JSON_FILE);
+        Path soundsJsonPath = packPath.resolve("assets").resolve("extendednoteblock").resolve(SOUNDS_JSON_FILE);
         Files.createDirectories(soundsJsonPath.getParent());
         try (Writer writer = new FileWriter(soundsJsonPath.toFile())) {
             GSON.toJson(soundsJson, writer);

@@ -204,7 +204,7 @@ public class ExtendedNoteBlockScreen extends AbstractContainerScreen<ExtendedNot
 
         this.addRenderableWidget(Button.builder(
             Component.translatable("gui.extendednoteblock.advanced_settings").withStyle(ChatFormatting.GOLD),
-            button -> minecraft.setScreen(new AdvancedSettingsScreen(this, this.menu.blockEntity))
+            button -> minecraft.gui.setScreen(new AdvancedSettingsScreen(this, this.menu.blockEntity))
         ).bounds(advancedButtonX, advancedButtonY, advBtnWidth, 20).build());
     }
 

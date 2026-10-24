@@ -4,7 +4,7 @@ import re
 import json
 import zipfile
 
-from resource_pack_assets import RESOURCE_PACK_FORMAT
+from resource_pack_assets import pack_metadata
 
 ROOT = Path(__file__).resolve().parents[1]
 CLIENT = ROOT / "src" / "client" / "java"
@@ -15,9 +15,10 @@ default_pack = ROOT / "src/main/resources/assets/extendednoteblock/extendednoteb
 with zipfile.ZipFile(default_pack) as archive:
     metadata = json.loads(archive.read("pack.mcmeta"))
     pack = metadata["pack"]
-    if any(pack.get(key) != RESOURCE_PACK_FORMAT for key in ("pack_format", "min_format", "max_format")):
+    expected = pack_metadata(pack.get("description", "ExtendedNoteBlock sounds"))["pack"]
+    if any(pack.get(key) != expected[key] for key in ("pack_format", "min_format", "max_format")):
         for key in ("pack_format", "min_format", "max_format"):
-            pack[key] = RESOURCE_PACK_FORMAT
+            pack[key] = expected[key]
         temporary = default_pack.with_suffix(".tmp")
         with zipfile.ZipFile(temporary, "w") as output:
             for entry in archive.infolist():
@@ -165,12 +166,12 @@ if projection_writer.exists():
 
     receiver_entity = """        tileEntities.add(createProjectionReceiverEntity(\n                controllerX + 1, 0, controllerZ, projectedNotes, options.sustainTicks()));\n"""
     receiver_entity_safe = """        if (!PAPER_SAFE_EXPORT) {\n            tileEntities.add(createProjectionReceiverEntity(\n                    controllerX + 1, 0, controllerZ, projectedNotes, options.sustainTicks()));\n        }\n"""
-    if receiver_entity in text:
+    if receiver_entity_safe not in text and receiver_entity in text:
         text = text.replace(receiver_entity, receiver_entity_safe, 1)
 
     note_entity = """            tileEntities.add(createNoteBlockEntity(x, y, z, note, options.sustainTicks()));\n"""
     note_entity_safe = """            if (!PAPER_SAFE_EXPORT) {\n                tileEntities.add(createNoteBlockEntity(x, y, z, note, options.sustainTicks()));\n            }\n"""
-    if note_entity in text:
+    if note_entity_safe not in text and note_entity in text:
         text = text.replace(note_entity, note_entity_safe, 1)
 
     root_anchor = """        CompoundTag root = createRoot(song, author, sizeX, sizeY, sizeZ, blocks.length,\n                projectedNotes.size() * 2 + 3, palette, packedStates, tileEntities);\n\n"""

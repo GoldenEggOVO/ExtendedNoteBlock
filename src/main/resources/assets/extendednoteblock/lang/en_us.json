@@ -255,5 +255,6 @@
   "gui.extendednoteblock.import.validating": "Checking pasted blocks: %s / %s",
   "gui.extendednoteblock.import.complete": "Restored %s ENB notes and the projection timeline. Saved on the server.",
   "gui.extendednoteblock.import.failed": "Restore failed: %s",
-  "gui.extendednoteblock.import.interrupted": "Restore interrupted. If it was already finishing, check the blocks or server log for the result."
+  "gui.extendednoteblock.import.interrupted": "Restore interrupted. If it was already finishing, check the blocks or server log for the result.",
+  "message.extendednoteblock.litematica.unsupported": "ENB: automatic schematic metadata copy is disabled. Use Litematica %s and MaLiLib %s; other versions do not preserve ENB music settings automatically."
 }

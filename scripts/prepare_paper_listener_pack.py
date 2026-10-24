@@ -411,7 +411,7 @@ if 'case "pack" -> switch (args.length)' not in text:
 help_pack_anchor = '''                case "reload" -> {
                     sender.sendMessage("/enb reload");
 '''
-if 'sender.sendMessage("/enb pack status | resend | test <MIDI 0-127> [instrument 0-127]");' not in text:
+if '"/enb pack status | resend | test <MIDI 0-127> [instrument 0-127]"' not in text:
     if help_pack_anchor not in text:
         raise SystemExit("Could not find command help insertion point")
     text = text.replace(
@@ -427,7 +427,7 @@ if 'sender.sendMessage("/enb pack status | resend | test <MIDI 0-127> [instrumen
 
 help_list_anchor = '''        sender.sendMessage("/enb list - List logical objects and vanilla carriers");
 '''
-if 'sender.sendMessage("/enb pack <status|resend|test> - Diagnose or test the listener pack");' not in text:
+if '"/enb pack <status|resend|test> - Diagnose or test the listener pack"' not in text:
     if help_list_anchor not in text:
         raise SystemExit("Could not find command-list help insertion point")
     text = text.replace(
@@ -449,7 +449,7 @@ if "flushPendingSaves()" in text:
     # Preserve the durable flush before re-reading either config or edit data.
     reload_anchor = "                loadNotes();\n"
     reload_replacement = "                reloadConfig();\n                loadListenerResourcePackSettings();\n                startTickers();\n" + reload_anchor
-if "                reloadConfig();\n                loadListenerResourcePackSettings();" not in text:
+if "                reloadConfig();" not in text:
     if reload_anchor not in text:
         raise SystemExit("Could not find /enb reload anchor")
     text = text.replace(reload_anchor, reload_replacement, 1)

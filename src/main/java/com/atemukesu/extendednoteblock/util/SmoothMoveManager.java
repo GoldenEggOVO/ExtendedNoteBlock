@@ -125,7 +125,7 @@ public class SmoothMoveManager {
 
             // 强行应用到实体（覆盖 Minecraft 所有的物理/碰撞/客户端修正）
             entity.setPos(newPos);
-            entity.hurtMarked = true;
+            entity.syncVelocity = true;
 
             // 关键：对于 ServerPlayer，我们需要不断重置它的 fallDistance 等，防止累计摔落伤害或动作异常
             entity.fallDistance = 0;

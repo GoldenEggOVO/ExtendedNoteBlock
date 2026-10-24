@@ -33,7 +33,6 @@ import com.atemukesu.extendednoteblock.network.ClientModMessages;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 
 public class ExtendedNoteBlockClient implements ClientModInitializer {
 
@@ -58,20 +57,20 @@ public class ExtendedNoteBlockClient implements ClientModInitializer {
 
         openWandGuiKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.extendednoteblock.open_wand_gui",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_ENTER,
+                InputConstants.Type.KEYBOARD,
+                InputConstants.KEY_RETURN,
                 KEY_CATEGORY));
 
         clearSelectionKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.extendednoteblock.clear_selection",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_BACKSPACE,
+                InputConstants.Type.KEYBOARD,
+                InputConstants.KEY_BACKSPACE,
                 KEY_CATEGORY));
 
         openNbsWorkshopKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.extendednoteblock.open_nbs_workshop",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_N,
+                InputConstants.Type.KEYBOARD,
+                InputConstants.KEY_N,
                 KEY_CATEGORY));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

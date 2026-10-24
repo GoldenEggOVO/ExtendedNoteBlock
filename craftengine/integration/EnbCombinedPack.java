@@ -11,10 +11,19 @@ import org.bukkit.scheduler.BukkitTask;
 import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.core.plugin.config.Config;
+import net.momirealms.craftengine.core.util.Key;
+import net.momirealms.craftengine.core.util.YamlUtils;
 import net.momirealms.craftengine.core.pack.host.ResourcePackDownloadData;
 
 /** One server pack; checks the atomically published file, never a half-built CE archive. */
 final class EnbCombinedPack implements AutoCloseable {
+    static final UUID AUDIO_ID = UUID.fromString("7056a49b-8a6d-4ce5-b4c8-33bf8d59889b");
+    private final boolean optional;
+    private final Path directory;
+    private final String publicUrl;
+    private OptionalAudioPack.Published published;
+    private volatile String sourceHash = "";
+    private final Map<UUID,String> audioOffered = new HashMap<>();
     private final ExtendedNoteBlockBridge plugin;
     private final BukkitCraftEngine engine;
     private final String prompt;
@@ -27,12 +36,21 @@ final class EnbCombinedPack implements AutoCloseable {
     private BukkitTask watcher, offers;
     EnbCombinedPack(ExtendedNoteBlockBridge plugin) {
         this.plugin=plugin;
+        optional=plugin.getConfig().getBoolean("resource-pack.optional-audio.enabled",false);
+        directory=Path.of(plugin.getConfig().getString("resource-pack.optional-audio.directory",plugin.getDataFolder()+"/optional-audio"));
+        publicUrl=plugin.getConfig().getString("resource-pack.optional-audio.public-url","");
+        if(optional) {
+            var uri=java.net.URI.create(publicUrl);
+            if(!Set.of("http","https").contains(uri.getScheme()) || uri.getHost()==null || uri.getUserInfo()!=null
+                    || uri.getQuery()!=null || uri.getFragment()!=null || !publicUrl.endsWith("/"))
+                throw new IllegalArgumentException("optional-audio.public-url must be an HTTP(S) directory URL ending with / without query");
+        }
         engine=BukkitCraftEngine.instance();
         if(engine==null)throw new IllegalStateException("CraftEngine is not ready");
         id=UUID.fromString("a452911d-2d41-4db4-8986-d9b2b8f8aeb0");
         required=plugin.getConfig().getBoolean("resource-pack.required",true);
         prompt=plugin.getConfig().getString("resource-pack.prompt","ExtendedNoteBlock resources");
-        plugin.listenerPackId=id;
+        plugin.listenerPackId=optional?AUDIO_ID:id;
         plugin.listenerPackSource="CraftEngine combined pack (waiting for verified publication)";
     }
     void enable() {
@@ -45,17 +63,30 @@ final class EnbCombinedPack implements AutoCloseable {
     }
     private void poll() {
         if(closed)return;
-        Path file=engine.packManager().resourcePackPath();
-        if(!Files.isRegularFile(file))return;
         try {
+            Path file=packSettings().path();
+            if(file==null || !Files.isRegularFile(file))return;
             String signature=file.toAbsolutePath()+":"+Files.size(file)+":"+Files.getLastModifiedTime(file).toMillis();
             if(!signature.equals(observed)){observed=signature;return;}
             if(signature.equals(checked))return;
             String hash=verify(file);
+            if(optional && hash.equals(sourceHash)){checked=signature;return;}
+            var split=optional ? OptionalAudioPack.split(file,directory) : null;
             if(!signature.equals(file.toAbsolutePath()+":"+Files.size(file)+":"+Files.getLastModifiedTime(file).toMillis()))return;
             checked=signature;
             Bukkit.getScheduler().runTask(plugin,()->{
-                if(closed || hash.equals(plugin.listenerPackSha1Hex))return;
+                if(closed)return;
+                if(optional) {
+                    published=split; sourceHash=hash;
+                    plugin.listenerPackId=AUDIO_ID; plugin.listenerPackSha1Hex=split.audioHash();
+                    plugin.listenerPackSha1=HexFormat.of().parseHex(split.audioHash());
+                    plugin.listenerPackUrl=publicUrl+split.audio().getFileName();
+                    plugin.listenerPackRequired=false; plugin.listenerPackPrompt=Component.text(EnbLanguage.text("Optional ENB audio"));
+                    plugin.listenerPackSource="CraftEngine split optional audio"; plugin.listenerPackEnabled=true;
+                    for(Player p:Bukkit.getOnlinePlayers())offer(p,false);
+                    return;
+                }
+                if(hash.equals(plugin.listenerPackSha1Hex))return;
                 plugin.listenerPackId=id; plugin.listenerPackUrl="Resolved from CraftEngine host for each player";
                 plugin.listenerPackSha1=HexFormat.of().parseHex(hash); plugin.listenerPackSha1Hex=hash;
                 plugin.listenerPackRequired=required; plugin.listenerPackPrompt=Component.text(prompt);
@@ -66,6 +97,36 @@ final class EnbCombinedPack implements AutoCloseable {
             });
         }catch(IOException|RuntimeException ex){plugin.getLogger().warning("ENB combined pack not ready; retaining last valid pack: "+ex.getMessage());}
     }
+    record PackSettings(Path path, boolean automaticDelivery) {}
+
+    // CE 26.9.1 has no resourcePackPath accessor; 26.9.2 derives it from the first ZIP workflow step.
+    // Both versions expose loaded workflow names and the live settings document.
+    private PackSettings packSettings() {
+        return packSettings(engine.dataFolderPath(), YamlUtils.reader(Config.instance().settings()),
+                engine.packManager().workflowNames(), Config.sendPackOnJoin());
+    }
+    boolean automaticDelivery() { return packSettings().automaticDelivery(); }
+    static PackSettings packSettings(Path directory, YamlUtils.Reader settings,
+                                     Collection<String> loadedWorkflows, boolean sendOnJoin) {
+        Path path=null;
+        boolean automatic=sendOnJoin || settings.getBoolean("resource-pack.delivery.resend-on-upload",false);
+        Object definitions=settings.getValue("resource-pack.workflows");
+        if(definitions instanceof Map<?,?> workflows)for(var definition:workflows.entrySet()) {
+            if(!loadedWorkflows.contains(definition.getKey()) || !(definition.getValue() instanceof Map<?,?> workflow))continue;
+            Object trigger=workflow.get("trigger");
+            boolean onReload="reload_pack".equals(trigger)
+                    || trigger instanceof Collection<?> triggers && triggers.contains("reload_pack");
+            if(!(workflow.get("steps") instanceof List<?> steps))continue;
+            for(Object value:steps) {
+                if(!(value instanceof Map<?,?> step) || !(step.get("type") instanceof String type))continue;
+                if(path==null && Key.ce("zip").equals(Key.ce(type)) && step.get("path") instanceof String output)
+                    path=directory.resolve(output).toAbsolutePath().normalize();
+                if(onReload && Key.ce("send_pack").equals(Key.ce(type)))automatic=true;
+            }
+        }
+        return new PackSettings(path,automatic);
+    }
+
     static String verify(Path file) throws IOException {
         try(ZipFile zip=new ZipFile(file.toFile())) {
             for(String name:List.of("pack.mcmeta","assets/extendednoteblock_listener/sounds.json","assets/extendednoteblock/models/block/c.json"))
@@ -97,11 +158,12 @@ final class EnbCombinedPack implements AutoCloseable {
     }
     void offer(Player player,boolean force) {
         if(closed || !plugin.listenerPackEnabled || !eligible(player))return;
-        if(Config.sendPackOnJoin() || Config.sendPackOnUpload()) {
-            problem("Set CraftEngine resource-pack.delivery.send-on-join and resend-on-upload to false; ENB sends the CraftEngine pack and tracks its load status.");
-            if(force)player.sendMessage("ENB: Disable CraftEngine send-on-join and resend-on-upload to avoid duplicate resource-pack requests.");
+        if(automaticDelivery()) {
+            problem("Disable CraftEngine send-on-join, resend-on-upload and automatic send_pack workflow steps; ENB sends the pack and tracks its load status.");
+            if(force)player.sendMessage("ENB: Disable CraftEngine automatic pack delivery (send-on-join, resend-on-upload and reload send_pack steps) to avoid duplicate requests.");
             return;
         }
+        if(optional){offerSplit(player,force);return;}
         UUID playerId=player.getUniqueId();
         String hash=plugin.listenerPackSha1Hex;
         if(pending.containsKey(playerId) || (!force && hash.equals(offered.get(playerId))))return;
@@ -122,7 +184,7 @@ final class EnbCombinedPack implements AutoCloseable {
                         if(force)player.sendMessage("ENB: The complete CraftEngine pack is missing or its hosted checksum differs. Contact the server owner.");
                         return;
                     }
-                    if(Config.sendPackOnJoin() || Config.sendPackOnUpload())return;
+                    if(automaticDelivery())return;
                     lastProblem="";
                     offered.put(playerId,hash);
                     plugin.listenerPackReady.remove(playerId);
@@ -137,6 +199,30 @@ final class EnbCombinedPack implements AutoCloseable {
             problem("CraftEngine download lookup failed: " + ex.getMessage());
         }
     }
+    private void offerSplit(Player player, boolean force) {
+        if(published==null)return;
+        UUID uuid=player.getUniqueId();
+        if(force || !published.baseHash().equals(offered.get(uuid))) {
+            offered.put(uuid,published.baseHash());
+            player.addResourcePack(id,publicUrl+published.base().getFileName(),HexFormat.of().parseHex(published.baseHash()),prompt,required);
+        }
+        if(plugin.isOptionalAudioEnabled(uuid) && (force || !published.audioHash().equals(audioOffered.get(uuid)))) {
+            audioOffered.put(uuid,published.audioHash());
+            plugin.listenerPackReady.remove(uuid);
+            plugin.listenerPackStates.put(uuid,"REQUESTED");
+            player.addResourcePack(AUDIO_ID,publicUrl+published.audio().getFileName(),HexFormat.of().parseHex(published.audioHash()),EnbLanguage.text("Optional ENB audio"),false);
+        }
+    }
+    boolean acceptsAudioStatus(Player player) {
+        return optional && eligible(player) && plugin.isOptionalAudioEnabled(player.getUniqueId())
+                && published!=null && published.audioHash().equals(audioOffered.get(player.getUniqueId()));
+    }
+    void disableAudio(Player player) {
+        audioOffered.remove(player.getUniqueId());
+        plugin.listenerPackReady.remove(player.getUniqueId());
+        plugin.listenerPackStates.remove(player.getUniqueId());
+        player.removeResourcePack(AUDIO_ID);
+    }
     private void problem(String message) {
         if(!message.equals(lastProblem))plugin.getLogger().warning(message);
         lastProblem=message;
@@ -144,9 +230,10 @@ final class EnbCombinedPack implements AutoCloseable {
     void forget(UUID playerId) {
         pending.remove(playerId);
         offered.remove(playerId);
+        audioOffered.remove(playerId);
     }
-    private boolean eligible(Player p) {
-        if(!p.isOnline())return false;
+    boolean eligible(Player p) {
+        if(!p.isOnline() || Bukkit.getPlayer(p.getUniqueId())!=p)return false;
         var geyser=Bukkit.getPluginManager().getPlugin("Geyser-Spigot");
         if(geyser!=null && geyser.isEnabled())try {
             var api=Class.forName("org.geysermc.geyser.api.GeyserApi",true,geyser.getClass().getClassLoader());

@@ -64,7 +64,7 @@ public abstract class OptionsScreenMixin extends Screen {
                     Component.translatable("gui.extendednoteblock.options.sound_packs_button"),
                     (button) -> {
                         if (this.minecraft != null) {
-                            this.minecraft.setScreen(new SoundPackManagerScreen((OptionsScreen) (Object) this));
+                            this.minecraft.gui.setScreen(new SoundPackManagerScreen((OptionsScreen) (Object) this));
                         }
                     })
                     .bounds(doneButton.getX(), originalDoneY, doneButton.getWidth(), buttonHeight)

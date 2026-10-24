@@ -56,8 +56,9 @@ def main() -> None:
                             'meta.setDisplayName(EnbLanguage.text(type.displayName));')
     source = source.replace('"ExtendedNoteBlock Bridge item",',
                             'EnbLanguage.text("ExtendedNoteBlock Bridge item"),')
-    source = source.replace('"Vanilla carrier: minecraft:" + type.carrier.name().toLowerCase(Locale.ROOT)',
-                            'EnbLanguage.text("Vanilla carrier: minecraft:" + type.carrier.name().toLowerCase(Locale.ROOT))')
+    if 'EnbLanguage.text("Vanilla carrier: minecraft:"' not in source:
+        source = source.replace('"Vanilla carrier: minecraft:" + type.carrier.name().toLowerCase(Locale.ROOT)',
+                                'EnbLanguage.text("Vanilla carrier: minecraft:" + type.carrier.name().toLowerCase(Locale.ROOT))')
     source = source.replace('ceMeta.setCustomModelDataComponent(ceModel); stack.setItemMeta(ceMeta);',
                             'ceMeta.setCustomModelDataComponent(ceModel); ceMeta.setDisplayName(EnbLanguage.text(type.displayName)); stack.setItemMeta(ceMeta);')
     bridge.write_text(prepare(source), encoding='utf-8')

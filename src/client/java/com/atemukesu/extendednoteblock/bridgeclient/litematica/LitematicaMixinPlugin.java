@@ -13,8 +13,8 @@ public final class LitematicaMixinPlugin implements IMixinConfigPlugin {
     public boolean shouldApplyMixin(String target, String mixin) {
         FabricLoader loader = FabricLoader.getInstance();
         return loader.isModLoaded("extendednoteblock_bridge_client")
-                && loader.getModContainer("litematica").map(mod -> mod.getMetadata().getVersion().getFriendlyString().equals("0.28.8")).orElse(false)
-                && loader.getModContainer("malilib").map(mod -> mod.getMetadata().getVersion().getFriendlyString().equals("0.29.6")).orElse(false);
+                && loader.getModContainer("litematica").map(mod -> mod.getMetadata().getVersion().getFriendlyString().equals("0.29.1")).orElse(false)
+                && loader.getModContainer("malilib").map(mod -> mod.getMetadata().getVersion().getFriendlyString().equals("0.30.2")).orElse(false);
     }
     public void acceptTargets(Set<String> mine, Set<String> others) { }
     public List<String> getMixins() { return null; }

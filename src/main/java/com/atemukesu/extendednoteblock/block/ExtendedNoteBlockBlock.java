@@ -30,7 +30,6 @@ import com.atemukesu.extendednoteblock.block.entity.ExtendedNoteBlockEntity;
 import com.atemukesu.extendednoteblock.sound.ServerSoundManager;
 import com.atemukesu.extendednoteblock.util.NotePitch;
 import com.atemukesu.extendednoteblock.util.RedstoneManager;
-import com.mojang.serialization.MapCodec;
 
 public class ExtendedNoteBlockBlock extends BaseEntityBlock {
 
@@ -252,11 +251,6 @@ public class ExtendedNoteBlockBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new ExtendedNoteBlockEntity(pos, state);
-    }
-
-    @Override
-    public MapCodec<ExtendedNoteBlockBlock> codec() {
-        return simpleCodec(ExtendedNoteBlockBlock::new);
     }
 
     @Override

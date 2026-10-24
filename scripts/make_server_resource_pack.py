@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the auto-delivered ENB listener resource pack for Minecraft 26.2.
+"""Build the auto-delivered ENB listener resource pack for Minecraft 26.3.
 
 The pack combines the existing Paper visual assets with a compact General MIDI
 listener bank. All 128 GM program numbers remain addressable, but each group of
@@ -409,7 +409,7 @@ def metadata(smoke: bool) -> dict:
     return {
         "schema": 1,
         "namespace": NAMESPACE,
-        "minecraft": "26.2",
+        "minecraft": "26.3",
         "representative_programs": list((0,) if smoke else REPRESENTATIVE_PROGRAMS),
         "program_group_size": 4,
         "melodic_anchors": list((60,) if smoke else MELODIC_ANCHORS),
@@ -437,8 +437,8 @@ def metadata(smoke: bool) -> dict:
 def build_zip(tasks: list[RenderTask], ogg_dir: Path, output: Path, smoke: bool) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     events = sound_events(smoke)
-    description = "ExtendedNoteBlock items + listener sounds (Minecraft 26.2)"
-    readme = f"""ExtendedNoteBlock Server Resources - Minecraft 26.2
+    description = "ExtendedNoteBlock items + listener sounds (Minecraft 26.3)"
+    readme = f"""ExtendedNoteBlock Server Resources - Minecraft 26.3
 
 This combined pack is sent automatically by ExtendedNoteBlockBridge.
 It contains the shared ENB item/model textures and a compact General MIDI bank
