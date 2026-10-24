@@ -1,10 +1,10 @@
 # Extended Note Block 文档中心
 
-> Paper Server 0.14.4 必须安装 **CraftEngine 26.9.2** 和 ENB 注册资源。自动建筑复制需要客户端 **Litematica 0.29.1 / MaLiLib 0.30.2**。Full Fabric 不需要 CraftEngine。
+> Paper Server 0.14.5 必须安装 **CraftEngine 26.9.2** 和 ENB 注册资源。自动建筑复制需要客户端 **Litematica 0.29.1 / MaLiLib 0.30.2**。Full Fabric 不需要 CraftEngine。
 
-[项目首页](../README.md) · [English](../README.md) · [当前 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.3-mc26.3)
+[项目首页](../README.md) · [English](../README.md) · [当前 Release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.4-mc26.3)
 
-这里集中维护 Extended Note Block 的用户说明、Paper / Purpur 技术文档和版本记录。当前基线为 Minecraft **26.3**、Full Fabric / Paper Client **2.13.3**、Paper Server **0.14.4**。
+这里集中维护 Extended Note Block 的用户说明、Paper / Purpur 技术文档和版本记录。当前基线为 Minecraft **26.3**、Full Fabric / Paper Client **2.13.4**、Paper Server **0.14.5**。
 
 ## 玩家与服主
 
@@ -31,6 +31,6 @@
 
 - [CHANGELOG](../CHANGELOG.md)：适合快速查看每个版本的变更摘要。
 - [历史发布文章](releases/README.md)：按版本浏览详细发布说明。
-- [2.13.3 发布说明](releases/2.13.3.md)：当前版本的英文默认与中英文语言设置。
+- [2.13.4 发布说明](releases/2.13.4.md)：全加载对象轮询优化，保留既有功能和数据。
 
 历史文章用于记录当时的行为，可能提到已经删除的旧 Release、Visuals ZIP 或后来被替换的实现。安装当前版本时请以[当前安装指南](INSTALLATION.md)为准。

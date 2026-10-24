@@ -1,8 +1,8 @@
-# 待办与验证 · 2.13.3 基线
+# 待办与验证 · 2.13.4 基线
 
-[返回首页](../README.md) · [文档中心](README.md) · [2.13.3 更新说明](releases/2.13.3.md)
+[返回首页](../README.md) · [文档中心](README.md) · [2.13.4 更新说明](releases/2.13.4.md)
 
-当前基线为 Full Fabric / Paper Client **2.13.3** 与 Paper Server **0.14.4**。
+当前基线为 Full Fabric / Paper Client **2.13.4** 与 Paper Server **0.14.5**。
 
 ## 原版客户端自动资源包
 

@@ -156,6 +156,44 @@ class BridgeRenderPollingTest {
         assertFalse(plugin.lastRenderStates.containsKey(old));
     }
 
+    @Test void chunkChurnAndReregistrationPollExactlyTheLoadedObjects() throws Exception {
+        world.loadChunk(0, 0);
+        world.loadChunk(1, 0);
+        for (int x = 0; x < 32; x++) note(x);
+        render();
+        var saved = java.util.Map.copyOf(plugin.notes);
+        server.getPluginManager().callEvent(new ChunkUnloadEvent(world.getChunkAt(1, 0)));
+        plugin.blockQueries = 0;
+        render();
+        assertEquals(16, plugin.blockQueries);
+
+        String replaced = world.getUID() + ":0:64:0";
+        plugin.objects.remove(replaced);
+        plugin.unindexObject(replaced, EXTENDED_NOTE_BLOCK);
+        plugin.notes.remove(replaced);
+        note(0);
+        note(0);
+        plugin.blockQueries = 0;
+        render();
+        assertEquals(16, plugin.blockQueries, "Repeated registration must not duplicate active work");
+
+        server.getPluginManager().callEvent(new ChunkUnloadEvent(world.getChunkAt(0, 0)));
+        plugin.blockQueries = 0;
+        render();
+        assertEquals(0, plugin.blockQueries);
+        server.getPluginManager().callEvent(new ChunkLoadEvent(world.getChunkAt(1, 0), false));
+        plugin.blockQueries = 0;
+        render();
+        assertEquals(16, plugin.blockQueries);
+        server.getPluginManager().callEvent(new ChunkLoadEvent(world.getChunkAt(0, 0), false));
+        plugin.blockQueries = 0;
+        render();
+        assertEquals(32, plugin.blockQueries);
+        assertEquals(32, plugin.objects.size());
+        assertEquals(saved, plugin.notes);
+        assertEquals(32, plugin.lastRenderStates.size());
+    }
+
     @Test void removingTransmitterClearsUnloadedProjectionAppearance() throws Exception {
         assertUnloadedProjectionTurnsOffAfterRouteReset(true);
     }

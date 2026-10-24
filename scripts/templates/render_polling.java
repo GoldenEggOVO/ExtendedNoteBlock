@@ -1,12 +1,18 @@
     // METHOD: syncChangedRenderStates
     private void syncChangedRenderStates() {
         if (craftEngine != null) craftEngine.beginTick();
-        for (String key : renderIndex.activeKeys()) refreshRenderObject(key, true);
+        var active = renderIndex.activeKeys();
+        // Active keys are a subset of registered keys; equal sizes mean all entries are loaded.
+        if (active.size() == objects.size()) {
+            objects.forEach((key, type) -> refreshRenderObject(key, type, true));
+        } else {
+            for (String key : active) refreshRenderObject(key, objects.get(key), true);
+        }
         var dirty = dirtyRenderObjects.iterator();
         while (dirty.hasNext()) {
             String key = dirty.next();
             dirty.remove();
-            if (!renderIndex.activeKeys().contains(key)) refreshRenderObject(key, false);
+            if (!active.contains(key)) refreshRenderObject(key, objects.get(key), false);
         }
     }
     // METHOD: currentRenderState

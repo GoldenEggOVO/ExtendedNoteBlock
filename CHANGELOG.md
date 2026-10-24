@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.13.4 / Paper Server 0.14.5 — Minecraft 26.3
+
+- Read object types directly from ledger entries when all registered objects are loaded, avoiding a second registry lookup per object. Partial loading still polls only active positions.
+- Preserve one-tick redstone and projection timing, saved music data, wireless routes, CraftEngine integration and optional audio.
+- Add regression coverage for repeated registration and chunk unload/reload. [Release notes](docs/releases/2.13.4.md).
+
 ## 2.13.3 / Paper Server 0.14.4 — Minecraft 26.3
 
 - Update Full Fabric, Paper Client, Litematica integration and Paper Server to Minecraft 26.3.
@@ -18,7 +24,7 @@ Added editable English and Simplified Chinese Paper server language files, with 
 
 CraftEngine 成为 Paper Server 必需插件；Litematica 保存建筑完整 ENB 参数，并在命令粘贴建筑及音乐工坊投影后自动导入。[详细说明](docs/releases/2.13.0.md)。
 
-[Documentation](docs/README.md) · [Detailed release notes](docs/releases/README.md) · [Latest release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.3-mc26.3)
+[Documentation](docs/README.md) · [Detailed release notes](docs/releases/README.md) · [Latest release](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.4-mc26.3)
 
 ## Repository maintenance after 2.13.1
 

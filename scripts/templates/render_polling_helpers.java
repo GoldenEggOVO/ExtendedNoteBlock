@@ -12,8 +12,7 @@
         if (previousTarget != null) dirtyRenderObjects.add(previousTarget);
     }
 
-    private void refreshRenderObject(String key, boolean active) {
-        BridgeItemType type = objects.get(key);
+    private void refreshRenderObject(String key, BridgeItemType type, boolean active) {
         BlockRef ref = blockRefs.get(key);
         if (type == null) {
             RenderObjectState previous = lastRenderStates.remove(key);

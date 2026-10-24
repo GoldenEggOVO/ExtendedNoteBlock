@@ -50,7 +50,7 @@ chmod +x gradlew
 ./gradlew clean test build --stacktrace
 python3 scripts/make_paper_bridge_client_jar.py
 python3 scripts/make_server_resource_pack.py
-python3 scripts/make_craftengine_pack.py --resource-pack build/server-resource-pack/ExtendedNoteBlock-Server-Resources-2.13.3-mc26.3.zip --output build/craftengine/ExtendedNoteBlock-CraftEngine-2.13.3-mc26.3.zip --version 2.13.3
+python3 scripts/make_craftengine_pack.py --resource-pack build/server-resource-pack/ExtendedNoteBlock-Server-Resources-2.13.4-mc26.3.zip --output build/craftengine/ExtendedNoteBlock-CraftEngine-2.13.4-mc26.3.zip --version 2.13.4
 ```
 
 Paper Client 从 Full 构建输出中按严格白名单提取客户端类，并内置物品模型资源包。不能直接重命名 Full JAR 来代替 Paper Client。
@@ -112,6 +112,6 @@ CI 验证现有测试、Full 运行内容、Paper Client 的 Registry 安全与�
 
 ## CraftEngine 与 Litematica 集成
 
-Paper Server 0.14.4 使用公开 Maven 的 CraftEngine core/bukkit 26.9.1 API (runtime compatibility: 26.9.2)（运行时不内嵌），必须在原有 Paper 准备步骤后依次运行 `prepare_paper_craftengine.py`、`prepare_paper_schematic.py`。生成源码只用于构建；权威集成源在 `craftengine/integration/` 与 `scripts/templates/`。
+Paper Server 0.14.5 使用公开 Maven 的 CraftEngine core/bukkit 26.9.1 API (runtime compatibility: 26.9.2)（运行时不内嵌），必须在原有 Paper 准备步骤后依次运行 `prepare_paper_craftengine.py`、`prepare_paper_schematic.py`。生成源码只用于构建；权威集成源在 `craftengine/integration/` 与 `scripts/templates/`。
 
-客户端编译兼容 Litematica 0.29.1 / MaLiLib 0.30.2，运行时可选。发布检查包含无 Litematica 与有 Litematica 两次 Paper Client 启动。CraftEngine 安装资源由 `scripts/make_craftengine_pack.py --resource-pack <server-resources.zip> --output <output.zip> --version 2.13.3` 生成；其中不含 CraftEngine 插件二进制或服务器私有配置。
+客户端编译兼容 Litematica 0.29.1 / MaLiLib 0.30.2，运行时可选。发布检查包含无 Litematica 与有 Litematica 两次 Paper Client 启动。CraftEngine 安装资源由 `scripts/make_craftengine_pack.py --resource-pack <server-resources.zip> --output <output.zip> --version 2.13.4` 生成；其中不含 CraftEngine 插件二进制或服务器私有配置。
