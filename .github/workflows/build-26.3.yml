@@ -76,6 +76,10 @@ jobs:
     needs: quality-gate
     if: needs.quality-gate.outputs.run-build == 'true'
     runs-on: ubuntu-latest
+    env:
+      SDL_VIDEO_DRIVER: x11
+      SDL_VIDEO_FORCE_EGL: '1'
+      GALLIUM_DRIVER: llvmpipe
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java 25
@@ -92,13 +96,18 @@ jobs:
       - run: chmod +x gradlew
       - name: Build Full Fabric mod
         run: ./gradlew clean test build --stacktrace
+      - name: Install software graphics for SDL client checks
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0 mesa-utils xvfb xauth
+          LIBGL_ALWAYS_SOFTWARE=true xvfb-run -a glxinfo -B
       - name: Launch packaged Full Fabric client
         timeout-minutes: 10
         env:
           LIBGL_ALWAYS_SOFTWARE: 'true'
           ALSOFT_DRIVERS: 'null'
         run: |
-          ./gradlew runFullClientSmoke --stacktrace
+          timeout --kill-after=10s 3m ./gradlew runFullClientSmoke --stacktrace
           grep -q 'ENB_FULL_CLIENT_SMOKE_OK' build/run/fullClientSmoke/logs/latest.log
       - name: Preserve Full Fabric startup logs
         if: always()
@@ -115,7 +124,7 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: 'true'
           ALSOFT_DRIVERS: 'null'
         run: |
-          ./gradlew runPaperClientSmoke --stacktrace
+          timeout --kill-after=10s 3m ./gradlew runPaperClientSmoke --stacktrace
           grep -q 'ENB_PAPER_CLIENT_SMOKE_OK' build/run/paperClientSmoke/logs/latest.log
       - name: Preserve Paper Client startup logs
         if: always()
@@ -130,7 +139,7 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: 'true'
           ALSOFT_DRIVERS: 'null'
         run: |
-          ./gradlew runPaperClientLitematicaSmoke --stacktrace
+          timeout --kill-after=10s 3m ./gradlew runPaperClientLitematicaSmoke --stacktrace
           grep -q 'ENB_LITEMATICA_SMOKE_OK' build/run/paperClientLitematicaSmoke/logs/latest.log
       - name: Preserve Litematica startup logs
         if: always()

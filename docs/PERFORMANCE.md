@@ -10,4 +10,6 @@ The existing optional-audio mode retains its UUIDs, `optional-audio-players.txt`
 
 Regression coverage includes the 8,879-object unloaded ledger, stable record reuse, shared block resolution, negative chunk coordinates, independent worlds, deletion, reload, wireless power retention and note power edges. These isolated checks measure bridge work; they do not establish production TPS or client FPS. Production comparisons must use matching server/plugin versions, data, loaded chunks, player counts and playback activity, with repeated JFR windows and MSPT/allocation/I/O observations.
 
+The fixed mock replay reduces queries from 8,879 per pass to the loaded object count and substantially reduces temporary allocations. Its fully loaded case took more CPU time despite lower allocation, so this update does not claim a speedup for every workload. Real CraftEngine and world access costs are outside that replay.
+
 The authoritative build source remains the base bridge, `craftengine/integration/` and the preparation scripts. Run optional-audio and performance preparation after schematic preparation and before language preparation. The complete chain is tested for repeated execution. Generated Java files and private runtime diagnostics must not be committed.
