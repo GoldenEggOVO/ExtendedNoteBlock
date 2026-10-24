@@ -5,18 +5,18 @@
 [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62B47A?style=flat-square)](https://www.minecraft.net/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.20.1-DBD0B4?style=flat-square)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square)](https://adoptium.net/)
-[![Release](https://img.shields.io/badge/Release-2.13.2-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2)
+[![Release](https://img.shields.io/badge/Release-2.13.3-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.3-mc26.3)
 [![License](https://img.shields.io/github/license/GoldenEggOVO/ExtendedNoteBlock?style=flat-square)](../LICENSE)
 
 ![Extended Note Block Banner](assets/ENB-Banner.webp)
 
 Extended Note Block 为 Minecraft 带来完整 MIDI 音域的扩展音符盒、指挥棒、无线红石和 NBS 音乐工坊。它支持 MIDI、NBS 与常见音频导入，也可以将歌曲导出为 Minecraft 音乐结构。
 
-当前开发目标为 **Full Fabric / Paper Client 2.13.3**、**Paper Server 0.14.4**，适用于 **Minecraft 26.3 / Java 25**。
+当前版本为 **Full Fabric / Paper Client 2.13.3**、**Paper Server 0.14.4**，适用于 **Minecraft 26.3 / Java 25**。
 
-[最新已发布版本（26.2）](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2) · [安装指南](INSTALLATION.md) · [功能展示](FEATURES.md) · [全部文档](README.md)
+[最新版本（26.3）](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.3-mc26.3) · [安装指南](INSTALLATION.md) · [功能展示](FEATURES.md) · [全部文档](README.md)
 
-此版本为尚未发布的 26.3 开发目标，构建见 [Actions](https://github.com/GoldenEggOVO/ExtendedNoteBlock/actions/workflows/build-26.3.yml)；公开 Release 仍为 2.13.2／26.2。
+从 Release 下载对应安装包。此版本面向 Minecraft 26.3，客户端与服务端需使用匹配版本。
 
 ## 我应该安装哪个版本？
 

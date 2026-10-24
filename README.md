@@ -5,7 +5,7 @@
 [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62B47A?style=flat-square)](https://www.minecraft.net/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.20.1-DBD0B4?style=flat-square)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square)](https://adoptium.net/)
-[![Release](https://img.shields.io/badge/Release-2.13.2-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2)
+[![Release](https://img.shields.io/badge/Release-2.13.3-4C8BF5?style=flat-square)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.3-mc26.3)
 [![License](https://img.shields.io/github/license/GoldenEggOVO/ExtendedNoteBlock?style=flat-square)](LICENSE)
 
 ![Extended Note Block Banner](docs/assets/ENB-Banner.webp)
@@ -14,9 +14,9 @@ Extended Note Block adds MIDI-range note blocks, a conductor wand, wireless reds
 
 **Minecraft 26.3 · Java 25 · Full Fabric / Paper Client 2.13.3 · Paper Server 0.14.4**
 
-This is the 26.3 development target, not a published release. Obtain builds from [GitHub Actions](https://github.com/GoldenEggOVO/ExtendedNoteBlock/actions/workflows/build-26.3.yml). The latest published release remains 2.13.2 for Minecraft 26.2.
+Download the four edition-specific files from the release below. This version targets Minecraft 26.3; use matching client and server versions.
 
-[Latest published release (26.2)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2) · [Choose an edition](#choose-an-edition) · [Quick start](#quick-start) · [Litematica](#copying-with-litematica) · [Development guide](docs/DEVELOPMENT.md)
+[Latest release (26.3)](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.3-mc26.3) · [Choose an edition](#choose-an-edition) · [Quick start](#quick-start) · [Litematica](#copying-with-litematica) · [Development guide](docs/DEVELOPMENT.md)
 
 ## Choose an edition
 

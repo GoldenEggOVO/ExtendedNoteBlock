@@ -4,7 +4,7 @@
 
 ## 下载与依赖
 
-本页对应尚未发布的 26.3 开发版本。构建文件见 [GitHub Actions](https://github.com/GoldenEggOVO/ExtendedNoteBlock/actions/workflows/build-26.3.yml)；当前公开 Release 仍为 [2.13.2／Minecraft 26.2](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.2-mc26.2)。不要混用两个 Minecraft 版本的客户端。
+本页对应 [2.13.3／Minecraft 26.3](https://github.com/GoldenEggOVO/ExtendedNoteBlock/releases/tag/v2.13.3-mc26.3)。从 Release 下载对应安装包，不要混用不同 Minecraft 版本的客户端。
 
 | 文件 | 安装对象 |
 | --- | --- |
